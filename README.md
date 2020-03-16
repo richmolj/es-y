@@ -267,7 +267,7 @@ You can copy this statement and paste on command-line as cURL.
 
 This one-liner is nice for brevity, but if you want a more-readable multi-line log:
 
-```
+```ts
 class MySearch extends Search {
   // ...
   static logFormat = "pretty"
