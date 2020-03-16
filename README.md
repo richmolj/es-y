@@ -16,6 +16,7 @@ This library is currently in 🔥**ALPHA**🔥
   * [Aggregations](#aggregations)
     * [sourceFields](#source-fields)
     * [ensureQuality](#ensurequality)
+  * [Logging](#logging)
   * [GraphQL Integration](#graphql-integration)
 * [Testing](#testing)
 * [Why not expose the elasticsearch payload directly?](#why-not-expose-the-elasticsearch-payload-directly)
@@ -255,6 +256,23 @@ search.terms("title").order("sum", "rating", "desc").ensureQuality()
 ```
 
 Everything else works the same, but a second query fires under-the-hood.
+
+### Logging
+
+Courtesy of @kwebb:
+
+![](https://user-images.githubusercontent.com/55264/76792734-0da89d00-679a-11ea-9632-95a90ff6b3ed.png)
+
+You can copy this statement and paste on command-line as cURL.
+
+This one-liner is nice for brevity, but if you want a more-readable multi-line log:
+
+```
+class MySearch extends Search {
+  // ...
+  static logFormat = "pretty"
+}
+```
 
 ### GraphQL Integration
 
