@@ -9,6 +9,7 @@ import { MatchPhraseCondition } from "./match-phrase"
 import { NumericRangeCondition } from "./numeric-range"
 import { DateRangeCondition } from "./date-range"
 import { KeywordCondition } from "./keyword"
+import { SimpleQueryStringCondition } from "./simple-query-string"
 import { TextCondition } from "./text"
 import { NumericCondition, NumericConditionInput } from "./numeric"
 import { DateCondition, DateConditionInput } from "./date"
@@ -19,6 +20,8 @@ class Conditions {
   static currentClass: typeof Conditions = Conditions
   protected _not!: Conditions
   protected _or!: Conditions
+
+  keywords = new SimpleQueryStringCondition<this>("", this)
 
   get not(): this {
     if (this._not) {
@@ -53,7 +56,7 @@ class Conditions {
 
     const _this = this as any
     const presentConditions = Object.keys(this)
-      .filter(k => _this[k].hasClause && _this[k].hasClause())
+      .filter(k => k !== "keywords" && _this[k].hasClause && _this[k].hasClause())
       .map(k => _this[k])
 
     presentConditions.forEach(c => {
@@ -81,6 +84,7 @@ class Conditions {
         },
       }
     }
+
     return payload
   }
 
@@ -197,4 +201,5 @@ export {
   NumericConditionInput,
   DateCondition,
   DateConditionInput,
+  SimpleQueryStringCondition,
 }

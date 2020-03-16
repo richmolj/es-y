@@ -12,12 +12,21 @@ import { ${name}TermsInput } from './aggregations/terms'
 import { ${name}MetaInput } from './meta'
 
 @InputType()
+class ${name}SimpleQueryStringConditionInput {
+  @Field()
+  eq!: string
+}
+
+@InputType()
 export class ${name}ConditionsInput {
   @Field(type => ${name}ConditionsInput, { nullable: true })
   not!: ${name}ConditionsInput
 
   @Field(type => ${name}ConditionsInput, { nullable: true })
   or!: ${name}ConditionsInput
+
+  @Field(type => ${name}SimpleQueryStringConditionInput, { nullable: true })
+  keywords!: ${name}SimpleQueryStringConditionInput
     `
   const instance = new klass.conditionsClass()
   Object.keys(instance).forEach(k => {

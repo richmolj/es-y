@@ -76,6 +76,15 @@ describe("integration", () => {
       await ThronesSearch.client.indices.refresh({ index })
     })
 
+    describe('query type', () => {
+      it('works', async() => {
+        const search = new ThronesSearch()
+        search.conditions.keywords.eq("vows")
+        await search.query()
+        expect(search.results.map(r => r.id)).to.deep.eq([2])
+      })
+    })
+
     describe("keyword type", () => {
       describe("basic equality", () => {
         describe("by direct assignment", () => {

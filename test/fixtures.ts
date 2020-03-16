@@ -48,5 +48,5 @@ export class ThronesSearch extends Search {
   static conditionsClass = ThronesSearchConditions
   conditions!: ThronesSearchConditions
 
-  static logFormat = "pretty"
+  // static logFormat = "pretty"
 }

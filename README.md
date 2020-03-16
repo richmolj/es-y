@@ -109,12 +109,20 @@ const search = new ThronesSearch({
 })
 ```
 
+
 ##### Condition Types
 
 * `KeywordCondition`: `eq`
 * `TextCondition`: `match`, `matchPhrase`
-* `NumericCondition`: `eq`, `gt`, `lt`, `gte`, `lte` 
+* `NumericCondition`: `eq`, `gt`, `lt`, `gte`, `lte`
 * `DateCondition`: `eq`, `gt`, `lt`, `gte`, `lte`, `pastFiscalYears`
+
+
+The `keywords` condition, a [simple string query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-simple-query-string-query.html), comes by default:
+
+```ts
+search.conditions.keywords.eq("something")
+```
 
 #### Meta
 
@@ -141,7 +149,7 @@ Let's say we wanted the count of all titles:
 const search = new Search()
 search.aggs.terms("title")
 await search.query()
-search.aggResults.title // => 
+search.aggResults.title // =>
 
 // [
 //   { key: "Queen", count: 2 },
@@ -296,7 +304,7 @@ export class ThronesSearchResult  {
 
   @Field()
   title!: string
-  
+
   @Field()
   age!: number
 }

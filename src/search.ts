@@ -99,6 +99,13 @@ export class Search {
       searchPayload.body = { query }
     }
 
+    if (this.conditions.keywords.hasClause()) {
+      if (!searchPayload.body.query) searchPayload.body.query = {}
+      searchPayload.body.query.simple_query_string = {
+        query: (this.conditions.keywords as any).value
+      }
+    }
+
     const { size, from, sort } = this.meta.toElastic()
     searchPayload.body.size = size
     searchPayload.body.from = from
