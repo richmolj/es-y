@@ -1,0 +1,39 @@
+{
+  "name": "search-resource",
+  "version": "0.0.27",
+  "description": "",
+  "main": "lib/src/index.js",
+  "module": "lib/src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "yarn lint:ci --fix",
+    "lint:ci": "yarn eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "mocha --reporter spec --require test/tshook.js --watch-extensions ts --recursive --extension ts"
+  },
+  "author": "Lee Richmond, Wade Tandy & Kayla Webb",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "7.6.0"
+  },
+  "devDependencies": {
+    "@types/chai": "4.2.9",
+    "@types/mocha": "7.0.1",
+    "@types/node": "13.7.6",
+    "@typescript-eslint/eslint-plugin": "2.22.0",
+    "@typescript-eslint/parser": "2.22.0",
+    "chai": "4.2.0",
+    "eslint": "6.8.0",
+    "eslint-config-prettier": "6.10.0",
+    "eslint-plugin-prettier": "3.1.2",
+    "mocha": "7.1.0",
+    "prettier": "1.19.1",
+    "ts-node": "8.6.2",
+    "tslint": "6.0.0",
+    "typescript": "3.8.2"
+  },
+  "files": [
+    "src/*",
+    "lib/*"
+  ]
+}

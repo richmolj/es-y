@@ -1,0 +1,28 @@
+language: node_js
+
+node_js:
+- lts/*
+- node
+
+before_install:
+  - sudo service elasticsearch stop
+  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.6.1-amd64.deb && sudo dpkg -i --force-confnew elasticsearch-7.6.1-amd64.deb
+  - sudo journalctl -xe
+  - sudo service elasticsearch start
+
+script:
+  - yarn lint:ci
+  - yarn test
+
+# before_deploy:
+#   - yarn run release
+
+# deploy:
+#   provider: npm
+#   email: $NPM_EMAIL
+#   api_key: $NPM_API_KEY
+#   skip_cleanup: true
+#   on:
+#     tags: true
+#     node: node # Only publish with latest node version
+#     repo: graphiti-api/spraypaint.js
