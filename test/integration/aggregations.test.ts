@@ -94,6 +94,23 @@ describe("integration", () => {
             ])
           })
 
+          it("works with full 'aggregations' key", async() => {
+            const search = new ThronesSearch({
+              aggregations: {
+                terms: [
+                  {
+                    field: "title",
+                  },
+                ],
+              },
+            })
+            await search.query()
+            expect(search.aggResults.title).to.deep.eq([
+              { key: "A", count: 2 },
+              { key: "B", count: 1 },
+            ])
+          })
+
           describe("when only specifying field", () => {
             it("works", async () => {
               const search = new ThronesSearch({

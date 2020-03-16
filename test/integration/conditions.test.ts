@@ -20,15 +20,6 @@ import {
 import { ThronesSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
-// TODO:
-// * top-level OR
-// * condition arrays (ie rather than tons of ors, pass array)
-// * within-condition AND (+ AND NOT)
-// * autocomplete payload values: [{key}]
-// * BASIC PHRASE MATCH (not matchphrase?)
-// * PREFIX
-// dupe logic in condition and or clause, eetc
-
 const index = ThronesSearch.index
 
 describe("integration", () => {
@@ -2376,17 +2367,64 @@ describe("integration", () => {
         await ThronesSearch.client.indices.refresh({ index })
       })
 
-      it("works", async () => {
-        const search = new ThronesSearch()
-        search.conditions.name
-          .eq("Ned Stark")
-          .and.conditions.title.eq("Other Ned")
-          .or.conditions.age.eq(10)
-          .and.conditions.rating.eq(77)
-        search.conditions.or.name.eq("Rando name")
-        search.conditions.not.bio.match("dontfindme")
-        await search.query()
-        expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
+      describe("via direct assignment", () => {
+        it("works", async () => {
+          const search = new ThronesSearch()
+          search.conditions.name
+            .eq("Ned Stark")
+            .and.conditions.title.eq("Other Ned")
+            .or.conditions.age.eq(10)
+            .and.conditions.rating.eq(77)
+          search.conditions.or.name.eq("Rando name")
+          search.conditions.not.bio.match("dontfindme")
+          await search.query()
+          expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
+        })
+      })
+
+      describe("via constructor", () => {
+        it("works", async() => {
+          const search = new ThronesSearch({
+            conditions: {
+              name: {
+                eq: "Ned Stark",
+                and: {
+                  conditions: {
+                    title: {
+                      eq: "Other Ned",
+                      or: {
+                        conditions: {
+                          age: {
+                            eq: 10,
+                            and: {
+                              conditions: {
+                                rating: {
+                                  eq: 77
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              or: {
+                name: {
+                  eq: "Rando name"
+                }
+              },
+              not: {
+                bio: {
+                  match: "dontfindme"
+                }
+              }
+            }
+          })
+          await search.query()
+          expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
+        })
       })
     })
   })

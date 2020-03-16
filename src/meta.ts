@@ -4,8 +4,24 @@ export class Meta {
   total?: number
   sort: Record<string, "asc" | "desc">[]
 
-  constructor() {
+  constructor(input: any) {
     this.sort = []
+
+    if (input) {
+      if (input.page) {
+        this.page = input.page
+      }
+
+      if (input.perPage || input.perPage === 0) {
+        this.perPage = input.perPage
+      }
+
+      if (input.sort) {
+        this.sort = input.sort.map((s: any) => {
+          return { [s.att]: s.dir }
+        })
+      }
+    }
   }
 
   toElastic(): Record<string, any> {

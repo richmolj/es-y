@@ -28,7 +28,7 @@ export class Search {
     // TODO any
     this.results = []
     this.aggResults = {}
-    this.meta = new Meta()
+    this.meta = new Meta(input && input.meta)
 
     if (input && input.conditions) {
       this.conditions = new this.klass.conditionsClass()
@@ -39,22 +39,6 @@ export class Search {
 
     if (input && (input.aggs || input.aggregations)) {
       this.aggs.build(input.aggs || input.aggregations)
-    }
-
-    if (input && input.meta) {
-      if (input.meta.page) {
-        this.meta.page = input.meta.page
-      }
-
-      if (input.meta.perPage || input.meta.perPage === 0) {
-        this.meta.perPage = input.meta.perPage
-      }
-
-      if (input.meta.sort) {
-        this.meta.sort = input.meta.sort.map((s: any) => {
-          return { [s.att]: s.dir }
-        })
-      }
     }
   }
 
@@ -176,7 +160,6 @@ export class Search {
     const entry = { key: bucket.key, count: bucket.doc_count } as any
 
     if (bucket.source_fields) {
-      // TODO alias for field source
       entry.sourceFields = bucket.source_fields.hits.hits[0]._source
     }
 

@@ -53,9 +53,7 @@ export class AndClause<ConditionT, ConditionsT> {
       query.bool.filter.bool.should.length > 0
     ) {
       const subQuery = query.bool.filter.bool.should[0].bool.must[0].bool
-      console.log(JSON.stringify(subQuery, null, 2))
-      // subQuery.bool.must[0].bool.must[0].bool.should
-      // subQuery.bool.must[0].bool.should
+
       if (subQuery.must.length > 0) {
         should = should.concat({ bool: { must: subQuery.must } })
       }
