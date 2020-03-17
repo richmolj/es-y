@@ -8,7 +8,7 @@ import { Constructor } from "../util/util-types"
 // But it can't because types?
 @ClassHook()
 export class Condition<ConditionsT, ValueType> {
-  elasticField: string
+  protected elasticField: string
   private conditions: ConditionsT
   protected queryType?: "term" | "match" | "match_phrase" | "range"
   protected value?: ValueType | RangeConditionValue<ValueType>
@@ -27,11 +27,11 @@ export class Condition<ConditionsT, ValueType> {
     this.notClauses = []
   }
 
-  hasClause(): boolean {
+  protected hasClause(): boolean {
     return !!this.value || (this as any).value === 0 || this.notClauses.length > 0
   }
 
-  toElastic() {
+  protected toElastic() {
     let must = [] as any
     let should = [] as any
     let must_not = [] as any
@@ -131,7 +131,7 @@ export class Condition<ConditionsT, ValueType> {
     }
   }
 
-  dupe<ThisType extends Condition<ConditionsT, ValueType>>(this: ThisType): ThisType {
+  protected dupe<ThisType extends Condition<ConditionsT, ValueType>>(this: ThisType): ThisType {
     return new (this as any).klass(this.elasticField, this.conditions)
   }
 
@@ -160,7 +160,7 @@ export function applyOrClause<
   OrClass extends Constructor<Or>
 >(condition: Condition<Conditions, ValueType>, orClass: OrClass): Or {
   const conditionsKlass = getConditionsClassConstructor(condition)
-  const dupe = condition.dupe()
+  const dupe = (condition as any).dupe()
   const dupeConditions = new conditionsKlass()
   const clause = new orClass(dupe, dupeConditions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,7 +175,7 @@ export function applyAndClause<
   AndClass extends Constructor<And>
 >(condition: Condition<Conditions, ValueType>, andClass: AndClass): And {
   const conditionsKlass = getConditionsClassConstructor(condition)
-  const dupe = condition.dupe()
+  const dupe = (condition as any).dupe()
   const dupeConditions = new conditionsKlass()
   const clause = new andClass(dupe, dupeConditions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,7 +190,7 @@ export function applyNotClause<
   NotClass extends Constructor<Not>
 >(condition: Condition<Conditions, ValueType>, notClass: NotClass): Not {
   const conditionsKlass = getConditionsClassConstructor(condition)
-  const dupe = condition.dupe()
+  const dupe = (condition as any).dupe()
   const dupeConditions = new conditionsKlass()
   const clause = new notClass(dupe, dupeConditions, condition)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

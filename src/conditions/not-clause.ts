@@ -12,7 +12,7 @@ export class NotClause<ConditionT, ConditionsT> {
     this.originalCondition = originalCondition
   }
 
-  toElastic() {
+  protected toElastic() {
     let should = [] as any[]
     if (this.value) {
       should = (this.condition as any).toElastic().bool.should

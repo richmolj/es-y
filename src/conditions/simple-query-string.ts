@@ -12,8 +12,8 @@ export class SimpleQueryStringCondition<ConditionsT> extends Condition<Condition
   toElastic(): any {
     return {
       simple_query_string: {
-        query: this.value
-      }
+        query: this.value,
+      },
     }
   }
 }

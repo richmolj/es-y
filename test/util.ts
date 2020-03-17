@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/camelcase */
+
 import { ThronesSearch } from "./fixtures"
 
-export async function setupIntegrationTest() {
+export function setupIntegrationTest() {
   const index = ThronesSearch.index
 
   afterEach(async () => {

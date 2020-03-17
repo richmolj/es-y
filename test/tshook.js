@@ -6,6 +6,6 @@ require("ts-node").register({
   },
 })
 
-process.on("unhandledRejection", (reason, p) => {
+process.on("unhandledRejection", reason => {
   console.log(`UNHANDLED PROMISE REJECTION: ${reason.stack}`)
 })

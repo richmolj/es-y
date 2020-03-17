@@ -8,7 +8,7 @@ export class OrClause<ConditionT, ConditionsT> {
     this.conditions = conditions
   }
 
-  toElastic() {
+  protected toElastic() {
     let should = [] as any[]
     let must = [] as any[]
     let must_not = [] as any[]

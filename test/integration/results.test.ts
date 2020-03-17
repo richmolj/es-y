@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { expect } from "chai"
-import { Search, SearchClass } from "../../src/index"
 import { ThronesSearch } from "../fixtures"
 
 const index = ThronesSearch.index
@@ -152,10 +151,11 @@ describe("integration", () => {
     })
 
     describe("when transforming single result", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let original: any
       beforeEach(() => {
-        original = ThronesSearch.prototype.transformResult
-        ThronesSearch.prototype.transformResult = (result: any) => {
+        original = (ThronesSearch.prototype as any).transformResult
+        ;(ThronesSearch.prototype as any).transformResult = (result: any) => {
           return {
             saying: result.quote,
             character: result.name,
@@ -164,7 +164,7 @@ describe("integration", () => {
       })
 
       afterEach(() => {
-        ThronesSearch.prototype.transformResult = original
+        ;(ThronesSearch.prototype as any).transformResult = original
       })
 
       it("works", async () => {
@@ -182,14 +182,14 @@ describe("integration", () => {
     describe("when transforming results", () => {
       let original: any
       beforeEach(() => {
-        original = ThronesSearch.prototype.transformResults
-        ThronesSearch.prototype.transformResults = (results: any[]) => {
+        original = (ThronesSearch.prototype as any).transformResults
+        ;(ThronesSearch.prototype as any).transformResults = (results: any[]) => {
           return [{ foo: "bar" }]
         }
       })
 
       afterEach(() => {
-        ThronesSearch.prototype.transformResults = original
+        ;(ThronesSearch.prototype as any).transformResults = original
       })
 
       it("works", async () => {

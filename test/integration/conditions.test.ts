@@ -2,21 +2,7 @@ import { config } from "./../../src/util/env"
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/camelcase */
 import { expect } from "chai"
-import {
-  Search,
-  ClassHook,
-  Conditions,
-  SearchClass,
-  KeywordCondition,
-  TextCondition,
-  NumericCondition,
-  DateCondition,
-  DateConditionInput,
-  StringEqConditionInput,
-  MatchConditionInput,
-  NumericConditionInput,
-  ConditionsClass,
-} from "../../src/index"
+import { Search } from "../../src/index"
 import { ThronesSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
@@ -67,8 +53,8 @@ describe("integration", () => {
       await ThronesSearch.client.indices.refresh({ index })
     })
 
-    describe('query type', () => {
-      it('works', async() => {
+    describe("query type", () => {
+      it("works", async () => {
         const search = new ThronesSearch()
         search.conditions.keywords.eq("vows")
         await search.query()
@@ -2383,7 +2369,7 @@ describe("integration", () => {
       })
 
       describe("via constructor", () => {
-        it("works", async() => {
+        it("works", async () => {
           const search = new ThronesSearch({
             conditions: {
               name: {
@@ -2399,28 +2385,28 @@ describe("integration", () => {
                             and: {
                               conditions: {
                                 rating: {
-                                  eq: 77
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                                  eq: 77,
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
               or: {
                 name: {
-                  eq: "Rando name"
-                }
+                  eq: "Rando name",
+                },
               },
               not: {
                 bio: {
-                  match: "dontfindme"
-                }
-              }
-            }
+                  match: "dontfindme",
+                },
+              },
+            },
           })
           await search.query()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])

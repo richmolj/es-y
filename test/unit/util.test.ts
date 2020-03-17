@@ -1,6 +1,5 @@
 import { expect } from "chai"
 import colorize, { supportsColor } from "../../src/util/colorize"
-import { logger } from "../../src/util/logger"
 
 describe("utility", () => {
   describe("colorize", () => {

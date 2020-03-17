@@ -16,7 +16,7 @@ export class AndClause<ConditionT, ConditionsT> {
     return this
   }
 
-  toElastic() {
+  protected toElastic() {
     let must = [] as any[]
     let must_not = [] as any[]
     let should = [] as any[]

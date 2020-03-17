@@ -13,7 +13,7 @@ import { SimpleQueryStringCondition } from "./simple-query-string"
 import { TextCondition } from "./text"
 import { NumericCondition, NumericConditionInput } from "./numeric"
 import { DateCondition, DateConditionInput } from "./date"
-import { buildConditions } from './builder'
+import { buildConditions } from "./builder"
 
 @ClassHook()
 class Conditions {

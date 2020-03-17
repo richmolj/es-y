@@ -94,7 +94,7 @@ describe("integration", () => {
             ])
           })
 
-          it("works with full 'aggregations' key", async() => {
+          it("works with full 'aggregations' key", async () => {
             const search = new ThronesSearch({
               aggregations: {
                 terms: [

@@ -2,7 +2,7 @@ import { Client, events } from "@elastic/elasticsearch"
 import colorize from "./util/colorize"
 import { LoggerInterface, logger, LogLevel } from "./util/logger"
 import { Conditions } from "./conditions"
-import { Aggregations } from "./aggregations"
+import { Aggregations, buildAggResults, buildAggRequest } from "./aggregations"
 import { Meta } from "./meta"
 
 export class Search {
@@ -64,29 +64,27 @@ export class Search {
     subclass.logger = logger
   }
 
-  // TODO: klass.model?
-  transformResults(results: Record<string, any>[]) {
+  private transformResults(results: Record<string, any>[]) {
     return results.map(result => {
       return this.transformResult(result)
     })
   }
 
-  transformResult(result: any): Record<string, any> {
+  private transformResult(result: any): Record<string, any> {
     return result
   }
 
   async query() {
-    // todo size, etc
     const searchPayload = { index: this.klass.index, body: {} } as any
     const query = (this.conditions as any).buildQuery()
     if (Object.keys(query).length > 0) {
       searchPayload.body = { query }
     }
 
-    if (this.conditions.keywords.hasClause()) {
+    if ((this.conditions.keywords as any).hasClause()) {
       if (!searchPayload.body.query) searchPayload.body.query = {}
       searchPayload.body.query.simple_query_string = {
-        query: (this.conditions.keywords as any).value
+        query: (this.conditions.keywords as any).value,
       }
     }
 
@@ -95,30 +93,7 @@ export class Search {
     searchPayload.body.from = from
     searchPayload.body.sort = sort
 
-    if (this._aggs && this._aggs.requiresQualityAssurance) {
-      searchPayload.body.aggs = this._aggs.toElastic({ overrideSize: true })
-      const response = await this.executeSearch(searchPayload)
-
-      Object.keys(response.body.aggregations).forEach(aggName => {
-        const termAgg = this._aggs?.termAggs.find(ta => ta.name == aggName)
-        if (termAgg && termAgg.requiresQualityAssurance) {
-          const keys = response.body.aggregations[aggName].buckets.map((b: any) => b.key)
-          if (!searchPayload.body.query) {
-            searchPayload.body.query = { bool: { filter: { bool: { should: [] } } } }
-          }
-          searchPayload.body.query.bool.filter.bool.should.push({
-            terms: {
-              [termAgg.field]: keys,
-            },
-          })
-        }
-      })
-    }
-
-    // Assign aggs if we didn't already have a requiresQualityAssurance query
-    if (this._aggs && !searchPayload.body.aggs) {
-      searchPayload.body.aggs = this._aggs.toElastic()
-    }
+    buildAggRequest(this, searchPayload)
 
     const response = await this.executeSearch(searchPayload)
     this.meta.total = response.body.hits.total.value
@@ -126,24 +101,7 @@ export class Search {
     this.results = this.transformResults(this.buildResults(response.body.hits.hits))
 
     if (response.body.aggregations) {
-      Object.keys(response.body.aggregations).forEach(aggName => {
-        if (aggName.match(/^calc_/)) {
-          // TODO shared func
-          const calcName = aggName.split("calc_")[1]
-          this.aggResults[calcName] = response.body.aggregations[aggName].value
-        } else {
-          const agg = this.aggs.bucketAggs.find(t => t.name === aggName)
-          let buckets = response.body.aggregations[aggName].buckets
-          // We overrode the size to ensure quality, now trim off the extra results
-          if (agg?.requiresQualityAssurance) {
-            buckets = response.body.aggregations[aggName].buckets.slice(0, agg.size)
-          }
-          const entries = buckets.map((b: any) => {
-            return this.parseAggBucket(b)
-          })
-          this.aggResults[aggName] = entries
-        }
-      })
+      this.aggResults = buildAggResults(this, response.body.aggregations)
     }
 
     return this.results
@@ -154,34 +112,6 @@ export class Search {
     const response = await this.klass.client.search(searchPayload)
     this.lastQuery = searchPayload
     return response
-  }
-
-  private parseAggBucket(bucket: any) {
-    const entry = { key: bucket.key, count: bucket.doc_count } as any
-
-    if (bucket.source_fields) {
-      entry.sourceFields = bucket.source_fields.hits.hits[0]._source
-    }
-
-    Object.keys(bucket).forEach(bucketKey => {
-      if (bucketKey.match(/^calc_/)) {
-        const calcName = bucketKey.split("calc_")[1]
-        entry[calcName] = bucket[bucketKey].value
-      } else if (
-        bucketKey != "key" &&
-        bucketKey != "doc_count" &&
-        bucketKey != "buckets" &&
-        bucketKey != "source_fields"
-      ) {
-        if (!entry.children) {
-          entry.children = {}
-        }
-        entry.children[bucketKey] = bucket[bucketKey].buckets.map((childBucket: any) => {
-          return this.parseAggBucket(childBucket)
-        })
-      }
-    })
-    return entry
   }
 
   private buildResults(rawResults: any[]): any[] {
