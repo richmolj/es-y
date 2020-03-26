@@ -6,6 +6,10 @@ export class OrClause<ConditionT, ConditionsT> {
   constructor(condition: ConditionT, conditions: ConditionsT) {
     this.condition = condition
     this.conditions = conditions
+
+    Object.keys(this.conditions).forEach((k) => {
+      (this as any)[k] = (this.conditions as any)[k]
+    })
   }
 
   protected toElastic() {

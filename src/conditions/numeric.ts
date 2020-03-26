@@ -49,12 +49,12 @@ class NumericAndClause<ConditionT extends NumericCondition<ConditionsT>, Conditi
 export class NumericCondition<ConditionsT> extends Condition<ConditionsT, number> {
   static type = "numeric"
 
-  get and(): NumericAndClause<this, ConditionsT> {
-    return applyAndClause(this, NumericAndClause)
+  get and(): ConditionsT & NumericCondition<ConditionsT> {
+    return applyAndClause(this, NumericAndClause)  as unknown as ConditionsT & NumericCondition<ConditionsT>
   }
 
-  get or(): NumericOrClause<this, ConditionsT> {
-    return applyOrClause(this, NumericOrClause)
+  get or(): ConditionsT & NumericCondition<ConditionsT> {
+    return applyOrClause(this, NumericOrClause) as unknown as ConditionsT & NumericCondition<ConditionsT>
   }
 
   get not(): NumericNotClause<this, ConditionsT> {

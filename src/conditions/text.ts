@@ -50,12 +50,12 @@ class TextAndClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> 
 export class TextCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "text"
 
-  get and(): TextAndClause<this, ConditionsT> {
-    return applyAndClause(this, TextAndClause)
+  get and(): ConditionsT & TextCondition<ConditionsT> {
+    return applyAndClause(this, TextAndClause) as unknown as ConditionsT & TextCondition<ConditionsT>
   }
 
-  get or(): TextOrClause<this, ConditionsT> {
-    return applyOrClause(this, TextOrClause)
+  get or(): ConditionsT & TextCondition<ConditionsT> {
+    return applyOrClause(this, TextOrClause) as unknown as ConditionsT & TextCondition<ConditionsT>
   }
 
   get not(): TextNotClause<this, ConditionsT> {

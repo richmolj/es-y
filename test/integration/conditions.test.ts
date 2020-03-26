@@ -56,7 +56,7 @@ describe("integration", () => {
     describe("query type", () => {
       it("works", async () => {
         const search = new ThronesSearch()
-        search.conditions.keywords.eq("vows")
+        search.keywords.eq("vows")
         await search.query()
         expect(search.results.map(r => r.id)).to.deep.eq([2])
       })
@@ -67,14 +67,14 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.name.eq("Ned Stark")
+            search.filters.name.eq("Ned Stark")
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
 
           it("does not match partial strings", async () => {
             const search = new ThronesSearch()
-            search.conditions.name.eq("Ned")
+            search.filters.name.eq("Ned")
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([])
           })
@@ -83,7 +83,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 name: { eq: "Ned Stark" },
               },
             })
@@ -93,14 +93,14 @@ describe("integration", () => {
         })
 
         // TODO: document that
-        // search.conditions.foo.eq("a").or.not.eq("b") is not valid even though type is there
+        // search.filters.foo.eq("a").or.not.eq("b") is not valid even though type is there
         // AND NOT is valid, though (gt 100 and not 500)
         // TODO: "and not"
         describe("NOT", () => {
           describe("when direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.name.not.eq("Ned Stark")
+              search.filters.name.not.eq("Ned Stark")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
@@ -109,7 +109,7 @@ describe("integration", () => {
           describe("when constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   name: {
                     not: { eq: "Ned Stark" },
                   },
@@ -137,7 +137,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.name.eq("Ned Stark").and.conditions.title.not.eq("Warden of the North")
+                  search.filters.name.eq("Ned Stark").and.title.not.eq("Warden of the North")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
@@ -146,15 +146,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       name: {
                         eq: "Ned Stark",
                         and: {
-                          conditions: {
-                            title: {
-                              not: {
-                                eq: "Warden of the North",
-                              },
+                          title: {
+                            not: {
+                              eq: "Warden of the North",
                             },
                           },
                         },
@@ -193,7 +191,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.title.not.eq("Warden of the North").and.conditions.name.eq("Ned Stark")
+                  search.filters.title.not.eq("Warden of the North").and.name.eq("Ned Stark")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
@@ -202,15 +200,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       title: {
                         not: {
                           eq: "Warden of the North",
                           and: {
-                            conditions: {
-                              name: {
-                                eq: "Ned Stark",
-                              },
+                            name: {
+                              eq: "Ned Stark",
                             },
                           },
                         },
@@ -228,7 +224,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.name.eq("Daenerys Targaryen").or.conditions.title.not.eq("Warden of the North")
+                search.filters.name.eq("Daenerys Targaryen").or.title.not.eq("Warden of the North")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999])
               })
@@ -237,15 +233,13 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     name: {
                       eq: "Daenerys Targaryen",
                       or: {
-                        conditions: {
-                          title: {
-                            not: {
-                              eq: "Warden of the North",
-                            },
+                        title: {
+                          not: {
+                            eq: "Warden of the North",
                           },
                         },
                       },
@@ -273,7 +267,7 @@ describe("integration", () => {
 
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.name.not.eq("Ned Stark").or.conditions.title.eq("Other Ned")
+              search.filters.name.not.eq("Ned Stark").or.title.eq("Other Ned")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 999, 777])
             })
@@ -299,7 +293,7 @@ describe("integration", () => {
           describe("by direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.name.eq("Ned Stark").and.conditions.title.eq("Other Ned")
+              search.filters.name.eq("Ned Stark").and.title.eq("Other Ned")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([333])
             })
@@ -308,13 +302,11 @@ describe("integration", () => {
           describe("by constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   name: {
                     eq: "Ned Stark",
                     and: {
-                      conditions: {
-                        title: { eq: "Other Ned" },
-                      },
+                      title: { eq: "Other Ned" }
                     },
                   },
                 },
@@ -331,7 +323,7 @@ describe("integration", () => {
           describe("by direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.name.eq("Ned Stark").and.conditions.title.not.eq("Other Ned")
+              search.filters.name.eq("Ned Stark").and.title.not.eq("Other Ned")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([2])
             })
@@ -340,15 +332,13 @@ describe("integration", () => {
           describe("by constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   name: {
                     eq: "Ned Stark",
                     and: {
-                      conditions: {
-                        title: {
-                          not: {
-                            eq: "Other Ned",
-                          },
+                      title: {
+                        not: {
+                          eq: "Other Ned",
                         },
                       },
                     },
@@ -366,7 +356,7 @@ describe("integration", () => {
         describe("across same field", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.name.eq("Ned Stark").or.eq("Daenerys Targaryen")
+            search.filters.name.eq("Ned Stark").or.eq("Daenerys Targaryen")
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
@@ -374,7 +364,7 @@ describe("integration", () => {
           describe("via constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   name: {
                     eq: "Ned Stark",
                     or: {
@@ -392,7 +382,7 @@ describe("integration", () => {
         describe("across multiple fields", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.name.eq("Ned Stark").or.conditions.title.eq("Queen of Dragons")
+            search.filters.name.eq("Ned Stark").or.title.eq("Queen of Dragons")
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
@@ -400,14 +390,12 @@ describe("integration", () => {
           describe("via constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   name: {
                     eq: "Ned Stark",
                     or: {
-                      conditions: {
-                        title: {
-                          eq: "Queen of Dragons",
-                        },
+                      title: {
+                        eq: "Queen of Dragons",
                       },
                     },
                   },
@@ -426,7 +414,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.quote.match("betray")
+            search.filters.quote.match("betray")
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
@@ -435,7 +423,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 quote: { match: "betray" },
               },
             })
@@ -448,7 +436,7 @@ describe("integration", () => {
           describe("when direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.quote.not.match("winter")
+              search.filters.quote.not.match("winter")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
@@ -457,7 +445,7 @@ describe("integration", () => {
           describe("when constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   quote: {
                     not: {
                       match: "winter",
@@ -493,7 +481,7 @@ describe("integration", () => {
               describe("by direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.quote.match("winter").and.not.match("other text")
+                  search.filters.quote.match("winter").and.not.match("other text")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
@@ -502,7 +490,7 @@ describe("integration", () => {
               describe("by constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       quote: {
                         match: "winter",
                         and: {
@@ -543,7 +531,7 @@ describe("integration", () => {
               describe("by direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.quote.match("winter").and.conditions.name.not.eq("Other Ned")
+                  search.filters.quote.match("winter").and.name.not.eq("Other Ned")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
@@ -552,15 +540,13 @@ describe("integration", () => {
               describe("by constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       quote: {
                         match: "winter",
                         and: {
-                          conditions: {
-                            name: {
-                              not: {
-                                eq: "Other Ned",
-                              },
+                          name: {
+                            not: {
+                              eq: "Other Ned",
                             },
                           },
                         },
@@ -597,7 +583,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.quote.not.match("winter").and.match("other text")
+                  search.filters.quote.not.match("winter").and.match("other text")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
@@ -606,7 +592,7 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       quote: {
                         not: {
                           match: "winter",
@@ -639,7 +625,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.quote.not.match("winter").and.conditions.name.eq("Ned Stark")
+                  search.filters.quote.not.match("winter").and.name.eq("Ned Stark")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
@@ -648,15 +634,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       quote: {
                         not: {
                           match: "winter",
                           and: {
-                            conditions: {
-                              name: {
-                                eq: "Ned Stark",
-                              },
+                            name: {
+                              eq: "Ned Stark",
                             },
                           },
                         },
@@ -674,7 +658,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.match("betray").or.conditions.bio.not.match("vows")
+                search.filters.quote.match("betray").or.bio.not.match("vows")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999])
               })
@@ -683,15 +667,13 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       match: "betray",
                       or: {
-                        conditions: {
-                          bio: {
-                            not: {
-                              match: "vows",
-                            },
+                        bio: {
+                          not: {
+                            match: "vows",
                           },
                         },
                       },
@@ -720,7 +702,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.not.match("winter").or.conditions.bio.match("other bio")
+                search.filters.quote.not.match("winter").or.bio.match("other bio")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999, 777])
               })
@@ -729,22 +711,19 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       not: {
                         match: "winter",
                       },
                       or: {
-                        conditions: {
-                          bio: {
-                            match: "other bio",
-                          },
+                        bio: {
+                          match: "other bio",
                         },
                       },
                     },
                   },
                 })
-                search.conditions.quote.not.match("winter").or.conditions.bio.match("other bio")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999, 777])
               })
@@ -770,7 +749,7 @@ describe("integration", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.match("winter").and.match("other text")
+                search.filters.quote.match("winter").and.match("other text")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
@@ -779,7 +758,7 @@ describe("integration", () => {
             describe("by constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       match: "winter",
                       and: {
@@ -798,7 +777,7 @@ describe("integration", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.match("winter").and.conditions.name.eq("Other Ned")
+                search.filters.quote.match("winter").and.name.eq("Other Ned")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
@@ -807,14 +786,12 @@ describe("integration", () => {
             describe("by constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       match: "winter",
                       and: {
-                        conditions: {
-                          name: {
-                            eq: "Other Ned",
-                          },
+                        name: {
+                          eq: "Other Ned",
                         },
                       },
                     },
@@ -831,7 +808,7 @@ describe("integration", () => {
           describe("across same field", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.quote.match("betray").or.match("winter")
+              search.filters.quote.match("betray").or.match("winter")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -839,7 +816,7 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       match: "betray",
                       or: {
@@ -857,7 +834,7 @@ describe("integration", () => {
           describe("across multiple fields", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.quote.match("betray").or.conditions.bio.match("vows")
+              search.filters.quote.match("betray").or.bio.match("vows")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -865,14 +842,12 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       match: "betray",
                       or: {
-                        conditions: {
-                          bio: {
-                            match: "vows",
-                          },
+                        bio: {
+                          match: "vows",
                         },
                       },
                     },
@@ -909,7 +884,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.quote.matchPhrase("burn you alive")
+            search.filters.quote.matchPhrase("burn you alive")
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
@@ -918,7 +893,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 quote: { matchPhrase: "burn you alive" },
               },
             })
@@ -944,7 +919,7 @@ describe("integration", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.matchPhrase("burn you alive").and.matchPhrase("with my words")
+                search.filters.quote.matchPhrase("burn you alive").and.matchPhrase("with my words")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.deep.eq([333])
               })
@@ -953,7 +928,7 @@ describe("integration", () => {
             describe("by constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       matchPhrase: "burn you alive",
                       and: {
@@ -972,7 +947,7 @@ describe("integration", () => {
             describe("by constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.matchPhrase("burn you alive").and.conditions.bio.matchPhrase("dragon queen")
+                search.filters.quote.matchPhrase("burn you alive").and.bio.matchPhrase("dragon queen")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.deep.eq([1])
               })
@@ -981,14 +956,12 @@ describe("integration", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       matchPhrase: "burn you alive",
                       and: {
-                        conditions: {
-                          bio: {
-                            matchPhrase: "dragon queen",
-                          },
+                        bio: {
+                          matchPhrase: "dragon queen",
                         },
                       },
                     },
@@ -1005,7 +978,7 @@ describe("integration", () => {
               describe("by direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.quote.matchPhrase("burn you alive").and.not.matchPhrase("with my words")
+                  search.filters.quote.matchPhrase("burn you alive").and.not.matchPhrase("with my words")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.deep.eq([1])
                 })
@@ -1014,7 +987,7 @@ describe("integration", () => {
               describe("by constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       quote: {
                         matchPhrase: "burn you alive",
                         and: {
@@ -1035,9 +1008,9 @@ describe("integration", () => {
               describe("by direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.quote
+                  search.filters.quote
                     .matchPhrase("burn you alive")
-                    .and.conditions.bio.not.matchPhrase("dragon queen")
+                    .and.bio.not.matchPhrase("dragon queen")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.deep.eq([333])
                 })
@@ -1046,15 +1019,13 @@ describe("integration", () => {
               describe("by constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       quote: {
                         matchPhrase: "burn you alive",
                         and: {
-                          conditions: {
-                            bio: {
-                              not: {
-                                matchPhrase: "dragon queen",
-                              },
+                          bio: {
+                            not: {
+                              matchPhrase: "dragon queen",
                             },
                           },
                         },
@@ -1073,7 +1044,7 @@ describe("integration", () => {
           describe("across same field", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.quote.matchPhrase("burn you alive").or.matchPhrase("is coming")
+              search.filters.quote.matchPhrase("burn you alive").or.matchPhrase("is coming")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -1081,7 +1052,7 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       matchPhrase: "burn you alive",
                       or: {
@@ -1099,7 +1070,7 @@ describe("integration", () => {
           describe("across multiple fields", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.quote.matchPhrase("burn you alive").or.conditions.bio.matchPhrase("digs vows")
+              search.filters.quote.matchPhrase("burn you alive").or.bio.matchPhrase("digs vows")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -1107,14 +1078,12 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       matchPhrase: "burn you alive",
                       or: {
-                        conditions: {
-                          bio: {
-                            matchPhrase: "digs vows",
-                          },
+                        bio: {
+                          matchPhrase: "digs vows",
                         },
                       },
                     },
@@ -1131,7 +1100,7 @@ describe("integration", () => {
           describe("when direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.quote.not.matchPhrase("burn you alive")
+              search.filters.quote.not.matchPhrase("burn you alive")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([2, 777, 888, 999])
             })
@@ -1140,7 +1109,7 @@ describe("integration", () => {
           describe("when constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   quote: {
                     not: {
                       matchPhrase: "burn you alive",
@@ -1157,7 +1126,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.matchPhrase("burn you alive").or.conditions.bio.not.matchPhrase("vows")
+                search.filters.quote.matchPhrase("burn you alive").or.bio.not.matchPhrase("vows")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 777, 888, 999])
               })
@@ -1166,15 +1135,13 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       matchPhrase: "burn you alive",
                       or: {
-                        conditions: {
-                          bio: {
-                            not: {
-                              matchPhrase: "vows",
-                            },
+                        bio: {
+                          not: {
+                            matchPhrase: "vows",
                           },
                         },
                       },
@@ -1203,7 +1170,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.quote.not.matchPhrase("burn you alive").or.conditions.name.eq("other daen")
+                search.filters.quote.not.matchPhrase("burn you alive").or.name.eq("other daen")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([2, 222, 777, 888, 999])
               })
@@ -1212,16 +1179,14 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     quote: {
                       not: {
                         matchPhrase: "burn you alive",
                       },
                       or: {
-                        conditions: {
-                          name: {
-                            eq: "other daen",
-                          },
+                        name: {
+                          eq: "other daen",
                         },
                       },
                     },
@@ -1241,7 +1206,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.rating.eq(500)
+            search.filters.rating.eq(500)
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
@@ -1260,7 +1225,7 @@ describe("integration", () => {
 
             it("works with 0", async () => {
               const search = new ThronesSearch()
-              search.conditions.rating.eq(0)
+              search.filters.rating.eq(0)
               await search.query()
               expect(search.results.map(r => r.id)).to.deep.eq([888])
             })
@@ -1270,7 +1235,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 rating: { eq: 500 },
               },
             })
@@ -1283,7 +1248,7 @@ describe("integration", () => {
           describe("when direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.rating.not.eq(500)
+              search.filters.rating.not.eq(500)
               await search.query()
               expect(search.results.map(r => r.id)).to.deep.eq([1, 999])
             })
@@ -1292,7 +1257,7 @@ describe("integration", () => {
           describe("when constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   rating: {
                     not: {
                       eq: 500,
@@ -1330,7 +1295,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.rating.eq(500).and.conditions.age.not.eq(100)
+                  search.filters.rating.eq(500).and.age.not.eq(100)
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
@@ -1339,15 +1304,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       rating: {
                         eq: 500,
                         and: {
-                          conditions: {
-                            age: {
-                              not: {
-                                eq: 100,
-                              },
+                          age: {
+                            not: {
+                              eq: 100,
                             },
                           },
                         },
@@ -1378,7 +1341,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.rating.not.eq(500).and.conditions.age.eq(77)
+                  search.filters.rating.not.eq(500).and.age.eq(77)
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
@@ -1387,15 +1350,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       rating: {
                         not: {
                           eq: 500,
                           and: {
-                            conditions: {
-                              age: {
-                                eq: 77,
-                              },
+                            age: {
+                              eq: 77,
                             },
                           },
                         },
@@ -1413,7 +1374,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.rating.eq(500).or.conditions.age.not.eq(13)
+                search.filters.rating.eq(500).or.age.not.eq(13)
                 await search.query()
                 expect(search.results.map(r => r.id)).to.deep.eq([2, 999])
               })
@@ -1422,15 +1383,13 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     rating: {
                       eq: 500,
                       or: {
-                        conditions: {
-                          age: {
-                            not: {
-                              eq: 13,
-                            },
+                        age: {
+                          not: {
+                            eq: 13,
                           },
                         },
                       },
@@ -1459,7 +1418,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.rating.not.eq(500).or.conditions.name.eq("other ned")
+                search.filters.rating.not.eq(500).or.name.eq("other ned")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 222, 999])
               })
@@ -1468,16 +1427,14 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     rating: {
                       not: {
                         eq: 500,
                       },
                       or: {
-                        conditions: {
-                          name: {
-                            eq: "other ned",
-                          },
+                        name: {
+                          eq: "other ned",
                         },
                       },
                     },
@@ -1509,7 +1466,7 @@ describe("integration", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.rating.eq(500).and.conditions.age.eq(100)
+                search.filters.rating.eq(500).and.age.eq(100)
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
@@ -1518,14 +1475,12 @@ describe("integration", () => {
             describe("by constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     rating: {
                       eq: 500,
                       and: {
-                        conditions: {
-                          age: {
-                            eq: 100,
-                          },
+                        age: {
+                          eq: 100,
                         },
                       },
                     },
@@ -1544,7 +1499,7 @@ describe("integration", () => {
               describe("by direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.rating.eq(500).and.conditions.age.not.eq(100)
+                  search.filters.rating.eq(500).and.age.not.eq(100)
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([2])
                 })
@@ -1553,15 +1508,13 @@ describe("integration", () => {
               describe("by constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       rating: {
                         eq: 500,
                         and: {
-                          conditions: {
-                            age: {
-                              not: {
-                                eq: 100,
-                              },
+                          age: {
+                            not: {
+                              eq: 100,
                             },
                           },
                         },
@@ -1580,7 +1533,7 @@ describe("integration", () => {
           describe("across same field", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.rating.eq(500).or.eq(250)
+              search.filters.rating.eq(500).or.eq(250)
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -1588,7 +1541,7 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     rating: {
                       eq: 500,
                       or: {
@@ -1606,7 +1559,7 @@ describe("integration", () => {
           describe("across multiple fields", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.rating.eq(250).or.conditions.age.eq(35)
+              search.filters.rating.eq(250).or.age.eq(35)
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -1614,14 +1567,12 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     rating: {
                       eq: 250,
                       or: {
-                        conditions: {
-                          age: {
-                            eq: 35,
-                          },
+                        age: {
+                          eq: 35,
                         },
                       },
                     },
@@ -1639,7 +1590,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.rating.gt(250)
+            search.filters.rating.gt(250)
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
@@ -1648,7 +1599,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 rating: { gt: 250 },
               },
             })
@@ -1662,7 +1613,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.rating.gte(250)
+            search.filters.rating.gte(250)
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
@@ -1671,7 +1622,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 rating: { gte: 250 },
               },
             })
@@ -1685,7 +1636,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.rating.lt(500)
+            search.filters.rating.lt(500)
             await search.query()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
@@ -1694,7 +1645,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 rating: { lt: 500 },
               },
             })
@@ -1708,7 +1659,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.rating.lte(500)
+            search.filters.rating.lte(500)
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
@@ -1717,7 +1668,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 rating: { lte: 500 },
               },
             })
@@ -1743,7 +1694,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.rating.gt(250).lt(500)
+            search.filters.rating.gt(250).lt(500)
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([999])
           })
@@ -1752,7 +1703,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 rating: { gt: 250, lt: 500 },
               },
             })
@@ -1771,7 +1722,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.createdAt.eq("1960-11-14")
+            search.filters.createdAt.eq("1960-11-14")
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([2])
           })
@@ -1780,7 +1731,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 createdAt: { eq: "1960-11-14" },
               },
             })
@@ -1793,7 +1744,7 @@ describe("integration", () => {
           describe("when direct assignment", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.createdAt.not.eq("1960-11-14")
+              search.filters.createdAt.not.eq("1960-11-14")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
@@ -1802,7 +1753,7 @@ describe("integration", () => {
           describe("when constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
-                conditions: {
+                filters: {
                   createdAt: {
                     not: {
                       eq: "1960-11-14",
@@ -1832,7 +1783,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.createdAt.eq("1960-11-14").and.conditions.updatedAt.not.eq("2000-01-01")
+                  search.filters.createdAt.eq("1960-11-14").and.updatedAt.not.eq("2000-01-01")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([2])
                 })
@@ -1841,15 +1792,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       createdAt: {
                         eq: "1960-11-14",
                         and: {
-                          conditions: {
-                            updatedAt: {
-                              not: {
-                                eq: "2000-01-01",
-                              },
+                          updatedAt: {
+                            not: {
+                              eq: "2000-01-01",
                             },
                           },
                         },
@@ -1889,7 +1838,7 @@ describe("integration", () => {
               describe("via direct assignment", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
-                  search.conditions.createdAt.not.eq("1960-11-14").and.conditions.updatedAt.eq("2000-01-01")
+                  search.filters.createdAt.not.eq("1960-11-14").and.updatedAt.eq("2000-01-01")
                   await search.query()
                   expect(search.results.map(r => r.id)).to.have.members([333])
                 })
@@ -1898,15 +1847,13 @@ describe("integration", () => {
               describe("via constructor", () => {
                 it("works", async () => {
                   const search = new ThronesSearch({
-                    conditions: {
+                    filters: {
                       createdAt: {
                         not: {
                           eq: "1960-11-14",
                           and: {
-                            conditions: {
-                              updatedAt: {
-                                eq: "2000-01-01",
-                              },
+                            updatedAt: {
+                              eq: "2000-01-01",
                             },
                           },
                         },
@@ -1924,7 +1871,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.createdAt.eq("1960-11-14").or.conditions.name.not.eq("Daenerys Targaryen")
+                search.filters.createdAt.eq("1960-11-14").or.name.not.eq("Daenerys Targaryen")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([2, 999])
               })
@@ -1933,15 +1880,13 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     createdAt: {
                       eq: "1960-11-14",
                       or: {
-                        conditions: {
-                          name: {
-                            not: {
-                              eq: "Daenerys Targaryen",
-                            },
+                        name: {
+                          not: {
+                            eq: "Daenerys Targaryen",
                           },
                         },
                       },
@@ -1970,7 +1915,7 @@ describe("integration", () => {
             describe("via direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.createdAt.not.eq("1960-11-14").or.conditions.name.eq("other ned")
+                search.filters.createdAt.not.eq("1960-11-14").or.name.eq("other ned")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([1, 222, 999])
               })
@@ -1979,16 +1924,14 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     createdAt: {
                       not: {
                         eq: "1960-11-14",
                       },
                       or: {
-                        conditions: {
-                          name: {
-                            eq: "other ned",
-                          },
+                        name: {
+                          eq: "other ned",
                         },
                       },
                     },
@@ -2020,7 +1963,7 @@ describe("integration", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
-                search.conditions.createdAt.eq("1960-11-14").and.conditions.updatedAt.eq("2000-01-01")
+                search.filters.createdAt.eq("1960-11-14").and.updatedAt.eq("2000-01-01")
                 await search.query()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
@@ -2029,14 +1972,12 @@ describe("integration", () => {
             describe("by constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     createdAt: {
                       eq: "1960-11-14",
                       and: {
-                        conditions: {
-                          updatedAt: {
-                            eq: "2000-01-01",
-                          },
+                        updatedAt: {
+                          eq: "2000-01-01",
                         },
                       },
                     },
@@ -2053,7 +1994,7 @@ describe("integration", () => {
           describe("across same field", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.createdAt.eq("1960-11-14").or.eq("1980-02-26")
+              search.filters.createdAt.eq("1960-11-14").or.eq("1980-02-26")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -2061,7 +2002,7 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     createdAt: {
                       eq: "1960-11-14",
                       or: {
@@ -2079,7 +2020,7 @@ describe("integration", () => {
           describe("across multiple fields", () => {
             it("works", async () => {
               const search = new ThronesSearch()
-              search.conditions.createdAt.eq("1960-11-14").or.conditions.updatedAt.eq("1980-02-27")
+              search.filters.createdAt.eq("1960-11-14").or.updatedAt.eq("1980-02-27")
               await search.query()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
@@ -2087,14 +2028,12 @@ describe("integration", () => {
             describe("via constructor", () => {
               it("works", async () => {
                 const search = new ThronesSearch({
-                  conditions: {
+                  filters: {
                     createdAt: {
                       eq: "1960-11-14",
                       or: {
-                        conditions: {
-                          updatedAt: {
-                            eq: "1980-02-27",
-                          },
+                        updatedAt: {
+                          eq: "1980-02-27",
                         },
                       },
                     },
@@ -2112,7 +2051,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.createdAt.gt("1960-11-14")
+            search.filters.createdAt.gt("1960-11-14")
             await search.query()
             expect(search.results.map(r => r.id)).to.have.members([1])
           })
@@ -2121,7 +2060,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 createdAt: { gt: "1960-11-14" },
               },
             })
@@ -2137,7 +2076,7 @@ describe("integration", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
-            search.conditions.createdAt.pastFiscalYears(5)
+            search.filters.createdAt.pastFiscalYears(5)
             await search.query()
             expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must[0].bool.should[0].range).to.deep.eq(
               {
@@ -2153,7 +2092,7 @@ describe("integration", () => {
         describe("by constructor", () => {
           it("works", async () => {
             const search = new ThronesSearch({
-              conditions: {
+              filters: {
                 createdAt: {
                   pastFiscalYears: 5,
                 },
@@ -2202,8 +2141,8 @@ describe("integration", () => {
       describe("via direct assignment", () => {
         it("works", async () => {
           const search = new ThronesSearch()
-          search.conditions.name.eq("Ned Stark")
-          search.conditions.not.title.eq("Warden of the North").and.conditions.age.eq(35)
+          search.filters.name.eq("Ned Stark")
+          search.filters.not.title.eq("Warden of the North").and.age.eq(35)
           await search.query()
           expect(search.results.map(r => r.id)).to.have.members([543, 555])
         })
@@ -2212,16 +2151,14 @@ describe("integration", () => {
       describe("via constructor", () => {
         it("works", async () => {
           const search = new ThronesSearch({
-            conditions: {
+            filters: {
               name: { eq: "Ned Stark" },
               not: {
                 title: {
                   eq: "Warden of the North",
                   and: {
-                    conditions: {
-                      age: {
-                        eq: 35,
-                      },
+                    age: {
+                      eq: 35,
                     },
                   },
                 },
@@ -2238,8 +2175,8 @@ describe("integration", () => {
       describe("via direct assignment", () => {
         it("works", async () => {
           const search = new ThronesSearch()
-          search.conditions.name.eq("Ned Stark")
-          search.conditions.or.title.eq("Queen of Dragons")
+          search.filters.name.eq("Ned Stark")
+          search.filters.or.title.eq("Queen of Dragons")
           await search.query()
           expect(search.results.map(r => r.id)).to.have.members([1, 2])
         })
@@ -2248,7 +2185,7 @@ describe("integration", () => {
       describe("via constructor", () => {
         it("works", async () => {
           const search = new ThronesSearch({
-            conditions: {
+            filters: {
               name: {
                 eq: "Ned Stark",
               },
@@ -2280,8 +2217,8 @@ describe("integration", () => {
 
       it("works", async () => {
         const search = new ThronesSearch()
-        search.conditions.name.eq("Ned Stark")
-        search.conditions.title.eq("findme")
+        search.filters.name.eq("Ned Stark")
+        search.filters.title.eq("findme")
         await search.query()
         expect(search.results.map(r => r.id)).to.have.members([888])
       })
@@ -2356,13 +2293,13 @@ describe("integration", () => {
       describe("via direct assignment", () => {
         it("works", async () => {
           const search = new ThronesSearch()
-          search.conditions.name
+          search.filters.name
             .eq("Ned Stark")
-            .and.conditions.title.eq("Other Ned")
-            .or.conditions.age.eq(10)
-            .and.conditions.rating.eq(77)
-          search.conditions.or.name.eq("Rando name")
-          search.conditions.not.bio.match("dontfindme")
+            .and.title.eq("Other Ned")
+            .or.age.eq(10)
+            .and.rating.eq(77)
+          search.filters.or.name.eq("Rando name")
+          search.filters.not.bio.match("dontfindme")
           await search.query()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
         })
@@ -2371,24 +2308,18 @@ describe("integration", () => {
       describe("via constructor", () => {
         it("works", async () => {
           const search = new ThronesSearch({
-            conditions: {
+            filters: {
               name: {
                 eq: "Ned Stark",
                 and: {
-                  conditions: {
-                    title: {
-                      eq: "Other Ned",
-                      or: {
-                        conditions: {
-                          age: {
-                            eq: 10,
-                            and: {
-                              conditions: {
-                                rating: {
-                                  eq: 77,
-                                },
-                              },
-                            },
+                  title: {
+                    eq: "Other Ned",
+                    or: {
+                      age: {
+                        eq: 10,
+                        and: {
+                          rating: {
+                            eq: 77,
                           },
                         },
                       },

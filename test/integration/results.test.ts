@@ -60,17 +60,17 @@ describe("integration", () => {
       describe("via direct assignment", () => {
         it("can set pagination", async () => {
           const search = new ThronesSearch()
-          search.meta.page = 2
-          search.meta.perPage = 2
+          search.page.number = 2
+          search.page.size = 2
           await search.query()
           expect(search.results.length).to.eq(2)
           expect(search.results.map(r => r.id)).to.deep.eq([3, 4])
         })
 
         // aggregations
-        it("can set perPage to 0", async () => {
+        it("can set page size to 0", async () => {
           const search = new ThronesSearch()
-          search.meta.perPage = 0
+          search.page.size = 0
           await search.query()
           expect(search.results.length).to.eq(0)
         })
@@ -78,19 +78,19 @@ describe("integration", () => {
         it("sets total entries", async () => {
           const search = new ThronesSearch()
           await search.query()
-          expect(search.meta.total).to.eq(5)
+          expect(search.total).to.eq(5)
         })
 
         it("can sort ascending", async () => {
           const search = new ThronesSearch()
-          search.meta.sort = [{ otherId: "asc" }]
+          search.sort = [{ att: "otherId", dir: "asc" }]
           await search.query()
           expect(search.results.map(r => r.id)).to.deep.eq([5, 4, 3, 2, 1])
         })
 
         it("can sort descending", async () => {
           const search = new ThronesSearch()
-          search.meta.sort = [{ id: "asc" }]
+          search.sort = [{ att: "id", dir: "asc" }]
           await search.query()
           expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 3, 4, 5])
         })
@@ -99,7 +99,7 @@ describe("integration", () => {
       describe("via constructor", () => {
         it("can set pagination", async () => {
           const search = new ThronesSearch({
-            meta: { page: 2, perPage: 2 },
+            page: { size: 2, number: 2 },
           })
           await search.query()
           expect(search.results.length).to.eq(2)
@@ -108,9 +108,7 @@ describe("integration", () => {
 
         it("can sort ascending", async () => {
           const search = new ThronesSearch({
-            meta: {
-              sort: [{ att: "otherId", dir: "asc" }],
-            },
+            sort: [{ att: "otherId", dir: "asc" }],
           })
           await search.query()
           expect(search.results.map(r => r.id)).to.deep.eq([5, 4, 3, 2, 1])
@@ -118,9 +116,7 @@ describe("integration", () => {
 
         it("can sort descending", async () => {
           const search = new ThronesSearch({
-            meta: {
-              sort: [{ att: "id", dir: "asc" }],
-            },
+            sort: [{ att: "id", dir: "asc" }],
           })
           await search.query()
           expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 3, 4, 5])

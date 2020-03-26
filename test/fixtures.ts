@@ -46,7 +46,7 @@ export class ThronesSearch extends Search {
   static host = "http://localhost:9200"
   static index = "game-of-thrones"
   static conditionsClass = ThronesSearchConditions
-  conditions!: ThronesSearchConditions
+  filters!: ThronesSearchConditions
 
   // static logFormat = "pretty"
 }
