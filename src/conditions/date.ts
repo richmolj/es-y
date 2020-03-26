@@ -63,12 +63,12 @@ class DateAndClause<ConditionT extends DateCondition<ConditionsT>, ConditionsT> 
 export class DateCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "date"
 
-  get and(): DateAndClause<this, ConditionsT> {
-    return applyAndClause(this, DateAndClause)
+  get and(): ConditionsT & DateCondition<ConditionsT> {
+    return applyAndClause(this, DateAndClause) as unknown as ConditionsT & DateCondition<ConditionsT>
   }
 
-  get or(): DateOrClause<this, ConditionsT> {
-    return applyOrClause(this, DateOrClause)
+  get or(): ConditionsT & DateCondition<ConditionsT> {
+    return applyOrClause(this, DateOrClause) as unknown as ConditionsT & DateCondition<ConditionsT>
   }
 
   get not(): DateNotClause<this, ConditionsT> {

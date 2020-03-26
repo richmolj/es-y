@@ -6,38 +6,43 @@ function buildCondition(condition: any, payload: any) {
       const keys = Object.keys(value)
       const subOperator = Object.keys(value)[0]
       let res = condition.not[subOperator](value[subOperator])
+
       if (keys.length > 1) {
         const k2 = keys[1] // and
         const v2 = value[k2]
-        const k3 = Object.keys(v2)[0]
-        const v3 = v2[k3]
-        if (k3 === "conditions") {
-          buildConditions(res[k2].conditions, v3)
+        if (k2 === "and") {
+          const k3 = Object.keys(v2)[0]
+          const v3 = v2[k3]
+          if (typeof res.and[k3] === "function") {
+            res.and[k3](v3)
+          } else {
+            buildConditions(res.and, { [k3]: v3 })
+          }
         } else {
-          res = res[k2][k3](v3) // .and.match("asdf")
+          buildConditions(res[k2], v2)
         }
       }
     } else if (operator === "and") {
       const k = Object.keys(value)[0]
       const v = value[k]
-      if (k === "conditions") {
-        buildConditions(condition.and.conditions, v)
+      if (k === "not") {
+        const subk = Object.keys(v)[0]
+        const subv = v[subk]
+        condition.and.not[subk](subv)
       } else {
-        if (k === "not") {
-          const subk = Object.keys(v)[0]
-          const subv = v[subk]
-          condition.and.not[subk](subv)
-        } else {
+        if (typeof condition.and[k] === "function") {
           condition.and[k](v)
+        } else {
+          buildConditions(condition.and, { [k]: v })
         }
       }
     } else if (operator === "or") {
       const k = Object.keys(value)[0]
       const v = value[k]
-      if (k === "conditions") {
-        buildConditions(condition.or.conditions, v)
-      } else {
+      if (typeof condition.or[k] === "function") {
         condition.or[k](v)
+      } else {
+        buildConditions(condition.or, { [k]: v })
       }
     } else {
       condition[operator](value)

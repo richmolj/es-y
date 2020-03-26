@@ -22,8 +22,6 @@ class Conditions {
   protected _not!: Conditions
   protected _or!: Conditions
 
-  keywords = new SimpleQueryStringCondition<this>("", this)
-
   get not(): this {
     if (this._not) {
       return this._not as this

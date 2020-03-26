@@ -39,12 +39,12 @@ class KeywordAndClause<ConditionT extends KeywordCondition<ConditionsT>, Conditi
 export class KeywordCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "keyword"
 
-  get or(): KeywordOrClause<this, ConditionsT> {
-    return applyOrClause(this, KeywordOrClause)
+  get or(): ConditionsT & KeywordCondition<ConditionsT> {
+    return applyOrClause(this, KeywordOrClause) as unknown as ConditionsT & KeywordCondition<ConditionsT>
   }
 
-  get and(): KeywordAndClause<this, ConditionsT> {
-    return applyAndClause(this, KeywordAndClause)
+  get and(): ConditionsT & KeywordCondition<ConditionsT> {
+    return applyAndClause(this, KeywordAndClause) as unknown as ConditionsT & KeywordCondition<ConditionsT>
   }
 
   get not(): KeywordNotClause<this, ConditionsT> {

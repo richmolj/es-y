@@ -1,7 +1,7 @@
 import { NotClause } from "."
 
 export class AndClause<ConditionT, ConditionsT> {
-  conditions: ConditionsT
+  protected conditions: ConditionsT
   protected condition: ConditionT
   protected value?: ConditionT
   protected isNot = false
@@ -9,6 +9,10 @@ export class AndClause<ConditionT, ConditionsT> {
   constructor(condition: ConditionT, conditions: ConditionsT) {
     this.condition = condition
     this.conditions = conditions
+
+    Object.keys(this.conditions).forEach((k) => {
+      (this as any)[k] = (this.conditions as any)[k]
+    })
   }
 
   get not(): this {

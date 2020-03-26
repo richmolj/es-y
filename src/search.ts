@@ -1,9 +1,19 @@
 import { Client, events } from "@elastic/elasticsearch"
 import colorize from "./util/colorize"
 import { LoggerInterface, logger, LogLevel } from "./util/logger"
-import { Conditions } from "./conditions"
+import { Conditions, SimpleQueryStringCondition } from "./conditions"
 import { Aggregations, buildAggResults, buildAggRequest } from "./aggregations"
 import { Meta } from "./meta"
+
+interface Pagination {
+  size: number
+  number: number
+}
+
+interface Sort {
+  att: string
+  dir: 'desc' | 'asc'
+}
 
 export class Search {
   static index: string
@@ -19,22 +29,36 @@ export class Search {
   klass!: typeof Search
   results: any[]
   aggResults: any
-  conditions: Conditions
-  meta: Meta
+  filters: Conditions
+  page: Pagination = { size: 20, number: 1 }
+  total?: number
   lastQuery?: any
+  sort: Sort[] = []
   protected _aggs?: Aggregations
 
+  keywords = new SimpleQueryStringCondition<this>("", this)
+
   constructor(input?: any) {
-    // TODO any
     this.results = []
     this.aggResults = {}
-    this.meta = new Meta(input && input.meta)
 
-    if (input && input.conditions) {
-      this.conditions = new this.klass.conditionsClass()
-      ;(this.conditions as any).build(input.conditions)
+    if (input && input.page) {
+      if (input.page.size) {
+        this.page.size = input.page.size
+      }
+      if (input.page.number) {
+        this.page.number = input.page.number
+      }
+    }
+    if (input && input.sort) {
+      this.sort = input.sort
+    }
+
+    if (input && input.filters) {
+      this.filters = new this.klass.conditionsClass()
+      ;(this.filters as any).build(input.filters)
     } else {
-      this.conditions = new this.klass.conditionsClass()
+      this.filters = new this.klass.conditionsClass()
     }
 
     if (input && (input.aggs || input.aggregations)) {
@@ -76,27 +100,28 @@ export class Search {
 
   async query() {
     const searchPayload = { index: this.klass.index, body: {} } as any
-    const query = (this.conditions as any).buildQuery()
+    const query = (this.filters as any).buildQuery()
     if (Object.keys(query).length > 0) {
       searchPayload.body = { query }
     }
 
-    if ((this.conditions.keywords as any).hasClause()) {
+    if ((this.keywords as any).hasClause()) {
       if (!searchPayload.body.query) searchPayload.body.query = {}
       searchPayload.body.query.simple_query_string = {
-        query: (this.conditions.keywords as any).value,
+        query: (this.keywords as any).value,
       }
     }
 
-    const { size, from, sort } = this.meta.toElastic()
-    searchPayload.body.size = size
-    searchPayload.body.from = from
-    searchPayload.body.sort = sort
+    searchPayload.body.size = this.page.size
+    searchPayload.body.from = this.page.size * (this.page.number - 1)
+    searchPayload.body.sort = this.sort.map((s) => {
+      return { [s.att]: s.dir}
+    })
 
-    buildAggRequest(this, searchPayload)
+    await buildAggRequest(this, searchPayload)
 
     const response = await this.executeSearch(searchPayload)
-    this.meta.total = response.body.hits.total.value
+    this.total = response.body.hits.total.value
 
     this.results = this.transformResults(this.buildResults(response.body.hits.hits))
 
