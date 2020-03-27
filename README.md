@@ -100,7 +100,7 @@ search.filters.quote.match("winter")
 AND trumps OR similar to how `*` trumps `+` in mathmatical order of operations. That means the above query executes as "Find all records where the quote matches 'winter', or it matches 'is coming' while also not matching 'summer'. Another way to state this:
 
 ```ts
-quote:'winter' OR (quote:'is coming' AND NOT quote:'summer' AND name:'Ned Stark)
+quote:'winter' OR (quote:'is coming' AND NOT quote:'summer' AND name:'Ned Stark')
 ```
 
 All examples here are using direct assignment, but you can do the same in the constructor:
