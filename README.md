@@ -10,8 +10,10 @@ This library is currently in 🔥**ALPHA**🔥
 
 * [Usage](#usage)
   * [Queries](#queries)
-    * [Conditions](#conditions)
-    * [Meta](#meta)
+    * [Filters](#filters)
+    * [Pagination](#pagination)
+    * [Sorting](#sorting)
+    * [Total](#total)
     * [Results](#results)
   * [Aggregations](#aggregations)
     * [sourceFields](#source-fields)
@@ -126,13 +128,25 @@ The `keywords` condition, a [simple string query](https://www.elastic.co/guide/e
 search.filters.keywords.eq("something")
 ```
 
-#### Pagination/Sorting/Total Results
+#### Pagination
 
 ```ts
 const search = new ThronesSearch()
 search.page.size = 10
 search.page.number = 2
+```
+
+#### Sorting
+
+```ts
+const search = new ThronesSearch()
 search.sort = [{ att: "someField", dir: "desc" }]
+```
+
+#### Total
+
+```ts
+const search = new ThronesSearch()
 await search.query()
 search.total // => 500
 ```
