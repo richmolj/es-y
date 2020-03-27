@@ -94,7 +94,7 @@ You can also AND, OR and NOT within a condition:
 const search = new ThronesSearch()
 search.filters.quote.match("winter")
   .or.match("is coming").and.not.match("summer")
-  .and.name.eq("Ned Stark)
+  .and.name.eq("Ned Stark")
 ```
 
 AND trumps OR similar to how `*` trumps `+` in mathmatical order of operations. That means the above query executes as "Find all records where the quote matches 'winter', or it matches 'is coming' while also not matching 'summer'. Another way to state this:
