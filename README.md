@@ -4,9 +4,9 @@ Node client for easy elasticsearch with typescript and GraphQL bindings.
 
 This library is currently in 🔥**ALPHA**🔥
 
-![](https://user-images.githubusercontent.com/55264/76755796-e2eb2400-675a-11ea-8904-60ad60394817.gif)
+![](https://user-images.githubusercontent.com/55264/77767549-9edc0700-7017-11ea-927d-c0452cf3c24f.gif)
 
-![](https://user-images.githubusercontent.com/55264/76755448-4294ff80-675a-11ea-8941-49eaed667617.png)
+![](https://user-images.githubusercontent.com/55264/77767897-1a3db880-7018-11ea-8daa-bba16b19b92d.png)
 
 * [Usage](#usage)
   * [Queries](#queries)
@@ -52,7 +52,7 @@ export class ThronesSearch extends Search {
   static host = "http://localhost:9200"
   static index = "game-of-thrones"
   static conditionsClass = ThronesSearchConditions
-  conditions!: ThronesSearchConditions
+  filters!: ThronesSearchConditions
 }
 ```
 
@@ -64,16 +64,16 @@ await search.query()
 search.results // => [{name: "Ned Stark"}, {name: "Jon Snow"}]
 ```
 
-#### Conditions
+#### Filters
 
-Assign conditions:
+Assign filters:
 
 ```ts
 const search = new ThronesSearch()
-search.conditions.name.eq("Ned Stark")
-search.conditions.quote.match("winter")
-search.conditions.rating.gt(100).lt(500)
-search.conditions.createdAt.gt("1960-12-26")
+search.filters.name.eq("Ned Stark")
+search.filters.quote.match("winter")
+search.filters.rating.gt(100).lt(500)
+search.filters.createdAt.gt("1960-12-26")
 await search.query()
 ```
 
@@ -81,30 +81,31 @@ All conditions get AND'd together, but we also support OR and NOT at the top-lev
 
 ```ts
 const search = new ThronesSearch()
-search.conditions.name.eq("Ned Stark")
-search.conditions.or.title.eq("Queen of Dragons")
-search.conditions.not.rating.lt(500)
+search.filters.name.eq("Ned Stark")
+search.filters.or.title.eq("Queen of Dragons")
+search.filters.not.rating.lt(500)
 ```
 
 You can also AND, OR and NOT within a condition:
 
 ```ts
 const search = new ThronesSearch()
-search.conditions.quote.match("winter")
+search.filters.quote.match("winter")
   .or.match("is coming").and.not.match("summer")
+  .and.name.eq("Ned Stark)
 ```
 
 AND trumps OR similar to how `*` trumps `+` in mathmatical order of operations. That means the above query executes as "Find all records where the quote matches 'winter', or it matches 'is coming' while also not matching 'summer'. Another way to state this:
 
 ```ts
-quote:'winter' OR (quote:'is coming' AND NOT quote:'summer')
+quote:'winter' OR (quote:'is coming' AND NOT quote:'summer' AND name:'Ned Stark)
 ```
 
 All examples here are using direct assignment, but you can do the same in the constructor:
 
 ```ts
 const search = new ThronesSearch({
-  condtions: {
+  filters: {
     name: { eq: "Ned Stark" }
   }
 })
@@ -122,20 +123,18 @@ const search = new ThronesSearch({
 The `keywords` condition, a [simple string query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-simple-query-string-query.html), comes by default:
 
 ```ts
-search.conditions.keywords.eq("something")
+search.filters.keywords.eq("something")
 ```
 
-#### Meta
-
-Use the `meta` object to sort, paginate, and see total results:
+#### Pagination/Sorting/Total Results
 
 ```ts
 const search = new ThronesSearch()
-search.meta.perPage = 10
-search.meta.page = 10
-search.meta.sort = [{ someField: "desc" }]
+search.page.size = 10
+search.page.number = 2
+search.sort = [{ att: "someField", dir: "desc" }]
 await search.query()
-search.meta.total // => 500
+search.total // => 500
 ```
 
 #### Results
@@ -331,6 +330,9 @@ export class ThronesSearchResult  {
 export class ThronesSearchResponse  {
   @Field(type => [ThronesSearchResult], { nullable: true })
   results!: ThronesSearchResult[]
+
+  @Field()
+  total: number
 
   @Field(type => GraphQLJSONObject, { nullable: true })
   aggregations!: any
