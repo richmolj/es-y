@@ -4,7 +4,7 @@ Node client for easy elasticsearch with typescript and GraphQL bindings.
 
 This library is currently in 🔥**ALPHA**🔥
 
-![](https://user-images.githubusercontent.com/55264/77767549-9edc0700-7017-11ea-927d-c0452cf3c24f.gif)
+![](https://user-images.githubusercontent.com/55264/77768780-57567a80-7019-11ea-8101-876a823152ad.gif)
 
 ![](https://user-images.githubusercontent.com/55264/77767897-1a3db880-7018-11ea-8daa-bba16b19b92d.png)
 
