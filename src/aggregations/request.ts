@@ -3,7 +3,7 @@ import { Search } from "../search"
 export async function buildAggRequest(search: Search, payload: any) {
   if ((search as any)._aggs && (search as any)._aggs.requiresQualityAssurance) {
     payload.body.aggs = (search as any)._aggs.toElastic({ overrideSize: true })
-    const response = await (search as any).executeSearch(payload)
+    const response = await (search as any)._execute(payload)
 
     Object.keys(response.body.aggregations).forEach(aggName => {
       const termAgg = (search as any)._aggs?.termAggs.find((ta: any) => ta.name == aggName)

@@ -107,9 +107,9 @@ export class Search {
     return result
   }
 
-  async query() {
+  async execute() {
     const searchPayload = await buildRequest(this)
-    const response = await this.executeSearch(searchPayload)
+    const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
     this.results = this.transformResults(this.buildResults(response.body.hits.hits))
     if (response.body.aggregations) {
@@ -118,7 +118,7 @@ export class Search {
     return this.results
   }
 
-  private async executeSearch(searchPayload: any) {
+  private async _execute(searchPayload: any) {
     this._logQuery(searchPayload)
     const response = await this.klass.client.search(searchPayload)
     this.lastQuery = searchPayload

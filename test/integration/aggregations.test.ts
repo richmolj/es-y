@@ -55,7 +55,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title")
-            await search.query()
+            await search.execute()
             expect(search.aggResults.title).to.deep.eq([
               { key: "A", count: 2 },
               { key: "B", count: 1 },
@@ -66,7 +66,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.aggs.terms("top_titles", { field: "title" })
-              await search.query()
+              await search.execute()
               expect(search.aggResults.top_titles).to.deep.eq([
                 { key: "A", count: 2 },
                 { key: "B", count: 1 },
@@ -87,7 +87,7 @@ describe("integration", () => {
                 ],
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.aggResults.top_titles).to.deep.eq([
               { key: "A", count: 2 },
               { key: "B", count: 1 },
@@ -104,7 +104,7 @@ describe("integration", () => {
                 ],
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.aggResults.title).to.deep.eq([
               { key: "A", count: 2 },
               { key: "B", count: 1 },
@@ -122,7 +122,7 @@ describe("integration", () => {
                   ],
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2 },
                 { key: "B", count: 1 },
@@ -137,7 +137,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title").sourceFields(["name"])
-            await search.query()
+            await search.execute()
             const entries = search.aggResults.title
             expect(entries[0].sourceFields).to.deep.eq({ name: "A Person 1" })
             expect(entries[1].sourceFields).to.deep.eq({ name: "B Person" })
@@ -148,7 +148,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title").sourceFields(["name"])
-            await search.query()
+            await search.execute()
             const entries = search.aggResults.title
             expect(entries[0].sourceFields).to.deep.eq({ name: "A Person 1" })
             expect(entries[1].sourceFields).to.deep.eq({ name: "B Person" })
@@ -161,7 +161,7 @@ describe("integration", () => {
           it("works when default asc", async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title").order("sum", "rating")
-            await search.query()
+            await search.execute()
             const keys = search.aggResults.title.map((e: any) => e.key)
             expect(keys).to.deep.eq(["B", "A"])
           })
@@ -169,7 +169,7 @@ describe("integration", () => {
           it("works when explicit asc", async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title").order("sum", "rating", "asc")
-            await search.query()
+            await search.execute()
             const keys = search.aggResults.title.map((e: any) => e.key)
             expect(keys).to.deep.eq(["B", "A"])
           })
@@ -177,7 +177,7 @@ describe("integration", () => {
           it("works when desc", async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title").order("sum", "rating", "desc")
-            await search.query()
+            await search.execute()
             const keys = search.aggResults.title.map((e: any) => e.key)
             expect(keys).to.deep.eq(["A", "B"])
           })
@@ -195,7 +195,7 @@ describe("integration", () => {
                 ],
               },
             })
-            await search.query()
+            await search.execute()
             const keys = search.aggResults.title.map((e: any) => e.key)
             expect(keys).to.deep.eq(["B", "A"])
           })
@@ -211,7 +211,7 @@ describe("integration", () => {
                 ],
               },
             })
-            await search.query()
+            await search.execute()
             const keys = search.aggResults.title.map((e: any) => e.key)
             expect(keys).to.deep.eq(["B", "A"])
           })
@@ -227,7 +227,7 @@ describe("integration", () => {
                 ],
               },
             })
-            await search.query()
+            await search.execute()
             const keys = search.aggResults.title.map((e: any) => e.key)
             expect(keys).to.deep.eq(["A", "B"])
           })
@@ -244,7 +244,7 @@ describe("integration", () => {
               .child()
               .terms("age")
               .sum("rating")
-            await search.query()
+            await search.execute()
             expect(search.lastQuery.body.query.bool.filter.bool.should).to.deep.eq([
               {
                 terms: {
@@ -295,7 +295,7 @@ describe("integration", () => {
               .child()
               .terms("age")
               .sum("rating")
-            await search.query()
+            await search.execute()
             expect(search.lastQuery.body.query.bool.filter.bool.should).to.deep.eq([
               {
                 terms: {
@@ -348,7 +348,7 @@ describe("integration", () => {
               .child()
               .terms("age")
               .sum("rating")
-            await search.query()
+            await search.execute()
             expect(search.aggResults.title).to.deep.eq([
               {
                 key: "A",
@@ -392,7 +392,7 @@ describe("integration", () => {
                 ],
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.aggResults.title).to.deep.eq([
               {
                 key: "A",
@@ -422,7 +422,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.aggs.terms("title").sum("rating")
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2, sum_rating: 300 },
                 { key: "B", count: 1, sum_rating: 100 },
@@ -442,7 +442,7 @@ describe("integration", () => {
                   ],
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2, sum_rating: 300 },
                 { key: "B", count: 1, sum_rating: 100 },
@@ -456,7 +456,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.aggs.terms("title").avg("rating")
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2, avg_rating: 150 },
                 { key: "B", count: 1, avg_rating: 100 },
@@ -476,7 +476,7 @@ describe("integration", () => {
                   ],
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2, avg_rating: 150 },
                 { key: "B", count: 1, avg_rating: 100 },
@@ -493,7 +493,7 @@ describe("integration", () => {
                 .terms("title")
                 .avg("rating")
                 .sum("rating")
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2, avg_rating: 150, sum_rating: 300 },
                 { key: "B", count: 1, avg_rating: 100, sum_rating: 100 },
@@ -514,7 +514,7 @@ describe("integration", () => {
                   ],
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.aggResults.title).to.deep.eq([
                 { key: "A", count: 2, avg_rating: 150, sum_rating: 300 },
                 { key: "B", count: 1, avg_rating: 100, sum_rating: 100 },
@@ -531,7 +531,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.aggs.sum("rating")
-            await search.query()
+            await search.execute()
             expect(search.aggResults.sum_rating).to.eq(400)
           })
         })
@@ -543,7 +543,7 @@ describe("integration", () => {
                 sum: "rating",
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.aggResults.sum_rating).to.eq(400)
           })
         })
@@ -554,7 +554,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.aggs.avg("rating")
-            await search.query()
+            await search.execute()
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
           })
         })
@@ -566,7 +566,7 @@ describe("integration", () => {
                 avg: "rating",
               },
             })
-            await search.query()
+            await search.execute()
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
           })
         })
@@ -577,7 +577,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.aggs.avg("rating").sum("rating")
-            await search.query()
+            await search.execute()
             expect(search.aggResults.sum_rating).to.eq(400)
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
           })
@@ -591,7 +591,7 @@ describe("integration", () => {
                 sum: "rating",
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.aggResults.sum_rating).to.eq(400)
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
           })
