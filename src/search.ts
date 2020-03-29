@@ -1,8 +1,9 @@
 import { Client, events } from "@elastic/elasticsearch"
 import colorize from "./util/colorize"
 import { LoggerInterface, logger, LogLevel } from "./util/logger"
+import { buildRequest } from './util/build-request'
 import { Conditions, SimpleQueryStringCondition } from "./conditions"
-import { Aggregations, buildAggResults, buildAggRequest } from "./aggregations"
+import { Aggregations, buildAggResults } from "./aggregations"
 import { Meta } from "./meta"
 
 interface Pagination {
@@ -30,13 +31,12 @@ export class Search {
   results: any[]
   aggResults: any
   filters: Conditions
+  queries: Conditions
   page: Pagination = { size: 20, number: 1 }
   total?: number
   lastQuery?: any
   sort: Sort[] = []
   protected _aggs?: Aggregations
-
-  keywords = new SimpleQueryStringCondition<this>("", this)
 
   constructor(input?: any) {
     this.results = []
@@ -59,6 +59,15 @@ export class Search {
       ;(this.filters as any).build(input.filters)
     } else {
       this.filters = new this.klass.conditionsClass()
+    }
+
+    if (input && input.queries) {
+      this.queries = new this.klass.conditionsClass()
+      ;(this.queries as any).isQuery = true;
+      ;(this.queries as any).build(input.queries)
+    } else {
+      this.queries = new this.klass.conditionsClass()
+      ;(this.queries as any).isQuery = true;
     }
 
     if (input && (input.aggs || input.aggregations)) {
@@ -99,36 +108,13 @@ export class Search {
   }
 
   async query() {
-    const searchPayload = { index: this.klass.index, body: {} } as any
-    const query = (this.filters as any).buildQuery()
-    if (Object.keys(query).length > 0) {
-      searchPayload.body = { query }
-    }
-
-    if ((this.keywords as any).hasClause()) {
-      if (!searchPayload.body.query) searchPayload.body.query = {}
-      searchPayload.body.query.simple_query_string = {
-        query: (this.keywords as any).value,
-      }
-    }
-
-    searchPayload.body.size = this.page.size
-    searchPayload.body.from = this.page.size * (this.page.number - 1)
-    searchPayload.body.sort = this.sort.map((s) => {
-      return { [s.att]: s.dir}
-    })
-
-    await buildAggRequest(this, searchPayload)
-
+    const searchPayload = await buildRequest(this)
     const response = await this.executeSearch(searchPayload)
     this.total = response.body.hits.total.value
-
     this.results = this.transformResults(this.buildResults(response.body.hits.hits))
-
     if (response.body.aggregations) {
       this.aggResults = buildAggResults(this, response.body.aggregations)
     }
-
     return this.results
   }
 

@@ -10,7 +10,10 @@ export async function buildAggRequest(search: Search, payload: any) {
       if (termAgg && termAgg.requiresQualityAssurance) {
         const keys = response.body.aggregations[aggName].buckets.map((b: any) => b.key)
         if (!payload.body.query) {
-          payload.body.query = { bool: { filter: { bool: { should: [] } } } }
+          payload.body.query = { bool: { } }
+        }
+        if (!payload.body.query.bool.filter) {
+          payload.body.query.bool.filter = { bool: { should: [] } }
         }
         payload.body.query.bool.filter.bool.should.push({
           terms: {

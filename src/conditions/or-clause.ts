@@ -12,17 +12,24 @@ export class OrClause<ConditionT, ConditionsT> {
     })
   }
 
+  get elasticContext() {
+    return (this.conditions as any).elasticContext
+  }
+
   protected toElastic() {
     let should = [] as any[]
     let must = [] as any[]
     let must_not = [] as any[]
     if (this.value) {
-      should = (this.condition as any).toElastic().bool.should
+      let esPayload = (this.condition as any).toElastic().bool
+      must = must.concat(esPayload.must)
+      should = should.concat(esPayload.should)
+      must_not = must_not.concat(esPayload.must_not)
     }
     const conditions = this.conditions as any
     const query = (this.conditions as any).buildQuery()
     if (query && query.bool) {
-      const nested = query.bool.filter.bool.should[0].bool.must[0].bool
+      const nested = query.bool[this.elasticContext].bool.should[0].bool.must[0].bool
       if (nested.should.length > 0) {
         should = should.concat(nested.should)
       }
@@ -34,10 +41,8 @@ export class OrClause<ConditionT, ConditionsT> {
       if (nested.must_not.length > 0) {
         must_not = must_not.concat(nested.must_not)
       }
-
-      return { must, should, must_not }
-    } else {
-      return { should }
     }
+
+    return { must, should, must_not }
   }
 }

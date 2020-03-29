@@ -47,6 +47,7 @@ export class ThronesSearch extends Search {
   static index = "game-of-thrones"
   static conditionsClass = ThronesSearchConditions
   filters!: ThronesSearchConditions
+  queries!: ThronesSearchConditions
 
   // static logFormat = "pretty"
 }

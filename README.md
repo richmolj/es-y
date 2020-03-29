@@ -103,16 +103,39 @@ AND trumps OR similar to how `*` trumps `+` in mathmatical order of operations. 
 quote:'winter' OR (quote:'is coming' AND NOT quote:'summer' AND name:'Ned Stark')
 ```
 
+Finally, you can AND/OR/NOT *across* conditions. Each time you reference a new condition, you're opening up a new parenthesis:
+
+```ts
+const search = new ThronesSearch()
+search.filters.name.eq("Ned Stark")
+  .and.quote.match("burn").or.match("alive")
+```
+
+Because we're jumping from `name` to `quote`, this evaluates to:
+
+```ts
+name:'Ned Stark' AND (quote:'burn' OR quote:'alive')
+```
+
 All examples here are using direct assignment, but you can do the same in the constructor:
 
 ```ts
 const search = new ThronesSearch({
   filters: {
-    name: { eq: "Ned Stark" }
+    name: {
+      eq: "Ned Stark",
+      and: {
+        quote: {
+          match: "burn",
+          or: {
+            match: "alive"
+          }
+        }
+      }
+    }
   }
 })
 ```
-
 
 ##### Condition Types
 

@@ -21,6 +21,9 @@ class Conditions {
   static currentClass: typeof Conditions = Conditions
   protected _not!: Conditions
   protected _or!: Conditions
+  protected isQuery: boolean = false
+
+  keywords = new SimpleQueryStringCondition<this>("", this)
 
   get not(): this {
     if (this._not) {
@@ -40,6 +43,14 @@ class Conditions {
     }
   }
 
+  protected get elasticContext(): 'filter' | 'query' {
+    if (this.isQuery) {
+      return 'query'
+    } else {
+      return 'filter'
+    }
+  }
+
   protected buildQuery() {
     let must = [] as any[]
     let must_not = [] as any[]
@@ -55,7 +66,7 @@ class Conditions {
 
     const _this = this as any
     const presentConditions = Object.keys(this)
-      .filter(k => k !== "keywords" && _this[k].hasClause && _this[k].hasClause())
+      .filter(k => _this[k].hasClause && _this[k].hasClause())
       .map(k => _this[k])
 
     presentConditions.forEach(c => {
@@ -74,7 +85,7 @@ class Conditions {
     const payload = {} as any
     if (must.length > 0 || must_not.length > 0 || should.length > 0) {
       payload.bool = {
-        filter: {
+        [this.elasticContext]: {
           bool: {
             // must,
             should,

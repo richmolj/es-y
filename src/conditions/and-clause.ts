@@ -20,6 +20,10 @@ export class AndClause<ConditionT, ConditionsT> {
     return this
   }
 
+  get elasticContext() {
+    return (this.conditions as any).elasticContext
+  }
+
   protected toElastic() {
     let must = [] as any[]
     let must_not = [] as any[]
@@ -51,12 +55,12 @@ export class AndClause<ConditionT, ConditionsT> {
     if (
       query &&
       query.bool &&
-      query.bool.filter &&
-      query.bool.filter.bool &&
-      query.bool.filter.bool.should &&
-      query.bool.filter.bool.should.length > 0
+      query.bool[this.elasticContext] &&
+      query.bool[this.elasticContext].bool &&
+      query.bool[this.elasticContext].bool.should &&
+      query.bool[this.elasticContext].bool.should.length > 0
     ) {
-      const subQuery = query.bool.filter.bool.should[0].bool.must[0].bool
+      const subQuery = query.bool[this.elasticContext].bool.should[0].bool.must[0].bool
 
       if (subQuery.must.length > 0) {
         should = should.concat({ bool: { must: subQuery.must } })

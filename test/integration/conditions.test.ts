@@ -9,59 +9,88 @@ import { setupIntegrationTest } from "../util"
 const index = ThronesSearch.index
 
 describe("integration", () => {
-  describe("conditions", () => {
-    setupIntegrationTest()
+  setupIntegrationTest()
 
+  beforeEach(async () => {
+    await ThronesSearch.client.index({
+      index,
+      body: {
+        id: 1,
+        name: "Daenerys Targaryen",
+        title: "Queen of Dragons",
+        rating: 250,
+        age: 13,
+        quote: "And I swear this. If you ever betray me, I’ll burn you alive.",
+        bio: "The standard dragon queen take over the world shit",
+        created_at: "1980-02-26",
+        updated_at: "1980-02-27",
+      },
+    })
+
+    await ThronesSearch.client.index({
+      index,
+      body: {
+        id: 2,
+        name: "Ned Stark",
+        title: "Warden of the North",
+        rating: 500,
+        age: 35,
+        quote: "Winter is coming.",
+        bio: "Does a lot of things, really digs vows and duty and whatnot",
+        created_at: "1960-11-14",
+        updated_at: "1960-11-15",
+      },
+    })
+    // Seed something that should never come back when conditions applied
+    await ThronesSearch.client.index({
+      index,
+      body: {
+        id: 999,
+        name: "asdf",
+        quote: "asdf",
+      },
+    })
+    await ThronesSearch.client.indices.refresh({ index })
+  })
+
+  it('can search without filters or queries', async () => {
+    const search = new ThronesSearch()
+    await search.query()
+    expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 999])
+  })
+
+  describe("keywords", () => {
     beforeEach(async () => {
       await ThronesSearch.client.index({
         index,
         body: {
-          id: 1,
-          name: "Daenerys Targaryen",
-          title: "Queen of Dragons",
-          rating: 250,
-          age: 13,
-          quote: "And I swear this. If you ever betray me, I’ll burn you alive.",
-          bio: "The standard dragon queen take over the world shit",
-          created_at: "1980-02-26",
-          updated_at: "1980-02-27",
-        },
-      })
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 2,
-          name: "Ned Stark",
-          title: "Warden of the North",
-          rating: 500,
-          age: 35,
-          quote: "Winter is coming.",
-          bio: "Does a lot of things, really digs vows and duty and whatnot",
-          created_at: "1960-11-14",
-          updated_at: "1960-11-15",
-        },
-      })
-      // Seed something that should never come back when conditions applied
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 999,
-          name: "asdf",
-          quote: "asdf",
+          id: 333,
+          quote: "dragon dragon dragon dragon",
         },
       })
       await ThronesSearch.client.indices.refresh({ index })
     })
 
-    describe("query type", () => {
+    describe('on filters', () => {
       it("works", async () => {
         const search = new ThronesSearch()
-        search.keywords.eq("vows")
+        search.filters.keywords.eq("dragon")
         await search.query()
-        expect(search.results.map(r => r.id)).to.deep.eq([2])
+        expect(search.results.map(r => r.id)).to.deep.eq([1, 333])
       })
     })
 
+    describe('on queries', () => {
+      it("works", async () => {
+        const search = new ThronesSearch()
+        search.queries.keywords.eq("dragon")
+        await search.query()
+        expect(search.results.map(r => r.id)).to.deep.eq([333, 1])
+      })
+    })
+  })
+
+  describe("filters", () => {
     describe("keyword type", () => {
       describe("basic equality", () => {
         describe("by direct assignment", () => {
@@ -2224,6 +2253,158 @@ describe("integration", () => {
       })
     })
 
+    describe('OR then AND', () => {
+      describe('within a condition', () => {
+        beforeEach(async () => {
+          // exclude, only foo
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              quote: "foo"
+            },
+          })
+          // exclude, only bar
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              quote: "bar"
+            },
+          })
+          // include, foo and bar
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 444,
+              quote: "foo bar"
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('has AND trump OR', async() => {
+          const search = new ThronesSearch()
+          search.filters.quote.match("burn")
+            .or.match("foo").and.match("bar")
+          await search.query()
+          expect(search.results.map((r) => r.id)).to.deep.eq([1, 444])
+        })
+      })
+
+      describe('across conditions', () => {
+        beforeEach(async () => {
+          // wrong age
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              name: "Ned Stark",
+              title: "Other Ned",
+            },
+          })
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 777,
+              name: "Ned Stark",
+              age: 4
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('opens new parens on new condition: (bio or (name and age))', async() => {
+          const search = new ThronesSearch()
+          search.filters.bio.match("dragon")
+            .or.name.eq("Ned Stark").and.age.eq(4)
+          await search.query()
+          expect(search.results.map((r) => r.id)).to.deep.eq([1, 777])
+        })
+      })
+    })
+
+    describe('AND then OR', () => {
+      describe('within same condition', () => {
+        beforeEach(async () => {
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 777,
+              bio: "dragon foo",
+            },
+          })
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 888,
+              bio: "bar",
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('has AND trump OR', async() => {
+          const search = new ThronesSearch()
+          search.filters.bio.match("dragon")
+            .and.match("foo").or.match("bar")
+          await search.query()
+          expect(search.results.map((r) => r.id)).to.deep.eq([777, 888])
+        })
+      })
+
+      describe('across conditions', () => {
+        beforeEach(async () => {
+          // excluded, correct name but not bio
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              name: "Ned Stark"
+            },
+          })
+
+          // excluded, correct age but not bio
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              age: 4
+            },
+          })
+
+          // included because correct bio and age
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 888,
+              bio: "dragon",
+              age: 4
+            },
+          })
+
+          // included because correct bio and name
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 777,
+              bio: "dragon",
+              name: "Ned Stark"
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('opens new parens on condition: (bio and (name or age))', async() => {
+          const search = new ThronesSearch()
+          search.filters.bio.match("dragon")
+            .and.name.eq("Ned Stark").or.age.eq(4)
+          await search.query()
+          expect(search.results.map((r) => r.id)).to.deep.eq([888, 777])
+        })
+      })
+    })
+
     describe("complex, nested queries", () => {
       beforeEach(async () => {
         // Right name
@@ -2342,6 +2523,109 @@ describe("integration", () => {
           await search.query()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
         })
+      })
+    })
+  })
+
+  describe('queries', () => {
+    beforeEach(async () => {
+      await ThronesSearch.client.index({
+        index,
+        body: {
+          id: 333,
+          bio: "dragon dragon dragon"
+        },
+      })
+      await ThronesSearch.client.indices.refresh({ index })
+    })
+
+    describe('via direct assignment', () => {
+      it('applies condition in query context', async () => {
+        const search = new ThronesSearch()
+        search.queries.bio.match("dragon")
+        await search.query()
+        expect(search.results.map((r) => r.id)).to.deep.eq([333, 1])
+      })
+    })
+
+    describe('via constructor', () => {
+      it('applies condition in query context', async () => {
+        const search = new ThronesSearch({
+          queries: {
+            bio: {
+              match: "dragon"
+            }
+          }
+        })
+        await search.query()
+        expect(search.results.map((r) => r.id)).to.deep.eq([333, 1])
+      })
+    })
+
+    describe('with and/or/not', () => {
+      beforeEach(async () => {
+        // exclude, because age > 10
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 999,
+            quote: "foo",
+            age: 9
+          },
+        })
+        // rank lower, only one foo
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 7,
+            quote: "foo",
+            age: 20
+          },
+        })
+        // rank higher, many foos
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 8,
+            quote: "foo foo foo foo foo foo foo foo foo foo foo foo",
+            age: 20
+          },
+        })
+        await ThronesSearch.client.indices.refresh({ index })
+      })
+
+      // 8 first, because tons of foos
+      // Then 7, because match foo AND the age
+      // Then 333, because a few dragons
+      // Then 1, because just match single dragon
+      it('works', async() => {
+        const search = new ThronesSearch()
+        search.queries.bio.match("dragon")
+          .or.quote.match("foo").and.age.gt(10)
+        await search.query()
+        expect(search.results.map((r) => r.id)).to.deep.eq([8, 7, 333, 1])
+      })
+    })
+
+    describe('when combined with filters', () => {
+      beforeEach(async () => {
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 444,
+            bio: "dragon dragon dragon dragon dragon",
+            age: 77
+          },
+        })
+        await ThronesSearch.client.indices.refresh({ index })
+      })
+
+      it('works', async() => {
+        const search = new ThronesSearch()
+        search.queries.bio.match("dragon")
+        search.filters.age.eq(77).or.eq(13)
+        await search.query()
+        expect(search.results.map((r) => r.id)).to.deep.eq([444, 1])
       })
     })
   })

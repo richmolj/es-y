@@ -59,11 +59,26 @@ export class Condition<ConditionsT, ValueType> {
 
         // foo and (this or that)
         if (esPayload && esPayload.should && esPayload.should.length > 0) {
-          must = must.concat({
-            bool: {
-              should: esPayload.should,
-            },
-          })
+          const key = Object.keys(esPayload.should[0])[0]
+          if (esPayload.should.length > 1 && Object.keys(esPayload.should[0][key])[0] === this.elasticField) {
+            // within condition
+            const anded = esPayload.should.shift()
+            must = must.concat(anded)
+            should = should.concat({
+              bool: {
+                must,
+              }
+            })
+            should = should.concat(esPayload.should)
+            must = []
+          } else {
+            // across conditions
+            must = must.concat({
+              bool: {
+                should: esPayload.should,
+              },
+            })
+          }
         }
 
         // foo and (not that)
@@ -83,7 +98,7 @@ export class Condition<ConditionsT, ValueType> {
         // Push to "should", because "or"
 
         if (esPayload && esPayload.must && esPayload.must.length > 0) {
-          must = must.concat(esPayload.must)
+          should = should.concat({ bool: { must: esPayload.must } })
         }
         if (esPayload && esPayload.should && esPayload.should.length > 0) {
           should = should.concat(esPayload.should)
@@ -114,11 +129,6 @@ export class Condition<ConditionsT, ValueType> {
             must_not = must_not.concat(esPayload.should)
           }
         }
-
-        // NEW: NOT AND
-        // if (esPayload && esPayload.bool.must.length > 0) {
-        //   must_not = must_not.concat(esPayload.bool.must)
-        // }
       })
     }
 
