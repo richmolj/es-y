@@ -4,7 +4,7 @@ import { Search } from "./search"
 function eachCondition(klass: typeof Search, callback: Function) {
   const instance = new klass.conditionsClass()
   Object.keys(instance).forEach(k => {
-    if (k === "_or" || k === "_not") {
+    if (k === "_or" || k === "_not" || k === "isQuery") {
       return
     }
     const value = (instance as any)[k]
@@ -68,6 +68,12 @@ class ${name}SimpleQueryStringConditionInput {
 
 @InputType()
 export class ${name}ConditionsInput {
+  @Field(type => ${name}ConditionsInput, { nullable: true })
+  not!: ${name}ConditionsInput
+
+  @Field(type => ${name}ConditionsInput, { nullable: true })
+  or!: ${name}ConditionsInput
+
   ${generateConditionInputs(klass)}
     `
 
