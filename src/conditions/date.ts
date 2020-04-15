@@ -41,12 +41,10 @@ class DateNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, Condi
 }
 
 function getCurrentFiscalYear(): number {
-  const today = new Date()
-  if (today.getMonth() + 1 <= 3) {
-    return today.getFullYear()
-  } else {
-    return today.getFullYear() + 1
-  }
+  const date = new Date()
+  const fyOffset = 1000 * 60 * 60 * 24 * 92 // 92 days
+  const fyDate = new Date(date.getTime() + fyOffset)
+  return fyDate.getUTCFullYear() // use UTC or we get the wrong FY on Oct 1 (data-side dates are EDT)
 }
 
 function derivePastFiscalYears(num: number): number[] {
