@@ -9,73 +9,102 @@ import { setupIntegrationTest } from "../util"
 const index = ThronesSearch.index
 
 describe("integration", () => {
-  describe("conditions", () => {
-    setupIntegrationTest()
+  setupIntegrationTest()
 
+  beforeEach(async () => {
+    await ThronesSearch.client.index({
+      index,
+      body: {
+        id: 1,
+        name: "Daenerys Targaryen",
+        title: "Queen of Dragons",
+        rating: 250,
+        age: 13,
+        quote: "And I swear this. If you ever betray me, I’ll burn you alive.",
+        bio: "The standard dragon queen take over the world shit",
+        created_at: "1980-02-26",
+        updated_at: "1980-02-27",
+      },
+    })
+
+    await ThronesSearch.client.index({
+      index,
+      body: {
+        id: 2,
+        name: "Ned Stark",
+        title: "Warden of the North",
+        rating: 500,
+        age: 35,
+        quote: "Winter is coming.",
+        bio: "Does a lot of things, really digs vows and duty and whatnot",
+        created_at: "1960-11-14",
+        updated_at: "1960-11-15",
+      },
+    })
+    // Seed something that should never come back when conditions applied
+    await ThronesSearch.client.index({
+      index,
+      body: {
+        id: 999,
+        name: "asdf",
+        quote: "asdf",
+      },
+    })
+    await ThronesSearch.client.indices.refresh({ index })
+  })
+
+  it('can search without filters or queries', async () => {
+    const search = new ThronesSearch()
+    await search.execute()
+    expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 999])
+  })
+
+  describe("keywords", () => {
     beforeEach(async () => {
       await ThronesSearch.client.index({
         index,
         body: {
-          id: 1,
-          name: "Daenerys Targaryen",
-          title: "Queen of Dragons",
-          rating: 250,
-          age: 13,
-          quote: "And I swear this. If you ever betray me, I’ll burn you alive.",
-          bio: "The standard dragon queen take over the world shit",
-          created_at: "1980-02-26",
-          updated_at: "1980-02-27",
-        },
-      })
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 2,
-          name: "Ned Stark",
-          title: "Warden of the North",
-          rating: 500,
-          age: 35,
-          quote: "Winter is coming.",
-          bio: "Does a lot of things, really digs vows and duty and whatnot",
-          created_at: "1960-11-14",
-          updated_at: "1960-11-15",
-        },
-      })
-      // Seed something that should never come back when conditions applied
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 999,
-          name: "asdf",
-          quote: "asdf",
+          id: 333,
+          quote: "dragon dragon dragon dragon",
         },
       })
       await ThronesSearch.client.indices.refresh({ index })
     })
 
-    describe("query type", () => {
+    describe('on filters', () => {
       it("works", async () => {
         const search = new ThronesSearch()
-        search.keywords.eq("vows")
-        await search.query()
-        expect(search.results.map(r => r.id)).to.deep.eq([2])
+        search.filters.keywords.eq("dragon")
+        await search.execute()
+        expect(search.results.map(r => r.id)).to.deep.eq([1, 333])
       })
     })
 
+    describe('on queries', () => {
+      it("works", async () => {
+        const search = new ThronesSearch()
+        search.queries.keywords.eq("dragon")
+        await search.execute()
+        expect(search.results.map(r => r.id)).to.deep.eq([333, 1])
+      })
+    })
+  })
+
+  describe("filters", () => {
     describe("keyword type", () => {
       describe("basic equality", () => {
         describe("by direct assignment", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.name.eq("Ned Stark")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
 
           it("does not match partial strings", async () => {
             const search = new ThronesSearch()
             search.filters.name.eq("Ned")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([])
           })
         })
@@ -87,7 +116,7 @@ describe("integration", () => {
                 name: { eq: "Ned Stark" },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
         })
@@ -101,7 +130,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.name.not.eq("Ned Stark")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
           })
@@ -115,7 +144,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
           })
@@ -138,7 +167,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.name.eq("Ned Stark").and.title.not.eq("Warden of the North")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -159,7 +188,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -192,7 +221,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.title.not.eq("Warden of the North").and.name.eq("Ned Stark")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -213,7 +242,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -225,7 +254,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.name.eq("Daenerys Targaryen").or.title.not.eq("Warden of the North")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999])
               })
             })
@@ -246,7 +275,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999])
               })
             })
@@ -268,7 +297,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.name.not.eq("Ned Stark").or.title.eq("Other Ned")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999, 777])
             })
           })
@@ -294,7 +323,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.name.eq("Ned Stark").and.title.eq("Other Ned")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([333])
             })
           })
@@ -311,7 +340,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([333])
             })
           })
@@ -324,7 +353,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.name.eq("Ned Stark").and.title.not.eq("Other Ned")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([2])
             })
           })
@@ -345,7 +374,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([2])
             })
           })
@@ -357,7 +386,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.name.eq("Ned Stark").or.eq("Daenerys Targaryen")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
 
@@ -373,7 +402,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
           })
@@ -383,7 +412,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.name.eq("Ned Stark").or.title.eq("Queen of Dragons")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
 
@@ -401,7 +430,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
           })
@@ -415,7 +444,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.quote.match("betray")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
         })
@@ -427,7 +456,7 @@ describe("integration", () => {
                 quote: { match: "betray" },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
         })
@@ -437,7 +466,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.quote.not.match("winter")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
           })
@@ -453,7 +482,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
           })
@@ -482,7 +511,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.quote.match("winter").and.not.match("other text")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
               })
@@ -501,7 +530,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
               })
@@ -532,7 +561,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.quote.match("winter").and.name.not.eq("Other Ned")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
               })
@@ -553,7 +582,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
               })
@@ -584,7 +613,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.quote.not.match("winter").and.match("other text")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -603,7 +632,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -626,7 +655,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.quote.not.match("winter").and.name.eq("Ned Stark")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -647,7 +676,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -659,7 +688,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.match("betray").or.bio.not.match("vows")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999])
               })
             })
@@ -680,7 +709,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999])
               })
             })
@@ -703,7 +732,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.not.match("winter").or.bio.match("other bio")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999, 777])
               })
             })
@@ -724,7 +753,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 999, 777])
               })
             })
@@ -750,7 +779,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.match("winter").and.match("other text")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -767,7 +796,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -778,7 +807,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.match("winter").and.name.eq("Other Ned")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -797,7 +826,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -809,7 +838,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.quote.match("betray").or.match("winter")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -825,7 +854,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -835,7 +864,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.quote.match("betray").or.bio.match("vows")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -853,7 +882,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -885,7 +914,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.quote.matchPhrase("burn you alive")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
         })
@@ -897,7 +926,7 @@ describe("integration", () => {
                 quote: { matchPhrase: "burn you alive" },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
         })
@@ -920,7 +949,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.matchPhrase("burn you alive").and.matchPhrase("with my words")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.deep.eq([333])
               })
             })
@@ -937,7 +966,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.deep.eq([333])
               })
             })
@@ -948,7 +977,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.matchPhrase("burn you alive").and.bio.matchPhrase("dragon queen")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.deep.eq([1])
               })
             })
@@ -967,7 +996,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.deep.eq([1])
               })
             })
@@ -979,7 +1008,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.quote.matchPhrase("burn you alive").and.not.matchPhrase("with my words")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.deep.eq([1])
                 })
               })
@@ -998,7 +1027,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.deep.eq([1])
                 })
               })
@@ -1011,7 +1040,7 @@ describe("integration", () => {
                   search.filters.quote
                     .matchPhrase("burn you alive")
                     .and.bio.not.matchPhrase("dragon queen")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.deep.eq([333])
                 })
               })
@@ -1032,7 +1061,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.deep.eq([333])
                 })
               })
@@ -1045,7 +1074,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.quote.matchPhrase("burn you alive").or.matchPhrase("is coming")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -1061,7 +1090,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -1071,7 +1100,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.quote.matchPhrase("burn you alive").or.bio.matchPhrase("digs vows")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -1089,7 +1118,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -1101,7 +1130,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.quote.not.matchPhrase("burn you alive")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([2, 777, 888, 999])
             })
           })
@@ -1117,7 +1146,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([2, 777, 888, 999])
             })
           })
@@ -1127,7 +1156,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.matchPhrase("burn you alive").or.bio.not.matchPhrase("vows")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 777, 888, 999])
               })
             })
@@ -1148,7 +1177,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 777, 888, 999])
               })
             })
@@ -1171,7 +1200,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.quote.not.matchPhrase("burn you alive").or.name.eq("other daen")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([2, 222, 777, 888, 999])
               })
             })
@@ -1192,7 +1221,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([2, 222, 777, 888, 999])
               })
             })
@@ -1207,7 +1236,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.rating.eq(500)
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
 
@@ -1226,7 +1255,7 @@ describe("integration", () => {
             it("works with 0", async () => {
               const search = new ThronesSearch()
               search.filters.rating.eq(0)
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.deep.eq([888])
             })
           })
@@ -1239,7 +1268,7 @@ describe("integration", () => {
                 rating: { eq: 500 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
         })
@@ -1249,7 +1278,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.rating.not.eq(500)
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.deep.eq([1, 999])
             })
           })
@@ -1265,7 +1294,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.deep.eq([1, 999])
             })
           })
@@ -1296,7 +1325,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.rating.eq(500).and.age.not.eq(100)
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
               })
@@ -1317,7 +1346,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2, 222])
                 })
               })
@@ -1342,7 +1371,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.rating.not.eq(500).and.age.eq(77)
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -1363,7 +1392,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([222])
                 })
               })
@@ -1375,7 +1404,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.rating.eq(500).or.age.not.eq(13)
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.deep.eq([2, 999])
               })
             })
@@ -1396,7 +1425,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.deep.eq([2, 999])
               })
             })
@@ -1419,7 +1448,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.rating.not.eq(500).or.name.eq("other ned")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 222, 999])
               })
             })
@@ -1440,7 +1469,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 222, 999])
               })
             })
@@ -1467,7 +1496,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.rating.eq(500).and.age.eq(100)
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -1486,7 +1515,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -1500,7 +1529,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.rating.eq(500).and.age.not.eq(100)
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2])
                 })
               })
@@ -1521,7 +1550,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2])
                 })
               })
@@ -1534,7 +1563,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.rating.eq(500).or.eq(250)
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -1550,7 +1579,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -1560,7 +1589,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.rating.eq(250).or.age.eq(35)
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -1578,7 +1607,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -1591,7 +1620,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.rating.gt(250)
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
         })
@@ -1603,7 +1632,7 @@ describe("integration", () => {
                 rating: { gt: 250 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([2])
           })
         })
@@ -1614,7 +1643,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.rating.gte(250)
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
         })
@@ -1626,7 +1655,7 @@ describe("integration", () => {
                 rating: { gte: 250 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
         })
@@ -1637,7 +1666,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.rating.lt(500)
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
         })
@@ -1649,7 +1678,7 @@ describe("integration", () => {
                 rating: { lt: 500 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.deep.eq([1])
           })
         })
@@ -1660,7 +1689,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.rating.lte(500)
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
         })
@@ -1672,7 +1701,7 @@ describe("integration", () => {
                 rating: { lte: 500 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1, 2])
           })
         })
@@ -1695,7 +1724,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.rating.gt(250).lt(500)
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([999])
           })
         })
@@ -1707,7 +1736,7 @@ describe("integration", () => {
                 rating: { gt: 250, lt: 500 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([999])
           })
         })
@@ -1723,7 +1752,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.createdAt.eq("1960-11-14")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([2])
           })
         })
@@ -1735,7 +1764,7 @@ describe("integration", () => {
                 createdAt: { eq: "1960-11-14" },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([2])
           })
         })
@@ -1745,7 +1774,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.createdAt.not.eq("1960-11-14")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
           })
@@ -1761,7 +1790,7 @@ describe("integration", () => {
                   },
                 },
               })
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 999])
             })
           })
@@ -1784,7 +1813,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.createdAt.eq("1960-11-14").and.updatedAt.not.eq("2000-01-01")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2])
                 })
               })
@@ -1805,7 +1834,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([2])
                 })
               })
@@ -1839,7 +1868,7 @@ describe("integration", () => {
                 it("works", async () => {
                   const search = new ThronesSearch()
                   search.filters.createdAt.not.eq("1960-11-14").and.updatedAt.eq("2000-01-01")
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([333])
                 })
               })
@@ -1860,7 +1889,7 @@ describe("integration", () => {
                       },
                     },
                   })
-                  await search.query()
+                  await search.execute()
                   expect(search.results.map(r => r.id)).to.have.members([333])
                 })
               })
@@ -1872,7 +1901,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.createdAt.eq("1960-11-14").or.name.not.eq("Daenerys Targaryen")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([2, 999])
               })
             })
@@ -1893,7 +1922,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([2, 999])
               })
             })
@@ -1916,7 +1945,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.createdAt.not.eq("1960-11-14").or.name.eq("other ned")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 222, 999])
               })
             })
@@ -1937,7 +1966,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 222, 999])
               })
             })
@@ -1964,7 +1993,7 @@ describe("integration", () => {
               it("works", async () => {
                 const search = new ThronesSearch()
                 search.filters.createdAt.eq("1960-11-14").and.updatedAt.eq("2000-01-01")
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -1983,7 +2012,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([333])
               })
             })
@@ -1995,7 +2024,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.createdAt.eq("1960-11-14").or.eq("1980-02-26")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -2011,7 +2040,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map((r: any) => r.id)).to.have.members([1, 2])
               })
             })
@@ -2021,7 +2050,7 @@ describe("integration", () => {
             it("works", async () => {
               const search = new ThronesSearch()
               search.filters.createdAt.eq("1960-11-14").or.updatedAt.eq("1980-02-27")
-              await search.query()
+              await search.execute()
               expect(search.results.map(r => r.id)).to.have.members([1, 2])
             })
 
@@ -2039,7 +2068,7 @@ describe("integration", () => {
                     },
                   },
                 })
-                await search.query()
+                await search.execute()
                 expect(search.results.map(r => r.id)).to.have.members([1, 2])
               })
             })
@@ -2052,7 +2081,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.createdAt.gt("1960-11-14")
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1])
           })
         })
@@ -2064,7 +2093,7 @@ describe("integration", () => {
                 createdAt: { gt: "1960-11-14" },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.results.map(r => r.id)).to.have.members([1])
           })
         })
@@ -2077,7 +2106,7 @@ describe("integration", () => {
           it("works", async () => {
             const search = new ThronesSearch()
             search.filters.createdAt.pastFiscalYears(5)
-            await search.query()
+            await search.execute()
             expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must[0].bool.should[0].range).to.deep.eq(
               {
                 created_at: {
@@ -2098,7 +2127,7 @@ describe("integration", () => {
                 },
               },
             })
-            await search.query()
+            await search.execute()
             expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must[0].bool.should[0].range).to.deep.eq(
               {
                 created_at: {
@@ -2143,7 +2172,7 @@ describe("integration", () => {
           const search = new ThronesSearch()
           search.filters.name.eq("Ned Stark")
           search.filters.not.title.eq("Warden of the North").and.age.eq(35)
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([543, 555])
         })
       })
@@ -2165,7 +2194,7 @@ describe("integration", () => {
               },
             },
           })
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([543, 555])
         })
       })
@@ -2177,7 +2206,7 @@ describe("integration", () => {
           const search = new ThronesSearch()
           search.filters.name.eq("Ned Stark")
           search.filters.or.title.eq("Queen of Dragons")
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([1, 2])
         })
       })
@@ -2196,7 +2225,7 @@ describe("integration", () => {
               },
             },
           })
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([1, 2])
         })
       })
@@ -2219,8 +2248,160 @@ describe("integration", () => {
         const search = new ThronesSearch()
         search.filters.name.eq("Ned Stark")
         search.filters.title.eq("findme")
-        await search.query()
+        await search.execute()
         expect(search.results.map(r => r.id)).to.have.members([888])
+      })
+    })
+
+    describe('OR then AND', () => {
+      describe('within a condition', () => {
+        beforeEach(async () => {
+          // exclude, only foo
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              quote: "foo"
+            },
+          })
+          // exclude, only bar
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              quote: "bar"
+            },
+          })
+          // include, foo and bar
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 444,
+              quote: "foo bar"
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('has AND trump OR', async() => {
+          const search = new ThronesSearch()
+          search.filters.quote.match("burn")
+            .or.match("foo").and.match("bar")
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([1, 444])
+        })
+      })
+
+      describe('across conditions', () => {
+        beforeEach(async () => {
+          // wrong age
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              name: "Ned Stark",
+              title: "Other Ned",
+            },
+          })
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 777,
+              name: "Ned Stark",
+              age: 4
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('opens new parens on new condition: (bio or (name and age))', async() => {
+          const search = new ThronesSearch()
+          search.filters.bio.match("dragon")
+            .or.name.eq("Ned Stark").and.age.eq(4)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([1, 777])
+        })
+      })
+    })
+
+    describe('AND then OR', () => {
+      describe('within same condition', () => {
+        beforeEach(async () => {
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 777,
+              bio: "dragon foo",
+            },
+          })
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 888,
+              bio: "bar",
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('has AND trump OR', async() => {
+          const search = new ThronesSearch()
+          search.filters.bio.match("dragon")
+            .and.match("foo").or.match("bar")
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([777, 888])
+        })
+      })
+
+      describe('across conditions', () => {
+        beforeEach(async () => {
+          // excluded, correct name but not bio
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              name: "Ned Stark"
+            },
+          })
+
+          // excluded, correct age but not bio
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 999,
+              age: 4
+            },
+          })
+
+          // included because correct bio and age
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 888,
+              bio: "dragon",
+              age: 4
+            },
+          })
+
+          // included because correct bio and name
+          await ThronesSearch.client.index({
+            index,
+            body: {
+              id: 777,
+              bio: "dragon",
+              name: "Ned Stark"
+            },
+          })
+          await ThronesSearch.client.indices.refresh({ index })
+        })
+
+        it('opens new parens on condition: (bio and (name or age))', async() => {
+          const search = new ThronesSearch()
+          search.filters.bio.match("dragon")
+            .and.name.eq("Ned Stark").or.age.eq(4)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([888, 777])
+        })
       })
     })
 
@@ -2300,7 +2481,7 @@ describe("integration", () => {
             .and.rating.eq(77)
           search.filters.or.name.eq("Rando name")
           search.filters.not.bio.match("dontfindme")
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
         })
       })
@@ -2339,9 +2520,112 @@ describe("integration", () => {
               },
             },
           })
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
         })
+      })
+    })
+  })
+
+  describe('queries', () => {
+    beforeEach(async () => {
+      await ThronesSearch.client.index({
+        index,
+        body: {
+          id: 333,
+          bio: "dragon dragon dragon"
+        },
+      })
+      await ThronesSearch.client.indices.refresh({ index })
+    })
+
+    describe('via direct assignment', () => {
+      it('applies condition in query context', async () => {
+        const search = new ThronesSearch()
+        search.queries.bio.match("dragon")
+        await search.execute()
+        expect(search.results.map((r) => r.id)).to.deep.eq([333, 1])
+      })
+    })
+
+    describe('via constructor', () => {
+      it('applies condition in query context', async () => {
+        const search = new ThronesSearch({
+          queries: {
+            bio: {
+              match: "dragon"
+            }
+          }
+        })
+        await search.execute()
+        expect(search.results.map((r) => r.id)).to.deep.eq([333, 1])
+      })
+    })
+
+    describe('with and/or/not', () => {
+      beforeEach(async () => {
+        // exclude, because age > 10
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 999,
+            quote: "foo",
+            age: 9
+          },
+        })
+        // rank lower, only one foo
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 7,
+            quote: "foo",
+            age: 20
+          },
+        })
+        // rank higher, many foos
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 8,
+            quote: "foo foo foo foo foo foo foo foo foo foo foo foo",
+            age: 20
+          },
+        })
+        await ThronesSearch.client.indices.refresh({ index })
+      })
+
+      // 8 first, because tons of foos
+      // Then 7, because match foo AND the age
+      // Then 333, because a few dragons
+      // Then 1, because just match single dragon
+      it('works', async() => {
+        const search = new ThronesSearch()
+        search.queries.bio.match("dragon")
+          .or.quote.match("foo").and.age.gt(10)
+        await search.execute()
+        expect(search.results.map((r) => r.id)).to.deep.eq([8, 7, 333, 1])
+      })
+    })
+
+    describe('when combined with filters', () => {
+      beforeEach(async () => {
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 444,
+            bio: "dragon dragon dragon dragon dragon",
+            age: 77
+          },
+        })
+        await ThronesSearch.client.indices.refresh({ index })
+      })
+
+      it('works', async() => {
+        const search = new ThronesSearch()
+        search.queries.bio.match("dragon")
+        search.filters.age.eq(77).or.eq(13)
+        await search.execute()
+        expect(search.results.map((r) => r.id)).to.deep.eq([444, 1])
       })
     })
   })

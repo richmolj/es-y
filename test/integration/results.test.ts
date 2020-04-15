@@ -25,7 +25,7 @@ describe("integration", () => {
 
     it("can execute basic query and get results", async () => {
       const search = new ThronesSearch()
-      await search.query()
+      await search.execute()
       expect(search.results).to.deep.eq([
         {
           id: 1,
@@ -62,7 +62,7 @@ describe("integration", () => {
           const search = new ThronesSearch()
           search.page.number = 2
           search.page.size = 2
-          await search.query()
+          await search.execute()
           expect(search.results.length).to.eq(2)
           expect(search.results.map(r => r.id)).to.deep.eq([3, 4])
         })
@@ -71,27 +71,27 @@ describe("integration", () => {
         it("can set page size to 0", async () => {
           const search = new ThronesSearch()
           search.page.size = 0
-          await search.query()
+          await search.execute()
           expect(search.results.length).to.eq(0)
         })
 
         it("sets total entries", async () => {
           const search = new ThronesSearch()
-          await search.query()
+          await search.execute()
           expect(search.total).to.eq(5)
         })
 
         it("can sort ascending", async () => {
           const search = new ThronesSearch()
           search.sort = [{ att: "otherId", dir: "asc" }]
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.deep.eq([5, 4, 3, 2, 1])
         })
 
         it("can sort descending", async () => {
           const search = new ThronesSearch()
           search.sort = [{ att: "id", dir: "asc" }]
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 3, 4, 5])
         })
       })
@@ -101,7 +101,7 @@ describe("integration", () => {
           const search = new ThronesSearch({
             page: { size: 2, number: 2 },
           })
-          await search.query()
+          await search.execute()
           expect(search.results.length).to.eq(2)
           expect(search.results.map(r => r.id)).to.deep.eq([3, 4])
         })
@@ -110,7 +110,7 @@ describe("integration", () => {
           const search = new ThronesSearch({
             sort: [{ att: "otherId", dir: "asc" }],
           })
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.deep.eq([5, 4, 3, 2, 1])
         })
 
@@ -118,7 +118,7 @@ describe("integration", () => {
           const search = new ThronesSearch({
             sort: [{ att: "id", dir: "asc" }],
           })
-          await search.query()
+          await search.execute()
           expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 3, 4, 5])
         })
       })
@@ -137,7 +137,7 @@ describe("integration", () => {
 
       it("assigns metadata to the results", async () => {
         const search = new ThronesSearch()
-        await search.query()
+        await search.execute()
         const { meta } = search.results[0]
         expect(meta._id).to.not.be.null
         expect(meta._score).to.not.be.null
@@ -165,7 +165,7 @@ describe("integration", () => {
 
       it("works", async () => {
         const search = new ThronesSearch()
-        await search.query()
+        await search.execute()
         expect(search.results).to.deep.eq([
           {
             character: "Ned Stark",
@@ -190,7 +190,7 @@ describe("integration", () => {
 
       it("works", async () => {
         const search = new ThronesSearch()
-        await search.query()
+        await search.execute()
         expect(search.results).to.deep.eq([{ foo: "bar" }])
       })
     })

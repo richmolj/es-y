@@ -62,7 +62,7 @@ Fire a query and get results:
 
 ```ts
 const search = new ThronesSearch()
-await search.query()
+await search.execute()
 search.results // => [{name: "Ned Stark"}, {name: "Jon Snow"}]
 ```
 
@@ -76,7 +76,7 @@ search.filters.name.eq("Ned Stark")
 search.filters.quote.match("winter")
 search.filters.rating.gt(100).lt(500)
 search.filters.createdAt.gt("1960-12-26")
-await search.query()
+await search.execute()
 ```
 
 All conditions get AND'd together, but we also support OR and NOT at the top-level:
@@ -103,16 +103,39 @@ AND trumps OR similar to how `*` trumps `+` in mathmatical order of operations. 
 quote:'winter' OR (quote:'is coming' AND NOT quote:'summer' AND name:'Ned Stark')
 ```
 
+Finally, you can AND/OR/NOT *across* conditions. Each time you reference a new condition, you're opening up a new parenthesis:
+
+```ts
+const search = new ThronesSearch()
+search.filters.name.eq("Ned Stark")
+  .and.quote.match("burn").or.match("alive")
+```
+
+Because we're jumping from `name` to `quote`, this evaluates to:
+
+```ts
+name:'Ned Stark' AND (quote:'burn' OR quote:'alive')
+```
+
 All examples here are using direct assignment, but you can do the same in the constructor:
 
 ```ts
 const search = new ThronesSearch({
   filters: {
-    name: { eq: "Ned Stark" }
+    name: {
+      eq: "Ned Stark",
+      and: {
+        quote: {
+          match: "burn",
+          or: {
+            match: "alive"
+          }
+        }
+      }
+    }
   }
 })
 ```
-
 
 ##### Condition Types
 
@@ -147,7 +170,7 @@ search.sort = [{ att: "someField", dir: "desc" }]
 
 ```ts
 const search = new ThronesSearch()
-await search.query()
+await search.execute()
 search.total // => 500
 ```
 
@@ -162,7 +185,7 @@ Let's say we wanted the count of all titles:
 ```ts
 const search = new Search()
 search.aggs.terms("title")
-await search.query()
+await search.execute()
 search.aggResults.title // =>
 
 // [
@@ -234,7 +257,7 @@ Finally, you can do top-level aggregations without a bucket as well. To see the 
 ```ts
 const search = new ThronesSearch()
 search.aggs.sum("rating").avg("avg")
-await search.query()
+await search.execute()
 search.aggResults // => { sum_rating: 10000, avg_age: 30 }
 ```
 
@@ -247,7 +270,7 @@ When aggregating, you're often referencing an underlying "id"-type field but wan
 ```ts
 const search = new ThronesSearch()
 search.aggs.terms("category_id").sourceFields(["category_name"])
-await search.query()
+await search.execute()
 search.aggResults // =>
 
 // [
@@ -304,7 +327,7 @@ export class ThronesSearchResolver {
     @Arg("data", { nullable: true }) searchInput?: ThronesSearchInput,
   ) {
     const search = new ThronesSearch(searchInput)
-    await search.query()
+    await search.execute()
     return search
   }
 }
