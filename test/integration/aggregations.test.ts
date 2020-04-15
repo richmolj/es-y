@@ -245,7 +245,7 @@ describe("integration", () => {
               .terms("age")
               .sum("rating")
             await search.execute()
-            expect(search.lastQuery.body.query.bool.filter.bool.should).to.deep.eq([
+            expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must).to.deep.eq([
               {
                 terms: {
                   title: ["A", "B"],
@@ -296,7 +296,7 @@ describe("integration", () => {
               .terms("age")
               .sum("rating")
             await search.execute()
-            expect(search.lastQuery.body.query.bool.filter.bool.should).to.deep.eq([
+            expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must).to.deep.eq([
               {
                 terms: {
                   title: ["A", "B"],

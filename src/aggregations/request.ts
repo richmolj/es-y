@@ -13,9 +13,9 @@ export async function buildAggRequest(search: Search, payload: any) {
           payload.body.query = { bool: { } }
         }
         if (!payload.body.query.bool.filter) {
-          payload.body.query.bool.filter = { bool: { should: [] } }
+          payload.body.query.bool.filter = { bool: { should: [{ bool: { must: [] } }] } }
         }
-        payload.body.query.bool.filter.bool.should.push({
+        payload.body.query.bool.filter.bool.should[0].bool.must.push({
           terms: {
             [termAgg.field]: keys,
           },
