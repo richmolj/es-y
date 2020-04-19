@@ -5,16 +5,7 @@ import { buildRequest } from './util/build-request'
 import { Conditions, SimpleQueryStringCondition } from "./conditions"
 import { Aggregations, buildAggResults } from "./aggregations"
 import { Meta } from "./meta"
-
-interface Pagination {
-  size: number
-  number: number
-}
-
-interface Sort {
-  att: string
-  dir: 'desc' | 'asc'
-}
+import { Pagination, Sort } from './types'
 
 export class Search {
   static index: string
@@ -26,12 +17,13 @@ export class Search {
   static logger: LoggerInterface
   static logFormat = "succinct"
   static conditionsClass: typeof Conditions
+  static isMultiSearch: boolean = false
 
   klass!: typeof Search
   results: any[]
   aggResults: any
-  filters: Conditions
-  queries: Conditions
+  filters!: Conditions
+  queries!: Conditions
   page: Pagination = { size: 20, number: 1 }
   total?: number
   lastQuery?: any
@@ -54,24 +46,26 @@ export class Search {
       this.sort = input.sort
     }
 
-    if (input && input.filters) {
-      this.filters = new this.klass.conditionsClass()
-      ;(this.filters as any).build(input.filters)
-    } else {
-      this.filters = new this.klass.conditionsClass()
-    }
+    if (this.klass.conditionsClass) { // else multisearch
+      if (input && input.filters) {
+        this.filters = new this.klass.conditionsClass()
+        ;(this.filters as any).build(input.filters)
+      } else {
+        this.filters = new this.klass.conditionsClass()
+      }
 
-    if (input && input.queries) {
-      this.queries = new this.klass.conditionsClass()
-      ;(this.queries as any).isQuery = true;
-      ;(this.queries as any).build(input.queries)
-    } else {
-      this.queries = new this.klass.conditionsClass()
-      ;(this.queries as any).isQuery = true;
-    }
+      if (input && input.queries) {
+        this.queries = new this.klass.conditionsClass()
+        ;(this.queries as any).isQuery = true;
+        ;(this.queries as any).build(input.queries)
+      } else {
+        this.queries = new this.klass.conditionsClass()
+        ;(this.queries as any).isQuery = true;
+      }
 
-    if (input && (input.aggs || input.aggregations)) {
-      this.aggs.build(input.aggs || input.aggregations)
+      if (input && (input.aggs || input.aggregations)) {
+        this.aggs.build(input.aggs || input.aggregations)
+      }
     }
   }
 
@@ -93,22 +87,29 @@ export class Search {
     subclass.parentClass = this
     subclass.currentClass = subclass
     subclass.prototype.klass = subclass
-    subclass.client = new Client({ node: subclass.host })
+    if (!subclass.isMultiSearch) {
+      subclass.client = new Client({ node: subclass.host })
+    }
     subclass.logger = logger
   }
 
-  private transformResults(results: Record<string, any>[]) {
+  protected transformResults(results: Record<string, any>[]) {
     return results.map(result => {
       return this.transformResult(result)
     })
   }
 
-  private transformResult(result: any): Record<string, any> {
+  protected transformResult(result: any): Record<string, any> {
     return result
   }
 
+  // TODO: agg request
+  async toElastic() {
+    return await buildRequest(this)
+  }
+
   async execute() {
-    const searchPayload = await buildRequest(this)
+    const searchPayload = await this.toElastic()
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
     this.results = this.transformResults(this.buildResults(response.body.hits.hits))
@@ -118,14 +119,18 @@ export class Search {
     return this.results
   }
 
+  get client(): Client {
+    return this.klass.client
+  }
+
   private async _execute(searchPayload: any) {
     this._logQuery(searchPayload)
-    const response = await this.klass.client.search(searchPayload)
+    const response = await this.client.search(searchPayload)
     this.lastQuery = searchPayload
     return response
   }
 
-  private buildResults(rawResults: any[]): any[] {
+  protected buildResults(rawResults: any[]): any[] {
     return rawResults.map(raw => {
       const result = raw._source
       if (this.klass.resultMetadata) {
@@ -135,7 +140,7 @@ export class Search {
     })
   }
 
-  private buildMetadata(rawResult: any) {
+  protected buildMetadata(rawResult: any) {
     return {
       _id: rawResult._id,
       _score: rawResult._score,

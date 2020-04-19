@@ -19,10 +19,12 @@ import {
   DateConditionInput,
 } from "./conditions"
 import { Search } from "./search"
+import { MultiSearch } from "./multi-search"
 import { generateGqlInputs } from "./gql-inputs"
 
 export {
   Search,
+  MultiSearch,
   SearchClass,
   Conditions,
   ClassHook,
