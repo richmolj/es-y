@@ -2,15 +2,24 @@ import { expect } from "chai"
 import { GlobalSearch, ThronesSearch , JustifiedSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
+// Common "keywords" filter and query in GQL - must improve gql type
+//
+// 10 promises appoach
+//
+// regex - isMatch method?
+//
+// -- GQL combo conditions -- if applicable
+//
 // Field Boosting
-// Index Boosting
 // Verify Aggs
+//
+//
 // resultMetadata on instance
-
 // Runtime transformers
 // Override the result index NORMALLY so no regex needed (maybe _klassIndex)
 //
-// ******** GQL BINDINGS FOR ALL THIS ***********
+// ensure keywords condition is gql gen'd correctly
+// also queries, etc
 
 describe("integration", () => {
   setupIntegrationTest()
@@ -95,6 +104,41 @@ describe("integration", () => {
         })
         await search.execute()
         expect(search.results.map((r) => r.id)).to.deep.eq([2, 901])
+      })
+
+      it('adds _type to the result object', async() => {
+        const search = new GlobalSearch({
+          thrones: {
+          },
+          justified: {
+          }
+        })
+        await search.execute()
+        expect(search.results.map((r) => r._type)).to.deep.eq([
+          'thrones',
+          'thrones',
+          'justified',
+          'justified',
+        ])
+      })
+
+      describe('whe boosting one index over the other', () => {
+        it('works', async() => {
+          const search = new GlobalSearch({
+            thrones: {
+            },
+            justified: {
+              boost: 2
+            }
+          })
+          await search.execute()
+          expect(search.results.map((r) => r._type)).to.deep.eq([
+            'justified',
+            'justified',
+            'thrones',
+            'thrones',
+          ])
+        })
       })
 
       describe('and also passing conditions that apply to both', () => {

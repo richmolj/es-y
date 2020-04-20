@@ -12,6 +12,7 @@ export class MultiSearch extends Search {
   static isMultiSearch = true
   static searches: Record<string, typeof Search> = {}
 
+  klass!: typeof MultiSearch
   searchInstances: Search[] = []
 
   constructor(input?: any) {
@@ -26,6 +27,9 @@ export class MultiSearch extends Search {
           searchInput.queries = { ...input.queries, ...searchInput.queries }
           searchInput.filters = { ...input.filters, ...searchInput.filters }
           const instance = new searchClass(searchInput)
+          if (searchInput.boost) {
+            instance.boost = searchInput.boost
+          }
           this.searchInstances.push(instance)
         }
       })
@@ -41,11 +45,22 @@ export class MultiSearch extends Search {
     await asyncForEach(this.searchInstances, async (search: Search) => {
       const payload = await search.toElastic()
 
+      let terms = { _index: [search.klass.index] } as any
+      if (search.boost) {
+        terms = {
+          _index: [search.klass.index],
+          boost: search.boost
+        }
+      }
+
+
       subQueries.push({
         bool: {
-          filter: [
+          must: [
             payload.body.query,
-            { terms: { _index: [ search.klass.index ] } }
+            {
+              terms
+            }
           ]
         }
       })
@@ -78,8 +93,10 @@ export class MultiSearch extends Search {
     })
   }
 
+
   protected transformResults(rawResults: Record<string, any>[]) {
     let results = [] as any[]
+    const classSearches = (this.constructor as any).searches;
     this.searchInstances.forEach((search: any) => {
       const relevantHits = rawResults
         .filter((r: any) => {
@@ -89,6 +106,13 @@ export class MultiSearch extends Search {
 
       transformed.forEach((r: any, index: number) => {
         r._order = relevantHits[index]._order
+        const rawSearchIndex = relevantHits[index]._index
+        // TODO configurable
+        const searchClass = Object.values(classSearches).find((s: any) => {
+          return relevantHits[index]._index.match(new RegExp(s.index))
+        })
+        const type = Object.keys(classSearches).find(k => classSearches[k] === searchClass)
+        r._type = type
       })
 
       results = results.concat(transformed)
@@ -99,6 +123,7 @@ export class MultiSearch extends Search {
       delete r._order
     })
 
-    return super.transformResults(results)
+    results = super.transformResults(results)
+    return results
   }
 }

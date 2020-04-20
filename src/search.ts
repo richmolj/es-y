@@ -28,6 +28,7 @@ export class Search {
   total?: number
   lastQuery?: any
   sort: Sort[] = []
+  boost?: number // multisearch
   protected _aggs?: Aggregations
 
   constructor(input?: any) {

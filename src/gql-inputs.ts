@@ -1,5 +1,7 @@
 import * as fs from "fs"
+import * as rimraf from "rimraf"
 import { Search } from "./search"
+import { MultiSearch } from "./multi-search"
 
 function eachCondition(klass: typeof Search, callback: Function) {
   const instance = new klass.conditionsClass()
@@ -19,7 +21,7 @@ function generateConditionInputs(klass: typeof Search): string {
   const name = instance.constructor.name
 
   eachCondition(klass, (conditionName: string, type: string, condition: any) => {
-    if (type == "keyword") {
+    if (type === "keyword" || type === "query") {
       inputs = inputs.concat(`
 @Field(type => ${name}KeywordConditionInput, { nullable: true })
 ${conditionName}!: ${name}KeywordConditionInput
@@ -49,6 +51,102 @@ ${conditionName}!: ${name}DateConditionInput
   })
 
   return inputs
+}
+
+function generateMultiSearchInput(klass: typeof MultiSearch, name: string) {
+  let searchInput = `
+import { InputType, Field } from 'type-graphql'
+import { ${name}TermsInput } from './aggregations/terms'
+  `
+
+  Object.keys(klass.searches).forEach((k) => {
+    const searchClass = klass.searches[k]
+    const instance = new searchClass()
+    const searchName = instance.constructor.name
+
+    searchInput = searchInput.concat(`
+import { ${searchName}Input } from '../${searchName}'
+    `)
+  })
+
+  searchInput = searchInput.concat(`
+@InputType()
+export class ${name}AggregationsInput {
+  @Field({ nullable: true })
+  sum!: string
+
+  @Field({ nullable: true })
+  avg!: string
+
+  @Field(type => ${name}TermsInput, { nullable: true })
+  terms!: ${name}TermsInput[]
+}
+
+@InputType()
+class ${name}PaginationInput {
+  @Field({ nullable: true })
+  size!: number
+
+  @Field({ nullable: true })
+  number!: number
+}
+
+@InputType()
+class ${name}SortInput {
+  @Field()
+  att!: string
+
+  // todo: enum
+  @Field()
+  dir!: string
+}
+
+@InputType()
+class SimpleKeywordsInput {
+  @Field()
+  eq!: string
+}
+
+@InputType()
+class ${name}ConditionsInput {
+  @Field(type => SimpleKeywordsInput)
+  keywords!: SimpleKeywordsInput
+}
+
+@InputType()
+export class ${name}Input {
+  // TODO shared fields
+  @Field(type => ${name}ConditionsInput, { nullable: true })
+  filters!: ${name}ConditionsInput
+
+  @Field(type => ${name}ConditionsInput, { nullable: true })
+  queries!: ${name}ConditionsInput
+
+  @Field(type => ${name}PaginationInput, { nullable: true })
+  page!: ${name}PaginationInput
+
+  @Field(type => [${name}SortInput], { nullable: true })
+  sort!: ${name}SortInput[]
+
+  @Field(type => ${name}AggregationsInput, { nullable: true })
+  aggregations!: ${name}AggregationsInput
+  `)
+
+  Object.keys(klass.searches).forEach((k) => {
+    const searchClass = klass.searches[k]
+    const instance = new searchClass()
+    const searchName = instance.constructor.name
+    searchInput = searchInput.concat(`
+  @Field(type => ${searchName}Input, { nullable: true })
+  ${k}!: ${searchName}Input
+    `)
+  })
+
+  searchInput = searchInput.concat(`
+}
+  `)
+
+  fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
 function generateSearchInput(klass: typeof Search, name: string) {
@@ -113,11 +211,11 @@ class ${name}SortInput {
 
 @InputType()
 export class ${name}Input {
-  @Field(type => ${name}SimpleQueryStringConditionInput, { nullable: true })
-  keywords!: ${name}SimpleQueryStringConditionInput
-
   @Field(type => ${name}ConditionsInput, { nullable: true })
   filters!: ${name}ConditionsInput
+
+  @Field(type => ${name}ConditionsInput, { nullable: true })
+  queries!: ${name}ConditionsInput
 
   @Field(type => ${name}PaginationInput, { nullable: true })
   page!: ${name}PaginationInput
@@ -127,6 +225,9 @@ export class ${name}Input {
 
   @Field(type => ${name}AggregationsInput, { nullable: true })
   aggregations!: ${name}AggregationsInput
+
+  @Field({ nullable: true })
+  boost!: number
 }
   `)
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
@@ -415,7 +516,7 @@ export class ${name}DateAndInput {
   fs.writeFileSync(`src/search-inputs/${name}/conditions/date-and.ts`, dateAndContent)
 }
 
-function generateTermsInput(klass: typeof Search, name: string) {
+function generateTermsInput(klass: typeof Search | typeof MultiSearch, name: string) {
   const termsContent = `
 import { ${name}AggregationsInput } from '../index'
 import { Field, InputType } from 'type-graphql'
@@ -453,21 +554,28 @@ export class ${name}TermsInput {
   fs.writeFileSync(`src/search-inputs/${name}/aggregations/terms.ts`, termsContent)
 }
 
-function generateGqlInput(klass: typeof Search, name: string) {
-  generateSearchInput(klass, name)
-  generateKeywordInput(klass, name)
-  generateTextInput(klass, name)
-  generateNumericInput(klass, name)
-  generateDateInput(klass, name)
-  generateTermsInput(klass, name)
+function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: string) {
+  if (klass.isMultiSearch) {
+    generateMultiSearchInput(klass as typeof MultiSearch, name)
+    generateTermsInput(klass, name)
+  } else {
+    generateSearchInput(klass, name)
+    generateKeywordInput(klass, name)
+    generateTextInput(klass, name)
+    generateNumericInput(klass, name)
+    generateDateInput(klass, name)
+    generateTermsInput(klass, name)
+  }
 }
 
-export function generateGqlInputs(searchClasses: typeof Search[]) {
+export function generateGqlInputs(searchClasses: (typeof Search | typeof MultiSearch)[]) {
   const directory = "src/search-inputs"
 
   searchClasses.forEach(searchClass => {
     const instance = new searchClass()
     const searchName = instance.constructor.name
+    rimraf.sync(`${directory}/${searchName}`)
+    fs.mkdirSync(`${directory}/${searchName}`)
     fs.mkdirSync(`${directory}/${searchName}/conditions`, { recursive: true })
     fs.mkdirSync(`${directory}/${searchName}/aggregations`, { recursive: true })
     generateGqlInput(searchClass, searchName)
