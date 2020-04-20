@@ -289,12 +289,6 @@ describe("integration", () => {
                 ],
               },
             })
-            search.aggs
-              .terms("title")
-              .ensureQuality()
-              .child()
-              .terms("age")
-              .sum("rating")
             await search.execute()
             expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must).to.deep.eq([
               {

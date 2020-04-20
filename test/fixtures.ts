@@ -1,5 +1,6 @@
 import {
   Search,
+  MultiSearch,
   ClassHook,
   Conditions,
   SearchClass,
@@ -13,21 +14,6 @@ import {
   NumericConditionInput,
   ConditionsClass,
 } from "../src/index"
-
-// interface ThronesSearchConditionsInput {
-//   name?: StringEqConditionInput<this>
-//   title?: StringEqConditionInput<this>
-//   quote?: MatchConditionInput<this>
-//   bio?: MatchConditionInput<this>
-//   rating?: NumericConditionInput<this>
-//   age?: NumericConditionInput<this>
-//   createdAt?: DateConditionInput<this>
-//   updatedAt?: DateConditionInput<this>
-// }
-
-// interface ThronesSearchInput {
-//   conditions?: ThronesSearchConditionsInput
-// }
 
 @ClassHook()
 class ThronesSearchConditions extends Conditions {
@@ -50,4 +36,29 @@ export class ThronesSearch extends Search {
   queries!: ThronesSearchConditions
 
   // static logFormat = "pretty"
+}
+
+@ClassHook()
+class JustifiedSearchConditions extends Conditions {
+  name = new KeywordCondition<this>("name", this)
+  rating = new NumericCondition<this>("rating", this)
+}
+
+@SearchClass()
+export class JustifiedSearch extends Search {
+  static host = "http://localhost:9200"
+  static index = "justified"
+  static conditionsClass = JustifiedSearchConditions
+  filters!: JustifiedSearchConditions
+  queries!: JustifiedSearchConditions
+
+  // static logFormat = "pretty"
+}
+
+
+export class GlobalSearch extends MultiSearch {
+  static searches = {
+    thrones: ThronesSearch,
+    justified: JustifiedSearch
+  }
 }

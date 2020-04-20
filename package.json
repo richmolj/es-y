@@ -1,6 +1,6 @@
 {
   "name": "search-resource",
-  "version": "0.0.36",
+  "version": "0.0.38",
   "description": "",
   "main": "lib/src/index.js",
   "module": "lib/src/index.js",
@@ -14,7 +14,9 @@
   "author": "Lee Richmond, Wade Tandy & Kayla Webb",
   "license": "ISC",
   "dependencies": {
-    "@elastic/elasticsearch": "7.6.0"
+    "@elastic/elasticsearch": "7.6.0",
+    "@types/rimraf": "3.0.0",
+    "rimraf": "3.0.2"
   },
   "devDependencies": {
     "@types/chai": "4.2.9",

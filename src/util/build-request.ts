@@ -30,12 +30,17 @@ export async function buildRequest(search: Search) {
     delete searchPayload.body.query
   }
 
-  searchPayload.body.size = search.page.size
-  searchPayload.body.from = search.page.size * (search.page.number - 1)
-  searchPayload.body.sort = search.sort.map((s) => {
-    return { [s.att]: s.dir}
-  })
+  assignSortAndPage(search, searchPayload)
 
   await buildAggRequest(search, searchPayload)
   return searchPayload
+}
+
+export function assignSortAndPage(search: Search, payload: any) {
+  payload.body.size = search.page.size
+  payload.body.from = search.page.size * (search.page.number - 1)
+  payload.body.sort = search.sort.map((s) => {
+    return { [s.att]: s.dir}
+  })
+  return payload
 }
