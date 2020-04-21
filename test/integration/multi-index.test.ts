@@ -2,9 +2,8 @@ import { expect } from "chai"
 import { GlobalSearch, ThronesSearch , JustifiedSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
-// Common "keywords" filter and query in GQL - must improve gql type
-//
 // 10 promises appoach
+// Expose resultMetadata at runtime with GQL so we can see scores (and transformResult API)
 //
 // regex - isMatch method?
 //
@@ -14,7 +13,8 @@ import { setupIntegrationTest } from "../util"
 // Verify Aggs
 //
 //
-// resultMetadata on instance
+// Common "keywords" filter and query in GQL - must improve gql type
+//
 // Runtime transformers
 // Override the result index NORMALLY so no regex needed (maybe _klassIndex)
 //
@@ -122,7 +122,7 @@ describe("integration", () => {
         ])
       })
 
-      describe('whe boosting one index over the other', () => {
+      describe('when boosting one index over the other', () => {
         it('works', async() => {
           const search = new GlobalSearch({
             thrones: {
@@ -431,6 +431,57 @@ describe("integration", () => {
             await search.execute()
             expect(search.results).to.deep.eq([{ new: 'results 4' }])
           })
+        })
+      })
+    })
+
+    describe('when spitting queries', () => {
+      describe('via constructor', () => {
+        it('fires a separate query for each search', async () => {
+          const search = new GlobalSearch({
+            split: 5,
+            thrones: {},
+            justified: {}
+          })
+          await search.execute()
+          expect(search.results).to.deep.eq([
+            { id: 1, title: 'Mother of Dragons', rating: 250, _type: 'thrones' },
+            { id: 2, title: 'Warden of the North', rating: 500, _type: 'thrones' },
+            { id: 901, name: 'Boyd Crowder', rating: 250, _type: 'justified' },
+            { id: 902, name: 'Raylan Givens', rating: 500, _type: 'justified' },
+          ])
+        })
+      })
+
+      describe('via direct assignment', () => {
+        it('fires a separate query for each search', async () => {
+          const search = new GlobalSearch({
+            thrones: {},
+            justified: {}
+          })
+          search.split()
+          await search.execute()
+          expect(search.results).to.deep.eq([
+            { id: 1, title: 'Mother of Dragons', rating: 250, _type: 'thrones' },
+            { id: 2, title: 'Warden of the North', rating: 500, _type: 'thrones' },
+            { id: 901, name: 'Boyd Crowder', rating: 250, _type: 'justified' },
+            { id: 902, name: 'Raylan Givens', rating: 500, _type: 'justified' },
+          ])
+        })
+      })
+
+      describe('splitting with max results per type', () => {
+        it('honors the max', async() => {
+          const search = new GlobalSearch({
+            split: 1,
+            thrones: {},
+            justified: {}
+          })
+          await search.execute()
+          expect(search.results).to.deep.eq([
+            { id: 1, title: 'Mother of Dragons', rating: 250, _type: 'thrones' },
+            { id: 901, name: 'Boyd Crowder', rating: 250, _type: 'justified' },
+          ])
         })
       })
     })

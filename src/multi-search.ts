@@ -14,11 +14,16 @@ export class MultiSearch extends Search {
 
   klass!: typeof MultiSearch
   searchInstances: Search[] = []
+  private _split: number = -1
 
   constructor(input?: any) {
     super(input)
 
     if (input) {
+      if (input.split) {
+        this.split(input.split)
+      }
+
       Object.keys(input).forEach((k) => {
         const searches = (this.constructor as any).searches;
         if (searches.hasOwnProperty(k)) {
@@ -38,6 +43,39 @@ export class MultiSearch extends Search {
 
   get client(): Client {
     return this.searchInstances[0].klass.client
+  }
+
+  split(per: number = 20) {
+    this._split = per
+  }
+
+  private get isSplitting() {
+    return this._split > 0
+  }
+
+  async execute(): Promise<any> {
+    if (this.isSplitting) {
+      this.searchInstances.forEach((s) => {
+        s.page.size = this._split
+      })
+      const promises = this.searchInstances.map((s) => s.execute())
+      const resultArray = await Promise.all(promises)
+      const classSearches = (this as any).constructor.searches
+      let results = [] as any[]
+      resultArray.forEach((group, index: number) => {
+        const searchClass = this.searchInstances[index].klass
+        const type = Object.keys(classSearches).find(k => classSearches[k] === searchClass)
+        group.forEach((result) => {
+          result._type = type
+        })
+        results = results.concat(group)
+      })
+
+      this.results = this.transformResults(results)
+      return this.results
+    } else {
+      return super.execute()
+    }
   }
 
   async toElastic() {
@@ -95,6 +133,11 @@ export class MultiSearch extends Search {
 
 
   protected transformResults(rawResults: Record<string, any>[]) {
+    // When splitting, we've already done per-search transformation and ordering
+    if (this.isSplitting) {
+      return super.transformResults(rawResults)
+    }
+
     let results = [] as any[]
     const classSearches = (this.constructor as any).searches;
     this.searchInstances.forEach((search: any) => {
