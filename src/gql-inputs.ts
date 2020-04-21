@@ -115,6 +115,9 @@ class ${name}ConditionsInput {
 
 @InputType()
 export class ${name}Input {
+  @Field({ nullable: true })
+  split!: number
+
   // TODO shared fields
   @Field(type => ${name}ConditionsInput, { nullable: true })
   filters!: ${name}ConditionsInput
