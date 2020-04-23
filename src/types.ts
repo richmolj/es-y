@@ -7,3 +7,7 @@ export interface Sort {
   att: string
   dir: 'desc' | 'asc'
 }
+
+export interface ClauseOptions {
+  boost?: number
+}

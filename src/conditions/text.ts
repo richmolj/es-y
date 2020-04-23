@@ -1,3 +1,4 @@
+import { ClauseOptions } from './../types';
 import { ClassHook } from "../decorators"
 import { Condition, NotClause, AndClause, OrClause, MatchCondition, MatchPhraseCondition } from "."
 import { applyMixins } from "../util"
@@ -7,13 +8,13 @@ class TextOrClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> e
   ConditionT,
   ConditionsT
 > {
-  match(value: string) {
-    this.value = this.condition.match(value)
+  match(value: string, options?: ClauseOptions) {
+    this.value = this.condition.match(value, options)
     return this.value
   }
 
-  matchPhrase(value: string) {
-    this.value = this.condition.matchPhrase(value)
+  matchPhrase(value: string, options?: ClauseOptions) {
+    this.value = this.condition.matchPhrase(value, options)
     return this.value
   }
 }
@@ -30,18 +31,17 @@ class TextNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, Condi
   }
 }
 
-// TODO AND NESTING: maybe return original condition here, like "not"
 class TextAndClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> extends AndClause<
   ConditionT,
   ConditionsT
 > {
-  match(value: string) {
-    this.value = this.condition.match(value)
+  match(value: string, options?: ClauseOptions) {
+    this.value = this.condition.match(value, options)
     return this.value
   }
 
-  matchPhrase(value: string) {
-    this.value = this.condition.matchPhrase(value)
+  matchPhrase(value: string, options?: ClauseOptions) {
+    this.value = this.condition.matchPhrase(value, options)
     return this.value
   }
 }

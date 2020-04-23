@@ -1,3 +1,4 @@
+import { ClauseOptions } from './../types'
 import { OrClause } from "./or-clause"
 import { AndClause } from "./and-clause"
 import { NotClause } from "./not-clause"
@@ -10,8 +11,8 @@ class KeywordNotClause<ConditionT extends KeywordCondition<ConditionsT>, Conditi
   ConditionT,
   ConditionsT
 > {
-  eq(value: string): ConditionT {
-    this.value = this.condition.eq(value)
+  eq(value: string, options?: ClauseOptions): ConditionT {
+    this.value = this.condition.eq(value, options)
     return this.originalCondition
   }
 }
@@ -20,8 +21,8 @@ class KeywordOrClause<ConditionT extends KeywordCondition<ConditionsT>, Conditio
   ConditionT,
   ConditionsT
 > {
-  eq(value: string) {
-    this.value = this.condition.eq(value)
+  eq(value: string, options?: ClauseOptions) {
+    this.value = this.condition.eq(value, options)
     return this.value
   }
 

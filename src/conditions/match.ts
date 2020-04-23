@@ -1,11 +1,15 @@
 import { Condition } from "./base"
+import { ClauseOptions } from '../types'
 
 export class MatchCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "match"
 
-  match(input: string): this {
+  match(input: string, options?: ClauseOptions): this {
     this.queryType = "match"
     this._setSimpleValue(input)
+    if (options && options.boost) {
+      this.boost = options.boost
+    }
     return this
   }
 }

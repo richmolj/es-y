@@ -2,40 +2,41 @@ import { applyMixins } from "../util"
 import { Condition, NotClause, AndClause, OrClause, EqCondition, DateRangeCondition } from "../conditions"
 import { ClassHook } from "../decorators"
 import { RangeCondition, applyOrClause, applyAndClause, applyNotClause } from "./base"
+import { ClauseOptions } from '../types'
 
 class DateOrClause<ConditionT extends DateCondition<ConditionsT>, ConditionsT> extends OrClause<
   ConditionT,
   ConditionsT
 > {
-  eq(value: string) {
-    this.value = this.condition.eq(value)
+  eq(value: string, options?: ClauseOptions) {
+    this.value = this.condition.eq(value, options)
     return this.value
   }
 
-  gt(value: string) {
-    this.value = this.condition.gt(value)
+  gt(value: string, options?: ClauseOptions) {
+    this.value = this.condition.gt(value, options)
     return this.value
   }
 
-  gte(value: string) {
-    this.value = this.condition.gte(value)
+  gte(value: string, options?: ClauseOptions) {
+    this.value = this.condition.gte(value, options)
     return this.value
   }
 
-  lt(value: string) {
-    this.value = this.condition.lt(value)
+  lt(value: string, options?: ClauseOptions) {
+    this.value = this.condition.lt(value, options)
     return this.value
   }
 
-  lte(value: string) {
-    this.value = this.condition.lte(value)
+  lte(value: string, options?: ClauseOptions) {
+    this.value = this.condition.lte(value, options)
     return this.value
   }
 }
 
 class DateNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  eq(value: string) {
-    this.value = (this.condition as any).eq(value)
+  eq(value: string, options?: ClauseOptions) {
+    this.value = (this.condition as any).eq(value, options)
     return this.originalCondition
   }
 }
