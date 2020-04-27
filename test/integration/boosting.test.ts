@@ -35,18 +35,84 @@ describe("integration", () => {
 
     // TODO: GQL boosting
     describe('field boosting', async() => {
+      beforeEach(async () => {
+        await ThronesSearch.client.index({
+          index: ThronesSearch.index,
+          body: {
+            id: 3,
+            quote: "burn you alive",
+          },
+        })
+        await ThronesSearch.client.index({
+          index: ThronesSearch.index,
+          body: {
+            id: 4,
+            bio: "burn you alive",
+          },
+        })
+
+        await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+      })
+
+      describe('via constructor', () => {
+        it('works', async() => {
+          const search = new ThronesSearch({
+            queries: {
+              keywords: {
+                eq: "burn",
+                fields: ['quote', 'bio^5']
+              }
+            }
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([4, 3])
+        })
+      })
+
       describe('referencing the raw field', () => {
-        xit('works', async() => {
+        it('works', async() => {
+          const search = new ThronesSearch()
+          search.queries.keywords.eq('burn', {
+            fields: ['quote', 'bio^5']
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([4, 3])
         })
       })
 
       describe('referencing the field alias', () => {
-        xit('works', async() => {
+        it('works', async() => {
+          const search = new ThronesSearch()
+          search.queries.keywords.eq('burn', {
+            fields: ['quote', 'bioAlias^5']
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([4, 3])
         })
       })
     })
 
     describe('clause boosting', () => {
+      describe('via constructor', () => {
+        it('works', async() => {
+          const search = new ThronesSearch({
+            queries: {
+              name: {
+                eq: "foo"
+              },
+              or: {
+                name: {
+                  eq: "bar",
+                  boost: 5
+                }
+              }
+            }
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([2, 1])
+        })
+      })
+
       describe('keyword conditions', () => {
         describe('or', () => {
           it('works', async() => {

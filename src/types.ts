@@ -11,3 +11,7 @@ export interface Sort {
 export interface ClauseOptions {
   boost?: number
 }
+
+export interface SimpleQueryClauseOptions<T> {
+  fields: string[]
+}

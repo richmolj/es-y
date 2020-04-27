@@ -20,13 +20,13 @@ class TextOrClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> e
 }
 
 class TextNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  match(value: string) {
-    this.value = (this.condition as any).match(value)
+  match(value: string, options?: ClauseOptions) {
+    this.value = (this.condition as any).match(value, options)
     return this.originalCondition
   }
 
-  matchPhrase(value: string) {
-    this.value = (this.condition as any).matchPhrase(value)
+  matchPhrase(value: string, options?: ClauseOptions) {
+    this.value = (this.condition as any).matchPhrase(value, options)
     return this.originalCondition
   }
 }

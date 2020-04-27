@@ -21,6 +21,7 @@ class ThronesSearchConditions extends Conditions {
   title = new KeywordCondition<this>("title", this)
   quote = new TextCondition<this>("quote", this)
   bio = new TextCondition<this>("bio", this)
+  bioAlias = new TextCondition<this>("bio", this)
   rating = new NumericCondition<this>("rating", this)
   age = new NumericCondition<this>("age", this)
   createdAt = new DateCondition<this>("created_at", this)
