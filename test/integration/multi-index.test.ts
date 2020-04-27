@@ -2,10 +2,10 @@ import { expect } from "chai"
 import { GlobalSearch, ThronesSearch , JustifiedSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
-// 10 promises appoach
 // Expose resultMetadata at runtime with GQL so we can see scores (and transformResult API)
 //
 // regex - isMatch method?
+// Override the result index NORMALLY so no regex needed (maybe _klassIndex)
 //
 // -- GQL combo conditions -- if applicable
 //
@@ -14,11 +14,6 @@ import { setupIntegrationTest } from "../util"
 //
 //
 // Common "keywords" filter and query in GQL - must improve gql type
-//
-// Runtime transformers
-// Override the result index NORMALLY so no regex needed (maybe _klassIndex)
-//
-// ensure keywords condition is gql gen'd correctly
 // also queries, etc
 
 describe("integration", () => {

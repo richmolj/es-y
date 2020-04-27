@@ -105,6 +105,9 @@ class ${name}SortInput {
 class SimpleKeywordsInput {
   @Field()
   eq!: string
+
+  @Field(type => [String], { nullable: true })
+  fields!: string[]
 }
 
 @InputType()
@@ -165,6 +168,9 @@ import { ${name}TermsInput } from './aggregations/terms'
 class ${name}SimpleQueryStringConditionInput {
   @Field()
   eq!: string
+
+  @Field(type => [String], { nullable: true })
+  fields!: string[]
 }
 
 @InputType()
@@ -246,12 +252,18 @@ import { ${name}KeywordAndInput } from './keyword-and'
 export class ${name}KeywordNotInput {
   @Field({ nullable: true })
   eq?: string
+
+  @Field({ nullable: true })
+  boost?: number
 }
 
 @InputType()
 export class ${name}KeywordConditionInput {
   @Field({ nullable: true })
   eq?: string
+
+  @Field({ nullable: true })
+  boost?: number
 
   @Field({ nullable: true })
   and?: ${name}KeywordAndInput
@@ -276,6 +288,9 @@ import { ${name}DateConditionInput } from './date'
 export class ${name}KeywordOrInput {
   @Field({ nullable: true })
   eq?: string
+
+  @Field({ nullable: true })
+  boost?: number
 
   ${generateConditionInputs(klass)}
 }
@@ -306,7 +321,13 @@ import { ${name}TextAndInput } from './text-and'
 @InputType()
 export class ${name}TextNotInput {
   @Field({ nullable: true })
+  match?: string
+
+  @Field({ nullable: true })
   matchPhrase?: string
+
+  @Field({ nullable: true })
+  boost?: number
 }
 
 @InputType()
@@ -316,6 +337,9 @@ export class ${name}TextConditionInput {
 
   @Field({ nullable: true })
   matchPhrase?: string
+
+  @Field({ nullable: true })
+  boost?: number
 
   @Field({ nullable: true })
   and?: ${name}TextAndInput
@@ -344,6 +368,9 @@ export class ${name}TextOrInput {
   @Field({ nullable: true })
   matchPhrase?: string
 
+  @Field({ nullable: true })
+  boost?: number
+
   ${generateConditionInputs(klass)}
 }
   `
@@ -364,6 +391,9 @@ export class ${name}TextAndInput {
   @Field({ nullable: true })
   matchPhrase?: string
 
+  @Field({ nullable: true })
+  boost?: number
+
   ${generateConditionInputs(klass)}
 }
   `
@@ -380,6 +410,9 @@ import { ${name}NumericAndInput } from './numeric-and'
 export class ${name}NumericNotInput {
   @Field({ nullable: true })
   eq?: number
+
+  @Field({ nullable: true })
+  boost?: number
 }
 
 @InputType()
@@ -398,6 +431,9 @@ export class ${name}NumericConditionInput {
 
   @Field({ nullable: true })
   lte?: number
+
+  @Field({ nullable: true })
+  boost?: number
 
   @Field({ nullable: true })
   and?: ${name}NumericAndInput
@@ -422,6 +458,9 @@ import { ${name}DateConditionInput } from './date'
 export class ${name}NumericOrInput {
   @Field({ nullable: true })
   eq?: number
+
+  @Field({ nullable: true })
+  boost?: number
 
   ${generateConditionInputs(klass)}
 }
@@ -453,6 +492,9 @@ import { ${name}DateAndInput } from './date-and'
 export class ${name}DateNotInput {
   @Field({ nullable: true })
   eq?: number
+
+  @Field({ nullable: true })
+  boost?: number
 }
 
 @InputType()
@@ -471,6 +513,9 @@ export class ${name}DateConditionInput {
 
   @Field({ nullable: true })
   lte?: string
+
+  @Field({ nullable: true })
+  boost?: number
 
   @Field({ nullable: true })
   pastFiscalYears?: number
@@ -498,6 +543,9 @@ import { ${name}DateConditionInput } from './date'
 export class ${name}DateOrInput {
   @Field({ nullable: true })
   eq?: string
+
+  @Field({ nullable: true })
+  boost?: number
 
   ${generateConditionInputs(klass)}
 }

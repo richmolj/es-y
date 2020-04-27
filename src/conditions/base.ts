@@ -3,6 +3,7 @@ import { AndClause } from "./and-clause"
 import { NotClause } from "./not-clause"
 import { ClassHook } from "../decorators"
 import { Constructor } from "../util/util-types"
+import { ClauseOptions } from '../types'
 
 // TODO: Ideally, this class would have the .or function
 // But it can't because types?
@@ -18,6 +19,7 @@ export class Condition<ConditionsT, ValueType> {
   protected klass!: typeof Condition
   static currentClass: typeof Condition = Condition
   static type: string
+  boost?: null | number
 
   constructor(elasticField: string, conditions: ConditionsT) {
     this.elasticField = elasticField
@@ -37,10 +39,31 @@ export class Condition<ConditionsT, ValueType> {
     let must_not = [] as any
     let main
     if (this.value || (this.value as any) === 0) {
+      let clause
+
+      if (this.boost) {
+        if (['numeric', 'date'].includes(this.klass.type) && typeof this.value == "object") {
+          clause = {
+            [this.elasticField]: { ...this.value, ...{ boost: this.boost } }
+          }
+        } else {
+          let boostKey = 'value'
+          if (this.klass.type === 'text') {
+            boostKey = 'query'
+          }
+          clause = {
+            [this.elasticField]: {
+              [boostKey]: this.value,
+              boost: this.boost
+            }
+          }
+        }
+      } else {
+        clause = { [this.elasticField]: this.value }
+      }
+
       main = {
-        [this.queryType!]: {
-          [this.elasticField]: this.value,
-        },
+        [this.queryType!]: clause
       }
     }
 
@@ -216,27 +239,27 @@ function isPrimitiveValue<ValueType>(x: ValueType | RangeConditionValue<ValueTyp
 }
 
 export class RangeCondition<ConditionsT, ValueType> extends Condition<ConditionsT, ValueType> {
-  gt(input: ValueType): this {
-    this._setValue(input, "gt")
+  gt(input: ValueType, options?: ClauseOptions): this {
+    this._setValue(input, "gt", options)
     return this
   }
 
-  gte(input: ValueType): this {
-    this._setValue(input, "gte")
+  gte(input: ValueType, options?: ClauseOptions): this {
+    this._setValue(input, "gte", options)
     return this
   }
 
-  lt(input: ValueType): this {
-    this._setValue(input, "lt")
+  lt(input: ValueType, options?: ClauseOptions): this {
+    this._setValue(input, "lt", options)
     return this
   }
 
-  lte(input: ValueType): this {
-    this._setValue(input, "lte")
+  lte(input: ValueType, options?: ClauseOptions): this {
+    this._setValue(input, "lte", options)
     return this
   }
 
-  protected _setValue(input: ValueType, type: ComparatorOperator) {
+  protected _setValue(input: ValueType, type: ComparatorOperator, options?: ClauseOptions) {
     this.queryType = "range"
     if (this.value) {
       if (isPrimitiveValue(this.value)) {
@@ -246,6 +269,10 @@ export class RangeCondition<ConditionsT, ValueType> extends Condition<Conditions
       this.value[type] = input
     } else {
       this.value = { [type]: input } as RangeConditionValue<ValueType>
+    }
+
+    if (options && options.boost) {
+      this.boost = options.boost
     }
   }
 }

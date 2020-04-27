@@ -5,7 +5,13 @@ function buildCondition(condition: any, payload: any) {
     if (operator === "not") {
       const keys = Object.keys(value)
       const subOperator = Object.keys(value)[0]
-      let res = condition.not[subOperator](value[subOperator])
+      let res: any
+
+      if (value.boost) {
+        let res = condition.not[subOperator](value[subOperator], { boost: value.boost })
+      } else {
+        let res = condition.not[subOperator](value[subOperator])
+      }
 
       if (keys.length > 1) {
         const k2 = keys[1] // and
@@ -14,7 +20,11 @@ function buildCondition(condition: any, payload: any) {
           const k3 = Object.keys(v2)[0]
           const v3 = v2[k3]
           if (typeof res.and[k3] === "function") {
-            res.and[k3](v3)
+            if (v2.boost) {
+              res.and[k3](v3, { boost: v2.boost })
+            } else {
+              res.and[k3](v3)
+            }
           } else {
             buildConditions(res.and, { [k3]: v3 })
           }
@@ -28,10 +38,18 @@ function buildCondition(condition: any, payload: any) {
       if (k === "not") {
         const subk = Object.keys(v)[0]
         const subv = v[subk]
-        condition.and.not[subk](subv)
+        if (v.boost) {
+          condition.and.not[subk](subv, { boost: v.boost })
+        } else {
+          condition.and.not[subk](subv)
+        }
       } else {
         if (typeof condition.and[k] === "function") {
-          condition.and[k](v)
+          if (v.boost) {
+            condition.and[k](v, { boost: value.boost })
+          } else {
+            condition.and[k](v)
+          }
         } else {
           buildConditions(condition.and, { [k]: v })
         }
@@ -40,12 +58,22 @@ function buildCondition(condition: any, payload: any) {
       const k = Object.keys(value)[0]
       const v = value[k]
       if (typeof condition.or[k] === "function") {
-        condition.or[k](v)
+        if (value.boost) {
+          condition.or[k](v, { boost: value.boost })
+        } else {
+          condition.or[k](v)
+        }
       } else {
         buildConditions(condition.or, { [k]: v })
       }
     } else {
-      condition[operator](value)
+      if (operator === "boost") {
+        condition.boost = value
+      } else if(operator === "fields") {
+        condition.fields = value
+      } else {
+        condition[operator](value)
+      }
     }
   })
 }
