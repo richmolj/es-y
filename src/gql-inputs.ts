@@ -21,7 +21,14 @@ function generateConditionInputs(klass: typeof Search): string {
   const name = instance.constructor.name
 
   eachCondition(klass, (conditionName: string, type: string, condition: any) => {
-    if (type === "keyword" || type === "query") {
+    if (type === "query") {
+      inputs = inputs.concat(`
+@Field(type => ${name}SimpleKeywordsInput, { nullable: true })
+${conditionName}!: ${name}SimpleKeywordsInput
+      `)
+    }
+
+    if (type === "keyword") {
       inputs = inputs.concat(`
 @Field(type => ${name}KeywordConditionInput, { nullable: true })
 ${conditionName}!: ${name}KeywordConditionInput
@@ -102,7 +109,7 @@ class ${name}SortInput {
 }
 
 @InputType()
-class SimpleKeywordsInput {
+class ${name}SimpleKeywordsInput {
   @Field()
   eq!: string
 
@@ -112,8 +119,8 @@ class SimpleKeywordsInput {
 
 @InputType()
 class ${name}ConditionsInput {
-  @Field(type => SimpleKeywordsInput)
-  keywords!: SimpleKeywordsInput
+  @Field(type => ${name}SimpleKeywordsInput, { nullable: true })
+  keywords!: ${name}SimpleKeywordsInput
 }
 
 @InputType()
@@ -163,15 +170,7 @@ import { ${name}TextConditionInput } from './conditions/text'
 import { ${name}NumericConditionInput } from './conditions/numeric'
 import { ${name}DateConditionInput } from './conditions/date'
 import { ${name}TermsInput } from './aggregations/terms'
-
-@InputType()
-class ${name}SimpleQueryStringConditionInput {
-  @Field()
-  eq!: string
-
-  @Field(type => [String], { nullable: true })
-  fields!: string[]
-}
+import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
 
 @InputType()
 export class ${name}ConditionsInput {
@@ -242,6 +241,22 @@ export class ${name}Input {
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
+function generateSimpleKeywordsInput(klass: typeof Search, name: string) {
+  const content = `
+import { Field, InputType } from 'type-graphql'
+
+@InputType()
+export class ${name}SimpleKeywordsInput {
+  @Field()
+  eq?: string
+
+  @Field(type => [String], { nullable: true })
+  fields?: string[]
+}
+  `
+  fs.writeFileSync(`src/search-inputs/${name}/conditions/simple-keywords.ts`, content)
+}
+
 function generateKeywordInput(klass: typeof Search, name: string) {
   const keywordContent = `
 import { Field, InputType } from 'type-graphql'
@@ -283,6 +298,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}KeywordOrInput {
@@ -303,6 +319,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}KeywordAndInput {
@@ -359,6 +376,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}TextOrInput {
@@ -382,6 +400,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}TextAndInput {
@@ -453,6 +472,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}NumericOrInput {
@@ -473,6 +493,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}NumericAndInput {
@@ -538,6 +559,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}DateOrInput {
@@ -558,6 +580,7 @@ import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
 import { ${name}DateConditionInput } from './date'
+import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}DateAndInput {
@@ -611,6 +634,7 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
     generateTermsInput(klass, name)
   } else {
     generateSearchInput(klass, name)
+    generateSimpleKeywordsInput(klass, name)
     generateKeywordInput(klass, name)
     generateTextInput(klass, name)
     generateNumericInput(klass, name)
