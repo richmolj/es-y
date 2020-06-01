@@ -8,9 +8,9 @@ function buildCondition(condition: any, payload: any) {
       let res: any
 
       if (value.boost) {
-        let res = condition.not[subOperator](value[subOperator], { boost: value.boost })
+        res = condition.not[subOperator](value[subOperator], { boost: value.boost })
       } else {
-        let res = condition.not[subOperator](value[subOperator])
+        res = condition.not[subOperator](value[subOperator])
       }
 
       if (keys.length > 1) {

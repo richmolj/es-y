@@ -1,5 +1,7 @@
+import { Scripting } from './../scripting';
 import { Search } from '../search'
 import { buildAggRequest } from "../aggregations"
+import { applyScriptQuery, applyScriptScore } from "../scripting"
 
 export async function buildRequest(search: Search) {
   const searchPayload = { index: search.klass.index, body: {} } as any
@@ -33,6 +35,16 @@ export async function buildRequest(search: Search) {
   assignSortAndPage(search, searchPayload)
 
   await buildAggRequest(search, searchPayload)
+
+  const scriptQuery = (search as any)._scriptQuery
+  if (scriptQuery) {
+    applyScriptQuery(searchPayload, scriptQuery)
+  }
+  const scriptScore = (search as any)._scriptScore
+  if (scriptScore) {
+    applyScriptScore(searchPayload, scriptScore)
+  }
+
   return searchPayload
 }
 
