@@ -171,6 +171,7 @@ import { ${name}NumericConditionInput } from './conditions/numeric'
 import { ${name}DateConditionInput } from './conditions/date'
 import { ${name}TermsInput } from './aggregations/terms'
 import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
+import { GraphQLJSONObject } from 'graphql-type-json'
 
 @InputType()
 export class ${name}ConditionsInput {
@@ -234,8 +235,15 @@ export class ${name}Input {
   @Field(type => ${name}AggregationsInput, { nullable: true })
   aggregations!: ${name}AggregationsInput
 
+  // for multisearch
   @Field({ nullable: true })
   boost!: number
+
+  @Field(type => GraphQLJSONObject, { nullable: true })
+  scriptQuery!: any
+
+  @Field(type => GraphQLJSONObject, { nullable: true })
+  scriptScore!: any
 }
   `)
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)

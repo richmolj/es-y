@@ -15,6 +15,7 @@ This library is currently in 🔥**ALPHA**🔥
     * [Sorting](#sorting)
     * [Total](#total)
     * [Results](#results)
+    * [Scripting](#scripting)
   * [Aggregations](#aggregations)
     * [sourceFields](#source-fields)
     * [ensureQuality](#ensurequality)
@@ -55,6 +56,7 @@ export class ThronesSearch extends Search {
   static index = "game-of-thrones"
   static conditionsClass = ThronesSearchConditions
   filters!: ThronesSearchConditions
+  queries!: ThronesSearchConditions
 }
 ```
 
@@ -177,6 +179,46 @@ search.total // => 500
 #### Results
 
 TODO
+
+### Scripting
+
+Elasticsearch supports [script queries](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-script-score-query.html) (where the query itself comes from a script) and [script scoring](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-script-score-query.html). We support both of these, and you can even combine them with the rest of your query.
+
+```ts
+const search = new ThronesSearch()
+search.scriptQuery({
+  source: "doc['rating'] > params.ratingGt",
+  params: { ratingGt: 100 }
+})
+
+// search.scriptScore(... args ...)
+
+// add other clauses if you like
+
+await search.query()
+```
+
+We support persisting these scripts as well:
+
+```ts
+await search.saveScript('foo', `doc['rating'] * 2`)
+```
+
+You can now query by the script name:
+
+```ts
+const search = new ThronesSearch()
+search.scriptQuery({
+  id: "foo",
+  params: { ratingGt: 100 }
+})
+```
+
+And delete if no longer needed:
+
+```ts
+await search.deleteScript('foo')
+```
 
 ### Aggregations
 

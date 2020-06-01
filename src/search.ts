@@ -6,6 +6,8 @@ import { Conditions, SimpleQueryStringCondition } from "./conditions"
 import { Aggregations, buildAggResults } from "./aggregations"
 import { Meta } from "./meta"
 import { Pagination, Sort } from './types'
+import { Scripting, ElasticScript } from "./scripting"
+import { applyMixins } from './util'
 
 export class Search {
   static index: string
@@ -30,6 +32,8 @@ export class Search {
   sort: Sort[] = []
   boost?: number // multisearch
   protected _aggs?: Aggregations
+  protected _scriptQuery?: ElasticScript
+  protected _scriptScore?: ElasticScript
 
   constructor(input?: any) {
     this.results = []
@@ -45,6 +49,12 @@ export class Search {
     }
     if (input && input.sort) {
       this.sort = input.sort
+    }
+    if (input && input.scriptQuery) {
+      this.scriptQuery(input.scriptQuery)
+    }
+    if (input && input.scriptScore) {
+      this.scriptScore(input.scriptScore)
     }
 
     if (this.klass.conditionsClass) { // else multisearch
@@ -167,3 +177,6 @@ export class Search {
     `)
   }
 }
+
+export interface Search extends Scripting {}
+applyMixins(Search, [Scripting])
