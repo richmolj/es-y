@@ -1,6 +1,6 @@
 {
   "name": "search-resource",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "",
   "main": "lib/src/index.js",
   "module": "lib/src/index.js",
@@ -16,8 +16,8 @@
   "dependencies": {
     "@elastic/elasticsearch": "7.6.0",
     "@types/rimraf": "3.0.0",
-    "rimraf": "3.0.2",
-    "graphql-type-json": "^0.3.1"
+    "graphql-type-json": "^0.3.1",
+    "rimraf": "3.0.2"
   },
   "devDependencies": {
     "@types/chai": "4.2.9",
