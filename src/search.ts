@@ -31,6 +31,7 @@ export class Search {
   lastQuery?: any
   sort: Sort[] = []
   boost?: number // multisearch
+  resultMetadata: boolean = false
   protected _aggs?: Aggregations
   protected _scriptQuery?: ElasticScript
   protected _scriptScore?: ElasticScript
@@ -80,6 +81,10 @@ export class Search {
     }
   }
 
+  get includeMetadata() {
+    return this.resultMetadata || this.klass.resultMetadata
+  }
+
   get aggregations() {
     return this.aggResults
   }
@@ -106,7 +111,8 @@ export class Search {
 
   protected transformResults(results: Record<string, any>[]) {
     return results.map(result => {
-      return this.transformResult(result)
+      const transformed = this.transformResult(result)
+      return transformed
     })
   }
 
@@ -123,7 +129,10 @@ export class Search {
     const searchPayload = await this.toElastic()
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
-    this.results = this.transformResults(this.buildResults(response.body.hits.hits))
+    const builtResults = this.buildResults(response.body.hits.hits, this.includeMetadata)
+    const transformedResults = this.transformResults(builtResults)
+    this.results = this.applyMetadata(transformedResults, builtResults)
+
     if (response.body.aggregations) {
       this.aggResults = buildAggResults(this, response.body.aggregations)
     }
@@ -141,11 +150,11 @@ export class Search {
     return response
   }
 
-  protected buildResults(rawResults: any[]): any[] {
+  protected buildResults(rawResults: any[], metadata: boolean = false): any[] {
     return rawResults.map(raw => {
       const result = raw._source
-      if (this.klass.resultMetadata) {
-        result.meta = this.buildMetadata(raw)
+      if (metadata) {
+        result._meta = this.buildMetadata(raw)
       }
       return result
     })
@@ -175,6 +184,17 @@ export class Search {
         `curl -XGET --header 'Content-Type: application/json' ${this.klass.host}/${this.klass.index}/_search -d`,
       )} ${colorize("magenta", `'${formattedPayload}'`)}
     `)
+  }
+
+  protected applyMetadata(results: any[], originalResults: any[]) {
+    if (this.includeMetadata) {
+      results.forEach((r, index) => {
+        if (originalResults[index] && originalResults[index]._meta) {
+          r._meta = originalResults[index]._meta
+        }
+      })
+    }
+    return results
   }
 }
 

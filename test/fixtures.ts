@@ -56,7 +56,7 @@ export class JustifiedSearch extends Search {
   // static logFormat = "pretty"
 }
 
-
+@SearchClass()
 export class GlobalSearch extends MultiSearch {
   static searches = {
     thrones: ThronesSearch,

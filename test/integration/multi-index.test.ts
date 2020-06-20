@@ -347,6 +347,44 @@ describe("integration", () => {
             expect(search.results[2].transformedName).to.eq('- Boyd Crowder -')
             expect(search.results[3].transformedName).to.eq('- Raylan Givens -')
           })
+
+          // TODO: resultMetadata needs to be runtime option
+          // Pass this option when splitting, equal to MultiSearch equivalent
+          // MultiSearch should "win", individual searches irrelevant
+          describe('when resultMetadata is requested', () => {
+            beforeEach(() => {
+              GlobalSearch.resultMetadata = true
+            })
+
+            afterEach(() => {
+              GlobalSearch.resultMetadata = false
+            })
+
+            describe('when not splitting', () => {
+              it('preserves metadata', async () => {
+                const search = new GlobalSearch({
+                  thrones: {},
+                  justified: {}
+                })
+                await search.execute()
+                expect(search.results[0]._meta._score).to.eq(1)
+                expect(search.results[1]._meta._score).to.eq(1)
+              })
+            })
+
+            describe('when splitting', () => {
+              it('preserves metadata', async () => {
+                const search = new GlobalSearch({
+                  split: 1,
+                  thrones: {},
+                  justified: {}
+                })
+                await search.execute()
+                expect(search.results[0]._meta._score).to.eq(1)
+                expect(search.results[1]._meta._score).to.eq(1)
+              })
+            })
+          })
         })
 
         describe('multiple', () => {
@@ -355,11 +393,15 @@ describe("integration", () => {
           beforeEach(() => {
             originalThrones = (ThronesSearch.prototype as any).transformResults
             originalJustified = (JustifiedSearch.prototype as any).transformResults
-            ;(ThronesSearch.prototype as any).transformResults = (result: any) => {
-              return [{ new: 'thrones results' }]
+            ;(ThronesSearch.prototype as any).transformResults = (results: any) => {
+              return results.map((r: any) => {
+                return { new: 'thrones results' }
+              })
             }
-            ;(JustifiedSearch.prototype as any).transformResults = (result: any) => {
-              return [{ new: 'justified results' }]
+            ;(JustifiedSearch.prototype as any).transformResults = (results: any) => {
+              return results.map((r: any) => {
+                return { new: 'justified results' }
+              })
             }
           })
 
@@ -375,7 +417,42 @@ describe("integration", () => {
             })
             await search.execute()
             expect(search.results[0].new).to.eq('thrones results')
-            expect(search.results[1].new).to.eq('justified results')
+            expect(search.results[2].new).to.eq('justified results')
+          })
+
+          describe('when resultMetadata is requested', () => {
+            beforeEach(() => {
+              GlobalSearch.resultMetadata = true
+            })
+
+            afterEach(() => {
+              GlobalSearch.resultMetadata = false
+            })
+
+            describe('when not splitting', () => {
+              it('preserves metadata', async () => {
+                const search = new GlobalSearch({
+                  thrones: {},
+                  justified: {}
+                })
+                await search.execute()
+                expect(search.results[0]._meta._score).to.eq(1)
+                expect(search.results[1]._meta._score).to.eq(1)
+              })
+            })
+
+            describe('when splitting', () => {
+              it('preserves metadata', async () => {
+                const search = new GlobalSearch({
+                  split: 1,
+                  thrones: {},
+                  justified: {}
+                })
+                await search.execute()
+                expect(search.results[0]._meta._score).to.eq(1)
+                expect(search.results[1]._meta._score).to.eq(1)
+              })
+            })
           })
         })
       })
@@ -407,6 +484,41 @@ describe("integration", () => {
               'Boyd Crowder',
               'Raylan Givens'
             ])
+          })
+
+          describe('when resultMetadata is requested', () => {
+            beforeEach(() => {
+              GlobalSearch.resultMetadata = true
+            })
+
+            afterEach(() => {
+              GlobalSearch.resultMetadata = false
+            })
+
+            describe('when not splitting', () => {
+              it('preserves metadata', async () => {
+                const search = new GlobalSearch({
+                  thrones: {},
+                  justified: {}
+                })
+                await search.execute()
+                expect(search.results[0]._meta._score).to.eq(1)
+                expect(search.results[1]._meta._score).to.eq(1)
+              })
+            })
+
+            describe('when splitting', () => {
+              it('preserves metadata', async () => {
+                const search = new GlobalSearch({
+                  split: 1,
+                  thrones: {},
+                  justified: {}
+                })
+                await search.execute()
+                expect(search.results[0]._meta._score).to.eq(1)
+                expect(search.results[1]._meta._score).to.eq(1)
+              })
+            })
           })
         })
 

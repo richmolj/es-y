@@ -57,6 +57,7 @@ export class MultiSearch extends Search {
     if (this.isSplitting) {
       this.searchInstances.forEach((s) => {
         s.page.size = this._split
+        s.resultMetadata = this.klass.resultMetadata
       })
       const promises = this.searchInstances.map((s) => s.execute())
       const resultArray = await Promise.all(promises)
@@ -131,11 +132,11 @@ export class MultiSearch extends Search {
     })
   }
 
-
   protected transformResults(rawResults: Record<string, any>[]) {
     // When splitting, we've already done per-search transformation and ordering
     if (this.isSplitting) {
-      return super.transformResults(rawResults)
+      const transformed = super.transformResults(rawResults)
+      return this.applyMetadata(transformed, rawResults)
     }
 
     let results = [] as any[]
@@ -145,7 +146,9 @@ export class MultiSearch extends Search {
         .filter((r: any) => {
           return r._index.match(new RegExp(search.klass.index))
         })
-      const transformed = search.transformResults(search.buildResults(relevantHits))
+      const builtResults = search.buildResults(relevantHits, this.klass.resultMetadata)
+      const transformed = search.transformResults(builtResults)
+      this.applyMetadata(transformed, builtResults)
 
       transformed.forEach((r: any, index: number) => {
         r._order = relevantHits[index]._order
@@ -166,7 +169,7 @@ export class MultiSearch extends Search {
       delete r._order
     })
 
-    results = super.transformResults(results)
-    return results
+    const transformed = super.transformResults(results)
+    return this.applyMetadata(transformed, results)
   }
 }

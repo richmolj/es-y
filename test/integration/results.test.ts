@@ -138,7 +138,7 @@ describe("integration", () => {
       it("assigns metadata to the results", async () => {
         const search = new ThronesSearch()
         await search.execute()
-        const { meta } = search.results[0]
+        const meta = search.results[0]._meta
         expect(meta._id).to.not.be.null
         expect(meta._score).to.not.be.null
         expect(meta._type).to.eq("_doc")
