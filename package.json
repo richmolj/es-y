@@ -1,6 +1,6 @@
 {
   "name": "search-resource",
-  "version": "0.0.45",
+  "version": "0.0.46",
   "description": "",
   "main": "lib/src/index.js",
   "module": "lib/src/index.js",
