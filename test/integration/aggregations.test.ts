@@ -18,6 +18,7 @@ describe("integration", () => {
           age: 10,
           title: "A",
           rating: 100,
+          created_at: '2020-01-01'
         },
       })
       await ThronesSearch.client.index({
@@ -28,6 +29,7 @@ describe("integration", () => {
           name: "A Person 2",
           title: "A",
           rating: 200,
+          created_at: '2020-06-01'
         },
       })
       await ThronesSearch.client.index({
@@ -38,6 +40,7 @@ describe("integration", () => {
           name: "B Person",
           title: "B",
           rating: 100,
+          created_at: '2020-06-15'
         },
       })
       await ThronesSearch.client.indices.refresh({ index })
@@ -589,6 +592,25 @@ describe("integration", () => {
             expect(search.aggResults.sum_rating).to.eq(400)
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
           })
+        })
+      })
+    })
+
+    // todo createdAt - search.fieldFor(name)
+    describe('date histogram', () => {
+      describe('by direct assignment', () => {
+        it.only('works', async () => {
+          const search = new ThronesSearch()
+          search.aggs.dateHistogram('created_at', { interval: "month" })
+          await search.execute()
+          expect(search.aggResults.created_at).to.deep.eq([
+            { key: '2020-01-01T00:00:00.000Z', count: 1 },
+            { key: '2020-02-01T00:00:00.000Z', count: 0 },
+            { key: '2020-03-01T00:00:00.000Z', count: 0 },
+            { key: '2020-04-01T00:00:00.000Z', count: 0 },
+            { key: '2020-05-01T00:00:00.000Z', count: 0 },
+            { key: '2020-06-01T00:00:00.000Z', count: 2 }
+          ])
         })
       })
     })

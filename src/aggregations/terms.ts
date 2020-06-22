@@ -22,6 +22,10 @@ export class TermsAggregation {
   protected calculations: Calculation[]
   protected _sourceFields: string[]
 
+  get type() {
+    return 'terms'
+  }
+
   constructor(name: string, options: TermsOptions) {
     this.name = name
     this.field = options.field || name

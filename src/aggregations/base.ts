@@ -1,3 +1,4 @@
+import { DateHistogramAggregation, DateHistogramOptions } from './date-histogram';
 import { TermsAggregation, TermsOptions } from "./terms"
 import { Calculation } from "./calculation"
 
@@ -6,11 +7,13 @@ interface ToElasticOptions {
 }
 
 export class Aggregations {
-  termAggs: TermsAggregation[]
-  calculations: Calculation[]
+  private termAggs: TermsAggregation[]
+  private dateHistogramAggs: DateHistogramAggregation[]
+  private calculations: Calculation[]
 
   constructor() {
     this.termAggs = []
+    this.dateHistogramAggs = []
     this.calculations = []
   }
 
@@ -25,12 +28,18 @@ export class Aggregations {
   }
 
   get bucketAggs() {
-    return this.termAggs
+    return [...this.termAggs, ...this.dateHistogramAggs]
   }
 
   terms(name: string, options: TermsOptions = {}): TermsAggregation {
     const agg = new TermsAggregation(name, options)
     this.termAggs.push(agg)
+    return agg
+  }
+
+  dateHistogram(name: string, options: DateHistogramOptions): DateHistogramAggregation {
+    const agg = new DateHistogramAggregation(name, options)
+    this.dateHistogramAggs.push(agg)
     return agg
   }
 
@@ -51,6 +60,10 @@ export class Aggregations {
     let payload = {}
     this.termAggs.forEach(ta => {
       payload = { ...payload, ...ta.toElastic(options) }
+    })
+
+    this.dateHistogramAggs.forEach(dha => {
+      payload = { ...payload, ...dha.toElastic(options) }
     })
 
     this.calculations.forEach(c => {
