@@ -113,6 +113,9 @@ class ${name}SimpleKeywordsInput {
   @Field()
   eq!: string
 
+  @Field({ nullable: true })
+  combinator!: string
+
   @Field(type => [String], { nullable: true })
   fields!: string[]
 }
@@ -257,6 +260,9 @@ import { Field, InputType } from 'type-graphql'
 export class ${name}SimpleKeywordsInput {
   @Field()
   eq?: string
+
+  @Field({ nullable: true })
+  combinator?: string
 
   @Field(type => [String], { nullable: true })
   fields?: string[]

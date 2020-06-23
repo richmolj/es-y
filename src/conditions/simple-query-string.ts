@@ -6,15 +6,27 @@ import { SimpleQueryClauseOptions } from '../types'
 export class SimpleQueryStringCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "query"
   fields?: string[]
+  combinator: 'and' | 'or' = 'or'
 
   eq(input: string, options?: SimpleQueryClauseOptions<ConditionsT>): any {
     this.value = input
     if (options && options.fields) {
       this.fields = options.fields
     }
+    if (options && options.combinator) {
+      this.combinator = options.combinator
+    }
   }
 
   toElastic(): any {
+    const payload = {
+      query: this.value
+    } as any
+
+    if (this.combinator) {
+      payload.default_operator = this.combinator
+    }
+
     if (this.fields) {
       let fields = this.fields
       fields = fields.map((field) => {
@@ -31,19 +43,9 @@ export class SimpleQueryStringCondition<ConditionsT> extends Condition<Condition
         }
         return field
       })
-
-      return {
-        multi_match: {
-          query: this.value,
-          fields,
-        },
-      }
-    } else {
-      return {
-        simple_query_string: {
-          query: this.value,
-        },
-      }
+      payload.fields = fields
     }
+
+    return { simple_query_string: payload }
   }
 }
