@@ -13,5 +13,6 @@ export interface ClauseOptions {
 }
 
 export interface SimpleQueryClauseOptions<T> {
-  fields: string[]
+  fields?: string[]
+  combinator?: 'and' | 'or'
 }
