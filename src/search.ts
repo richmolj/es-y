@@ -81,6 +81,10 @@ export class Search {
     }
   }
 
+  fieldFor(name: string) {
+    return (this.filters as any)[name].elasticField
+  }
+
   get includeMetadata() {
     return this.resultMetadata || this.klass.resultMetadata
   }
@@ -93,7 +97,7 @@ export class Search {
     if (this._aggs) {
       return this._aggs
     } else {
-      this._aggs = new Aggregations()
+      this._aggs = new Aggregations(this)
       return this._aggs
     }
   }

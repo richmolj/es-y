@@ -64,6 +64,7 @@ function generateMultiSearchInput(klass: typeof MultiSearch, name: string) {
   let searchInput = `
 import { InputType, Field } from 'type-graphql'
 import { ${name}TermsInput } from './aggregations/terms'
+import { ${name}DateHistogramInput } from './aggregations/date-histogram'
   `
 
   Object.keys(klass.searches).forEach((k) => {
@@ -85,8 +86,11 @@ export class ${name}AggregationsInput {
   @Field({ nullable: true })
   avg!: string
 
-  @Field(type => ${name}TermsInput, { nullable: true })
+  @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
+
+  @Field(type => [${name}DateHistogramInput], { nullable: true })
+  dateHistograms!: ${name}DateHistogramsInput[]
 }
 
 @InputType()
@@ -170,6 +174,7 @@ import { ${name}TextConditionInput } from './conditions/text'
 import { ${name}NumericConditionInput } from './conditions/numeric'
 import { ${name}DateConditionInput } from './conditions/date'
 import { ${name}TermsInput } from './aggregations/terms'
+import { ${name}DateHistogramInput } from './aggregations/date-histogram'
 import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
 import { GraphQLJSONObject } from 'graphql-type-json'
 
@@ -195,8 +200,11 @@ export class ${name}AggregationsInput {
   @Field({ nullable: true })
   avg!: string
 
-  @Field(type => ${name}TermsInput, { nullable: true })
+  @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
+
+  @Field(type => [${name}DateHistogramInput], { nullable: true })
+  dateHistograms!: ${name}DateHistogramInput[]
 }
 
 @InputType()
@@ -598,6 +606,30 @@ export class ${name}DateAndInput {
   fs.writeFileSync(`src/search-inputs/${name}/conditions/date-and.ts`, dateAndContent)
 }
 
+function generateDateHistogramInput(klass: typeof Search | typeof MultiSearch, name: string) {
+  const dateHistogramContent = `
+import { ${name}AggregationsInput } from '../index'
+import { Field, InputType } from 'type-graphql'
+
+@InputType()
+export class ${name}DateHistogramInput {
+  @Field()
+  name!: string
+
+  @Field()
+  interval!: string
+
+  @Field({ nullable: true })
+  field!: string
+
+  @Field({ nullable: true })
+  min_doc_count!: number
+}
+`
+
+  fs.writeFileSync(`src/search-inputs/${name}/aggregations/date-histogram.ts`, dateHistogramContent)
+}
+
 function generateTermsInput(klass: typeof Search | typeof MultiSearch, name: string) {
   const termsContent = `
 import { ${name}AggregationsInput } from '../index'
@@ -610,6 +642,9 @@ export class ${name}TermsInput {
 
   @Field({ nullable: true })
   field!: string
+
+  @Field({ nullable: true })
+  min_doc_count!: number
 
   @Field({ nullable: true })
   size!: number
@@ -640,6 +675,7 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
   if (klass.isMultiSearch) {
     generateMultiSearchInput(klass as typeof MultiSearch, name)
     generateTermsInput(klass, name)
+    generateDateHistogramInput(klass, name)
   } else {
     generateSearchInput(klass, name)
     generateSimpleKeywordsInput(klass, name)
@@ -648,6 +684,7 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
     generateNumericInput(klass, name)
     generateDateInput(klass, name)
     generateTermsInput(klass, name)
+    generateDateHistogramInput(klass, name)
   }
 }
 

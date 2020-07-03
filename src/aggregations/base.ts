@@ -1,6 +1,7 @@
 import { DateHistogramAggregation, DateHistogramOptions } from './date-histogram';
 import { TermsAggregation, TermsOptions } from "./terms"
 import { Calculation } from "./calculation"
+import { Search } from "../search"
 
 interface ToElasticOptions {
   overrideSize?: boolean
@@ -10,8 +11,10 @@ export class Aggregations {
   private termAggs: TermsAggregation[]
   private dateHistogramAggs: DateHistogramAggregation[]
   private calculations: Calculation[]
+  private search: Search
 
-  constructor() {
+  constructor(search: Search) {
+    this.search = search
     this.termAggs = []
     this.dateHistogramAggs = []
     this.calculations = []
@@ -32,13 +35,13 @@ export class Aggregations {
   }
 
   terms(name: string, options: TermsOptions = {}): TermsAggregation {
-    const agg = new TermsAggregation(name, options)
+    const agg = new TermsAggregation(this.search, name, options)
     this.termAggs.push(agg)
     return agg
   }
 
   dateHistogram(name: string, options: DateHistogramOptions): DateHistogramAggregation {
-    const agg = new DateHistogramAggregation(name, options)
+    const agg = new DateHistogramAggregation(this.search, name, options)
     this.dateHistogramAggs.push(agg)
     return agg
   }
@@ -74,6 +77,13 @@ export class Aggregations {
   }
 
   build(input: any): this {
+    if (input.dateHistograms) {
+      input.dateHistograms.forEach((dateHistogram: any) => {
+        const { name, ...options } = dateHistogram
+        const clause = this.dateHistogram(name, options)
+      })
+    }
+
     if (input.terms) {
       input.terms.forEach((term: any) => {
         const { name, ensureQuality, children, sourceFields, order, sum, avg, ...options } = term

@@ -1,19 +1,17 @@
+import { BucketAggregation, BucketOptions, BucketToElasticOptions } from './bucket';
 import { Calculation } from "./calculation"
 import { Aggregations } from "./base"
+import { Search } from '../search'
 
-export interface TermsOptions {
-  field?: string
+export interface TermsOptions extends BucketOptions {
   size?: number
 }
 
-interface ToElasticOptions {
+interface ToElasticOptions extends BucketToElasticOptions {
   overrideSize?: boolean
 }
 
-// TODO extends bucketagg
-export class TermsAggregation {
-  name: string
-  field: string
+export class TermsAggregation extends BucketAggregation {
   size: number
   sortAtt?: string
   sortDir?: string
@@ -26,9 +24,8 @@ export class TermsAggregation {
     return 'terms'
   }
 
-  constructor(name: string, options: TermsOptions) {
-    this.name = name
-    this.field = options.field || name
+  constructor(search: Search, name: string, options: TermsOptions) {
+    super(search, name, options)
     this.size = options.size || 5
     this.calculations = []
     this.children = []
@@ -65,12 +62,11 @@ export class TermsAggregation {
   }
 
   child() {
-    const child = new Aggregations()
+    const child = new Aggregations(this.search)
     this.children.push(child)
     return child
   }
 
-  // todo size, shard size option
   // todo dont allow size > 10 or so
   toElastic(options?: ToElasticOptions) {
     const payload = {
@@ -83,6 +79,10 @@ export class TermsAggregation {
     if (options?.overrideSize) {
       payload.terms.size = payload.terms.size * 3
       payload.terms.shard_size = payload.terms.size + 1000
+    }
+
+    if (this.min_doc_count) {
+      payload.terms.min_doc_count = this.min_doc_count
     }
 
     if (this.sortAtt) {

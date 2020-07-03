@@ -1,19 +1,15 @@
-export interface DateHistogramOptions {
-  field?: string
+import { Search } from '../search'
+import { BucketAggregation, BucketOptions, BucketToElasticOptions } from './bucket'
+
+export interface DateHistogramOptions extends BucketOptions {
   interval: string
 }
 
-interface ToElasticOptions {
-}
-
-export class DateHistogramAggregation {
-  name: string
-  field: string
+export class DateHistogramAggregation extends BucketAggregation {
   interval: string
 
-  constructor(name: string, options: DateHistogramOptions) {
-    this.name = name
-    this.field = options.field || name
+  constructor(search: Search, name: string, options: DateHistogramOptions) {
+    super(search, name, options)
     this.interval = options.interval
   }
 
@@ -21,14 +17,22 @@ export class DateHistogramAggregation {
     return 'date_histogram'
   }
 
-  toElastic(options?: ToElasticOptions) {
-    return {
+  toElastic(options?: BucketToElasticOptions) {
+    let payloadOptions = {
+      field: this.field,
+      calendar_interval: this.interval
+    } as any
+
+    if (this.min_doc_count) {
+      payloadOptions.min_doc_count = this.min_doc_count
+    }
+
+    let payload = {
       [this.name]: {
-        date_histogram: {
-          field: this.field,
-          calendar_interval: this.interval
-        }
+        date_histogram: { ...payloadOptions }
       }
     }
+
+    return payload
   }
 }

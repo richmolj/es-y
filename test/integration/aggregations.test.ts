@@ -65,6 +65,27 @@ describe("integration", () => {
             ])
           })
 
+          it('works with min_doc_count', async () => {
+            const search = new ThronesSearch()
+            search.aggs.terms("title", { min_doc_count: 2 })
+            await search.execute()
+            expect(search.aggResults.title).to.deep.eq([
+              { key: "A", count: 2 }
+            ])
+          })
+
+          describe('when alias/camelized field', () => {
+            it("works", async () => {
+              const search = new ThronesSearch()
+              search.aggs.terms("titleAlias")
+              await search.execute()
+              expect(search.aggResults.titleAlias).to.deep.eq([
+                { key: "A", count: 2 },
+                { key: "B", count: 1 },
+              ])
+            })
+          })
+
           describe("with a name/field mismatch", () => {
             it("works", async () => {
               const search = new ThronesSearch()
@@ -427,6 +448,18 @@ describe("integration", () => {
             })
           })
 
+          describe('with field alias reorg this test', () => {
+            it("works", async () => {
+              const search = new ThronesSearch()
+              search.aggs.terms("titleAlias").sum("rating")
+              await search.execute()
+              expect(search.aggResults.titleAlias).to.deep.eq([
+                { key: "A", count: 2, sum_rating: 300 },
+                { key: "B", count: 1, sum_rating: 100 },
+              ])
+            })
+          })
+
           describe("via constructor", () => {
             it("works", async () => {
               const search = new ThronesSearch({
@@ -596,14 +629,13 @@ describe("integration", () => {
       })
     })
 
-    // todo createdAt - search.fieldFor(name)
     describe('date histogram', () => {
       describe('by direct assignment', () => {
-        it.only('works', async () => {
+        it('works', async () => {
           const search = new ThronesSearch()
-          search.aggs.dateHistogram('created_at', { interval: "month" })
+          search.aggs.dateHistogram('createdAt', { interval: "month" })
           await search.execute()
-          expect(search.aggResults.created_at).to.deep.eq([
+          expect(search.aggResults.createdAt).to.deep.eq([
             { key: '2020-01-01T00:00:00.000Z', count: 1 },
             { key: '2020-02-01T00:00:00.000Z', count: 0 },
             { key: '2020-03-01T00:00:00.000Z', count: 0 },
@@ -611,6 +643,86 @@ describe("integration", () => {
             { key: '2020-05-01T00:00:00.000Z', count: 0 },
             { key: '2020-06-01T00:00:00.000Z', count: 2 }
           ])
+        })
+
+        it('works with min_doc_count', async () => {
+          const search = new ThronesSearch()
+          search.aggs.dateHistogram('createdAt', { interval: "month", min_doc_count: 1 })
+          await search.execute()
+          expect(search.aggResults.createdAt).to.deep.eq([
+            { key: '2020-01-01T00:00:00.000Z', count: 1 },
+            { key: '2020-06-01T00:00:00.000Z', count: 2 }
+          ])
+        })
+
+        it('works with other interval', async () => {
+          const search = new ThronesSearch()
+          search.aggs.dateHistogram('createdAt', { interval: "year" })
+          await search.execute()
+          expect(search.aggResults.createdAt).to.deep.eq([
+            { key: '2020-01-01T00:00:00.000Z', count: 3 }
+          ])
+        })
+
+        describe('with explicit field', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.dateHistogram('foo', { field: 'created_at', interval: "month" })
+            await search.execute()
+            expect(search.aggResults.foo).to.deep.eq([
+              { key: '2020-01-01T00:00:00.000Z', count: 1 },
+              { key: '2020-02-01T00:00:00.000Z', count: 0 },
+              { key: '2020-03-01T00:00:00.000Z', count: 0 },
+              { key: '2020-04-01T00:00:00.000Z', count: 0 },
+              { key: '2020-05-01T00:00:00.000Z', count: 0 },
+              { key: '2020-06-01T00:00:00.000Z', count: 2 }
+            ])
+          })
+        })
+      })
+
+      describe('by constructor', () => {
+        it('works', async () => {
+          const search = new ThronesSearch({
+            aggs: {
+              dateHistograms: [{
+                name: 'createdAt',
+                interval: 'month'
+              }]
+            }
+          })
+          await search.execute()
+          expect(search.aggResults.createdAt).to.deep.eq([
+            { key: '2020-01-01T00:00:00.000Z', count: 1 },
+            { key: '2020-02-01T00:00:00.000Z', count: 0 },
+            { key: '2020-03-01T00:00:00.000Z', count: 0 },
+            { key: '2020-04-01T00:00:00.000Z', count: 0 },
+            { key: '2020-05-01T00:00:00.000Z', count: 0 },
+            { key: '2020-06-01T00:00:00.000Z', count: 2 }
+          ])
+        })
+
+        describe('with explicit field', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                dateHistograms: [{
+                  name: 'foo',
+                  field: 'created_at',
+                  interval: 'month'
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.foo).to.deep.eq([
+              { key: '2020-01-01T00:00:00.000Z', count: 1 },
+              { key: '2020-02-01T00:00:00.000Z', count: 0 },
+              { key: '2020-03-01T00:00:00.000Z', count: 0 },
+              { key: '2020-04-01T00:00:00.000Z', count: 0 },
+              { key: '2020-05-01T00:00:00.000Z', count: 0 },
+              { key: '2020-06-01T00:00:00.000Z', count: 2 }
+            ])
+          })
         })
       })
     })
