@@ -2,6 +2,7 @@ import { ThronesSearch } from "./../fixtures"
 import { expect } from "chai"
 import { setupIntegrationTest } from "../util"
 import { equal } from "assert"
+import { argv } from "process"
 
 const index = ThronesSearch.index
 
@@ -630,41 +631,67 @@ describe("integration", () => {
     })
 
     describe('date histogram', () => {
-      describe('by direct assignment', () => {
-        it('works', async () => {
-          const search = new ThronesSearch()
-          search.aggs.dateHistogram('createdAt', { interval: "month" })
-          await search.execute()
-          expect(search.aggResults.createdAt).to.deep.eq([
-            { key: '2020-01-01T00:00:00.000Z', count: 1 },
-            { key: '2020-02-01T00:00:00.000Z', count: 0 },
-            { key: '2020-03-01T00:00:00.000Z', count: 0 },
-            { key: '2020-04-01T00:00:00.000Z', count: 0 },
-            { key: '2020-05-01T00:00:00.000Z', count: 0 },
-            { key: '2020-06-01T00:00:00.000Z', count: 2 }
-          ])
+      describe('basic', () => {
+        describe('by direct assignment', () => {
+          it('works', async () => {
+            const search = new ThronesSearch()
+            search.aggs.dateHistogram('createdAt', { interval: "month" })
+            await search.execute()
+            expect(search.aggResults.createdAt).to.deep.eq([
+              { key: '2020-01-01T00:00:00.000Z', count: 1 },
+              { key: '2020-02-01T00:00:00.000Z', count: 0 },
+              { key: '2020-03-01T00:00:00.000Z', count: 0 },
+              { key: '2020-04-01T00:00:00.000Z', count: 0 },
+              { key: '2020-05-01T00:00:00.000Z', count: 0 },
+              { key: '2020-06-01T00:00:00.000Z', count: 2 }
+            ])
+          })
+
+          it('works with min_doc_count', async () => {
+            const search = new ThronesSearch()
+            search.aggs.dateHistogram('createdAt', { interval: "month", min_doc_count: 1 })
+            await search.execute()
+            expect(search.aggResults.createdAt).to.deep.eq([
+              { key: '2020-01-01T00:00:00.000Z', count: 1 },
+              { key: '2020-06-01T00:00:00.000Z', count: 2 }
+            ])
+          })
+
+          it('works with other interval', async () => {
+            const search = new ThronesSearch()
+            search.aggs.dateHistogram('createdAt', { interval: "year" })
+            await search.execute()
+            expect(search.aggResults.createdAt).to.deep.eq([
+              { key: '2020-01-01T00:00:00.000Z', count: 3 }
+            ])
+          })
         })
 
-        it('works with min_doc_count', async () => {
-          const search = new ThronesSearch()
-          search.aggs.dateHistogram('createdAt', { interval: "month", min_doc_count: 1 })
-          await search.execute()
-          expect(search.aggResults.createdAt).to.deep.eq([
-            { key: '2020-01-01T00:00:00.000Z', count: 1 },
-            { key: '2020-06-01T00:00:00.000Z', count: 2 }
-          ])
+        describe('by constructor', () => {
+          it('works', async () => {
+            const search = new ThronesSearch({
+              aggs: {
+                dateHistograms: [{
+                  name: 'createdAt',
+                  interval: 'month'
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.createdAt).to.deep.eq([
+              { key: '2020-01-01T00:00:00.000Z', count: 1 },
+              { key: '2020-02-01T00:00:00.000Z', count: 0 },
+              { key: '2020-03-01T00:00:00.000Z', count: 0 },
+              { key: '2020-04-01T00:00:00.000Z', count: 0 },
+              { key: '2020-05-01T00:00:00.000Z', count: 0 },
+              { key: '2020-06-01T00:00:00.000Z', count: 2 }
+            ])
+          })
         })
+      })
 
-        it('works with other interval', async () => {
-          const search = new ThronesSearch()
-          search.aggs.dateHistogram('createdAt', { interval: "year" })
-          await search.execute()
-          expect(search.aggResults.createdAt).to.deep.eq([
-            { key: '2020-01-01T00:00:00.000Z', count: 3 }
-          ])
-        })
-
-        describe('with explicit field', () => {
+      describe('with explicit field', () => {
+        describe('by direct assignment', () => {
           it('works', async() => {
             const search = new ThronesSearch()
             search.aggs.dateHistogram('foo', { field: 'created_at', interval: "month" })
@@ -679,30 +706,8 @@ describe("integration", () => {
             ])
           })
         })
-      })
 
-      describe('by constructor', () => {
-        it('works', async () => {
-          const search = new ThronesSearch({
-            aggs: {
-              dateHistograms: [{
-                name: 'createdAt',
-                interval: 'month'
-              }]
-            }
-          })
-          await search.execute()
-          expect(search.aggResults.createdAt).to.deep.eq([
-            { key: '2020-01-01T00:00:00.000Z', count: 1 },
-            { key: '2020-02-01T00:00:00.000Z', count: 0 },
-            { key: '2020-03-01T00:00:00.000Z', count: 0 },
-            { key: '2020-04-01T00:00:00.000Z', count: 0 },
-            { key: '2020-05-01T00:00:00.000Z', count: 0 },
-            { key: '2020-06-01T00:00:00.000Z', count: 2 }
-          ])
-        })
-
-        describe('with explicit field', () => {
+        describe('by constructor', () => {
           it('works', async() => {
             const search = new ThronesSearch({
               aggs: {
@@ -721,6 +726,338 @@ describe("integration", () => {
               { key: '2020-04-01T00:00:00.000Z', count: 0 },
               { key: '2020-05-01T00:00:00.000Z', count: 0 },
               { key: '2020-06-01T00:00:00.000Z', count: 2 }
+            ])
+          })
+        })
+      })
+
+      describe('with calculation', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs
+              .dateHistogram('createdAt', { interval: "month" })
+              .avg('rating')
+              .sum('age')
+            await search.execute()
+            expect(search.aggResults.createdAt[0]).to.deep.eq({
+              key: '2020-01-01T00:00:00.000Z',
+              count: 1,
+              avg_rating: 100,
+              sum_age: 10
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                dateHistograms: [
+                  {
+                    name: 'createdAt',
+                    interval: 'month',
+                    avg: 'rating',
+                    sum: 'age'
+                  }
+                ]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.createdAt[0]).to.deep.eq({
+              key: '2020-01-01T00:00:00.000Z',
+              count: 1,
+              avg_rating: 100,
+              sum_age: 10
+            })
+          })
+        })
+      })
+
+      describe('with children', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs
+              .dateHistogram('createdAt', { interval: "month" })
+              .child()
+              .terms('title')
+            await search.execute()
+            expect(search.aggResults.createdAt[0]).to.deep.eq({
+              key: '2020-01-01T00:00:00.000Z',
+              count: 1,
+              children: {
+                title: [
+                  {
+                    count: 1,
+                    key: 'A'
+                  }
+                ]
+              }
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                dateHistograms: [{
+                  name: 'createdAt',
+                  interval: 'month',
+                  children: [{
+                    terms: [{
+                      name: 'title'
+                    }]
+                  }]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.createdAt[0]).to.deep.eq({
+              key: '2020-01-01T00:00:00.000Z',
+              count: 1,
+              children: {
+                title: [
+                  {
+                    count: 1,
+                    key: 'A'
+                  }
+                ]
+              }
+            })
+          })
+        })
+      })
+    })
+
+    // TODO: ensure this works for this and date histogram
+    // figure out avg, sum etc as well (maybe bucket superclass, maybe not bc range`)
+    // TODO: this and date histogram with sum, avg, etc
+    // GQL for range and children, avg sum etc
+    describe('range', () => {
+      describe('basic', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.range('rating', { ranges: [{ from: 1, to: 101 }, { from: 102 }] })
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              { key: '1.0-101.0', count: 2 },
+              { key: '102.0-*', count: 1 }
+            ])
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                ranges: [{
+                  name: 'rating',
+                  ranges: [
+                    {
+                      from: 1,
+                      to: 101
+                    },
+                    {
+                      from: 102
+                    }
+                  ]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              { key: '1.0-101.0', count: 2 },
+              { key: '102.0-*', count: 1 }
+            ])
+          })
+        })
+      })
+
+      describe('with calculation', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs
+              .range('rating', { ranges: [{ from: 1, to: 101 }, { from: 102 }] })
+              .avg('rating')
+              .sum('age')
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              { key: '1.0-101.0', count: 2, avg_rating: 100, sum_age: 40 },
+              { key: '102.0-*', count: 1, avg_rating: 200, sum_age: 20 }
+            ])
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                ranges: [{
+                  name: 'rating',
+                  ranges: [
+                    {
+                      from: 1,
+                      to: 101,
+                    },
+                    {
+                      from: 102
+                    }
+                  ],
+                  avg: 'rating',
+                  sum: 'age'
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              { key: '1.0-101.0', count: 2, avg_rating: 100, sum_age: 40 },
+              { key: '102.0-*', count: 1, avg_rating: 200, sum_age: 20 }
+            ])
+          })
+        })
+      })
+
+      describe('with custom key', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.range('rating', { ranges: [{ key: 'low', from: 1, to: 101 }, { key: 'high', from: 102 }] })
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              { key: 'low', count: 2 },
+              { key: 'high', count: 1 }
+            ])
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                ranges: [{
+                  name: 'rating',
+                  ranges: [
+                    {
+                      key: 'low',
+                      from: 1,
+                      to: 101
+                    },
+                    {
+                      key: 'high',
+                      from: 102,
+                    }
+                  ]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              { key: 'low', count: 2 },
+              { key: 'high', count: 1 }
+            ])
+          })
+        })
+      })
+
+      describe('with children', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs
+              .range('rating', { ranges: [{ from: 1, to: 101 }, { from: 102 }] })
+              .child()
+              .terms('title')
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              {
+                key: '1.0-101.0',
+                count: 2,
+                children: {
+                  title: [
+                    {
+                      count: 1,
+                      key: 'A'
+                    },
+                    {
+                      count: 1,
+                      key: 'B'
+                    }
+                  ]
+                }
+              },
+              {
+                key: '102.0-*',
+                count: 1,
+                children: {
+                  title: [
+                    {
+                      key: 'A',
+                      count: 1
+                    }
+                  ]
+                }
+              }
+            ])
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                ranges: [{
+                  name: 'rating',
+                  ranges: [
+                    {
+                      from: 1,
+                      to: 101
+                    },
+                    {
+                      from: 102
+                    }
+                  ],
+                  children: [{
+                    terms: [{
+                      name: 'title'
+                    }]
+                  }]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.rating).to.deep.eq([
+              {
+                key: '1.0-101.0',
+                count: 2,
+                children: {
+                  title: [
+                    {
+                      count: 1,
+                      key: 'A'
+                    },
+                    {
+                      count: 1,
+                      key: 'B'
+                    }
+                  ]
+                }
+              },
+              {
+                key: '102.0-*',
+                count: 1,
+                children: {
+                  title: [
+                    {
+                      key: 'A',
+                      count: 1
+                    }
+                  ]
+                }
+              }
             ])
           })
         })

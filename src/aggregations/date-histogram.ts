@@ -3,14 +3,17 @@ import { BucketAggregation, BucketOptions, BucketToElasticOptions } from './buck
 
 export interface DateHistogramOptions extends BucketOptions {
   interval: string
+  min_doc_count?: number
 }
 
 export class DateHistogramAggregation extends BucketAggregation {
   interval: string
+  min_doc_count?: number
 
   constructor(search: Search, name: string, options: DateHistogramOptions) {
     super(search, name, options)
     this.interval = options.interval
+    this.min_doc_count = options.min_doc_count
   }
 
   get type() {
@@ -29,7 +32,8 @@ export class DateHistogramAggregation extends BucketAggregation {
 
     let payload = {
       [this.name]: {
-        date_histogram: { ...payloadOptions }
+        date_histogram: { ...payloadOptions },
+        ...super.toElastic(options)
       }
     }
 

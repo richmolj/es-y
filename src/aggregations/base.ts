@@ -1,5 +1,6 @@
 import { DateHistogramAggregation, DateHistogramOptions } from './date-histogram';
 import { TermsAggregation, TermsOptions } from "./terms"
+import { RangeAggregation, RangeOptions } from "./range"
 import { Calculation } from "./calculation"
 import { Search } from "../search"
 
@@ -10,6 +11,7 @@ interface ToElasticOptions {
 export class Aggregations {
   private termAggs: TermsAggregation[]
   private dateHistogramAggs: DateHistogramAggregation[]
+  private rangeAggs: RangeAggregation[]
   private calculations: Calculation[]
   private search: Search
 
@@ -17,6 +19,7 @@ export class Aggregations {
     this.search = search
     this.termAggs = []
     this.dateHistogramAggs = []
+    this.rangeAggs = []
     this.calculations = []
   }
 
@@ -31,7 +34,11 @@ export class Aggregations {
   }
 
   get bucketAggs() {
-    return [...this.termAggs, ...this.dateHistogramAggs]
+    return [
+      ...this.termAggs,
+      ...this.dateHistogramAggs,
+      ...this.rangeAggs
+    ]
   }
 
   terms(name: string, options: TermsOptions = {}): TermsAggregation {
@@ -43,6 +50,12 @@ export class Aggregations {
   dateHistogram(name: string, options: DateHistogramOptions): DateHistogramAggregation {
     const agg = new DateHistogramAggregation(this.search, name, options)
     this.dateHistogramAggs.push(agg)
+    return agg
+  }
+
+  range(name: string, options: RangeOptions): RangeAggregation {
+    const agg = new RangeAggregation(this.search, name, options)
+    this.rangeAggs.push(agg)
     return agg
   }
 
@@ -61,12 +74,8 @@ export class Aggregations {
 
   toElastic(options?: ToElasticOptions) {
     let payload = {}
-    this.termAggs.forEach(ta => {
-      payload = { ...payload, ...ta.toElastic(options) }
-    })
-
-    this.dateHistogramAggs.forEach(dha => {
-      payload = { ...payload, ...dha.toElastic(options) }
+    this.bucketAggs.forEach(ba => {
+      payload = { ...payload, ...ba.toElastic(options) }
     })
 
     this.calculations.forEach(c => {
@@ -84,9 +93,16 @@ export class Aggregations {
       })
     }
 
+    if (input.ranges) {
+      input.ranges.forEach((range: any) => {
+        const { name, ...options } = range
+        const clause = this.range(name, options)
+      })
+    }
+
     if (input.terms) {
       input.terms.forEach((term: any) => {
-        const { name, ensureQuality, children, sourceFields, order, sum, avg, ...options } = term
+        const { name, ensureQuality, sourceFields, order, sum, avg, ...options } = term
         const termsClause = this.terms(name || options.field, options)
 
         if (sourceFields) {
@@ -108,12 +124,6 @@ export class Aggregations {
 
         if (avg) {
           termsClause.avg(avg)
-        }
-
-        if (children) {
-          children.forEach((c: any) => {
-            termsClause.child().build(c)
-          })
         }
       })
     }

@@ -16,6 +16,8 @@ function parseAggBucket(bucket: any) {
       bucketKey != "key_as_string" &&
       bucketKey != "doc_count" &&
       bucketKey != "buckets" &&
+      bucketKey != "from" &&
+      bucketKey != "to" &&
       bucketKey != "source_fields"
     ) {
       if (!entry.children) {
@@ -30,6 +32,7 @@ function parseAggBucket(bucket: any) {
 }
 
 export function buildAggResults(search: Search, payload: any) {
+  console.log(JSON.stringify(payload))
   const aggResults = {} as any
   Object.keys(payload).forEach(aggName => {
     if (aggName.match(/^calc_/)) {
