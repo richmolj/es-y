@@ -36,6 +36,24 @@ export class Search {
   protected _scriptQuery?: ElasticScript
   protected _scriptScore?: ElasticScript
 
+  static async persist(payload: Record<string, any> | Record<string, any>[], refresh: boolean = false) {
+    if (!Array.isArray(payload)) payload = [payload]
+    const promises = payload.map((body: Record<string, any>) => {
+      return this.client.index({
+        index: this.index,
+        body
+      })
+    })
+    await Promise.all(promises)
+    if (refresh) {
+      await this.refresh()
+    }
+  }
+
+  static async refresh() {
+    await this.client.indices.refresh({ index: this.index })
+  }
+
   constructor(input?: any) {
     this.results = []
     this.aggResults = {}

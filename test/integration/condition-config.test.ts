@@ -74,23 +74,17 @@ describe("integration", () => {
 
   describe("low-level toElastic override", () => {
     beforeEach(async () => {
-      await TransformedThronesSearch.client.index({
-        index,
-        body: {
-          id: 1,
-          name: "foo",
-          title: "bar",
-        },
+      await TransformedThronesSearch.persist({
+        id: 1,
+        name: "foo",
+        title: "bar",
       })
-      await TransformedThronesSearch.client.index({
-        index,
-        body: {
-          id: 2,
-          name: "bar",
-          title: "foo",
-        },
+      await TransformedThronesSearch.persist({
+        id: 2,
+        name: "bar",
+        title: "foo",
       })
-      await TransformedThronesSearch.client.indices.refresh({ index })
+      await TransformedThronesSearch.refresh()
     })
 
     it('works', async() => {
@@ -111,22 +105,16 @@ describe("integration", () => {
   describe('transforms', () => {
     describe('transforming values', () => {
       beforeEach(async () => {
-        await TransformedThronesSearch.client.index({
-          index,
-          body: {
-            id: 1,
-            name: "foo",
-            title: "bar"
-          },
+        await TransformedThronesSearch.persist({
+          id: 1,
+          name: "foo",
+          title: "bar"
         })
-        await TransformedThronesSearch.client.index({
-          index,
-          body: {
-            id: 2,
-            name: "foo=bar=baz-bax",
-          },
+        await TransformedThronesSearch.persist({
+          id: 2,
+          name: "foo=bar=baz-bax",
         })
-        await TransformedThronesSearch.client.indices.refresh({ index })
+        await TransformedThronesSearch.refresh()
       })
 
       it('properly passes the transformed value', async () => {
@@ -148,35 +136,26 @@ describe("integration", () => {
 
     describe('transforming conditions', () => {
       beforeEach(async () => {
-        await TransformedThronesSearch.client.index({
-          index,
-          body: {
-            id: 1,
-            name: "foo",
-            created_at: '1980-01-01',
-            updated_at: '1960-01-01',
-            bio: "burn baby burn",
-          },
+        await TransformedThronesSearch.persist({
+          id: 1,
+          name: "foo",
+          created_at: '1980-01-01',
+          updated_at: '1960-01-01',
+          bio: "burn baby burn",
         })
-        await TransformedThronesSearch.client.index({
-          index,
-          body: {
-            id: 2,
-            created_at: '1950-01-01',
-            updated_at: '1960-01-01'
-          },
+        await TransformedThronesSearch.persist({
+          id: 2,
+          created_at: '1950-01-01',
+          updated_at: '1960-01-01'
         })
-        await TransformedThronesSearch.client.index({
-          index,
-          body: {
-            id: 3,
-            title: "foo",
-            created_at: '1950-01-01',
-            updated_at: '1980-01-01',
-            quote: "burn baby burn",
-          },
+        await TransformedThronesSearch.persist({
+          id: 3,
+          title: "foo",
+          created_at: '1950-01-01',
+          updated_at: '1980-01-01',
+          quote: "burn baby burn",
         })
-        await TransformedThronesSearch.client.indices.refresh({ index })
+        await TransformedThronesSearch.refresh()
       })
 
       it('properly uses the transformed condition', async () => {

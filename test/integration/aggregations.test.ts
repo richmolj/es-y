@@ -11,40 +11,31 @@ describe("integration", () => {
     setupIntegrationTest()
 
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 1,
-          name: "A Person 1",
-          age: 10,
-          title: "A",
-          rating: 100,
-          created_at: '2020-01-01'
-        },
+      await ThronesSearch.persist({
+        id: 1,
+        name: "A Person 1",
+        age: 10,
+        title: "A",
+        rating: 100,
+        created_at: '2020-01-01'
       })
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 2,
-          age: 20,
-          name: "A Person 2",
-          title: "A",
-          rating: 200,
-          created_at: '2020-06-01'
-        },
+      await ThronesSearch.persist({
+        id: 2,
+        age: 20,
+        name: "A Person 2",
+        title: "A",
+        rating: 200,
+        created_at: '2020-06-01'
       })
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 3,
-          age: 30,
-          name: "B Person",
-          title: "B",
-          rating: 100,
-          created_at: '2020-06-15'
-        },
+      await ThronesSearch.persist({
+        id: 3,
+        age: 30,
+        name: "B Person",
+        title: "B",
+        rating: 100,
+        created_at: '2020-06-15'
       })
-      await ThronesSearch.client.indices.refresh({ index })
+      await ThronesSearch.refresh()
     })
 
     // Min, max, any other graphiti/standard es things
@@ -347,16 +338,12 @@ describe("integration", () => {
 
       describe("with children", () => {
         beforeEach(async () => {
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 2,
-              age: 20,
-              title: "A",
-              rating: 500,
-            },
-          })
-          await ThronesSearch.client.indices.refresh({ index })
+          await ThronesSearch.persist({
+            id: 2,
+            age: 20,
+            title: "A",
+            rating: 500,
+          }, true)
         })
 
         describe("via direct assignment", () => {

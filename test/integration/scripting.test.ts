@@ -9,25 +9,19 @@ describe("integration", () => {
 
   describe("scripts", () => {
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 1,
-          rating: 100,
-          age: 5,
-          quote: 'burn baby burn'
-        },
+      await ThronesSearch.persist({
+        id: 1,
+        rating: 100,
+        age: 5,
+        quote: 'burn baby burn'
       })
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 2,
-          rating: 200,
-          age: 2,
-          quote: 'some quote'
-        },
+      await ThronesSearch.persist({
+        id: 2,
+        rating: 200,
+        age: 2,
+        quote: 'some quote'
       })
-      await ThronesSearch.client.indices.refresh({ index })
+      await ThronesSearch.refresh()
     })
 
     describe('saving', () => {
@@ -59,16 +53,12 @@ describe("integration", () => {
         await search.saveScript('foo', `doc['rating'].value > params.ratingGt`)
         await search.saveScript('bar', `doc['rating'].value * doc['age'].value`)
 
-        await ThronesSearch.client.index({
-          index,
-          body: {
-            id: 3,
-            rating: 400,
-            age: 2,
-            quote: 'burn you alive'
-          },
-        })
-        await ThronesSearch.client.indices.refresh({ index })
+        await ThronesSearch.persist({
+          id: 3,
+          rating: 400,
+          age: 2,
+          quote: 'burn you alive'
+        }, true)
       })
 
       describe('script query', () => {
