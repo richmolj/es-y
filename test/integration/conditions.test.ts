@@ -75,6 +75,62 @@ describe("integration", () => {
         expect(search.results.map(r => r.id)).to.deep.eq([333, 1])
       })
     })
+
+    describe('specifying combinator', () => {
+      beforeEach(async () => {
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 777,
+            quote: "one two three four",
+          },
+        })
+        await ThronesSearch.client.index({
+          index,
+          body: {
+            id: 888,
+            quote: "one five"
+          },
+        })
+        await ThronesSearch.client.indices.refresh({ index })
+      })
+
+      describe('via direct assignment', () => {
+        it("works", async () => {
+          const search = new ThronesSearch()
+          search.queries.keywords.eq("one two", { combinator: 'and' })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([777])
+          search.queries.keywords.eq("one two", { combinator: 'or' })
+          await search.execute()
+        })
+      })
+
+      describe('via constructor', () => {
+        it("works", async () => {
+          let search = new ThronesSearch({
+            queries: {
+              keywords: {
+                eq: "one two",
+                combinator: "and"
+              }
+            }
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([777])
+          search = new ThronesSearch({
+            queries: {
+              keywords: {
+                eq: "one two",
+                combinator: "or"
+              }
+            }
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.deep.eq([777, 888])
+        })
+      })
+    })
   })
 
   describe("filters", () => {

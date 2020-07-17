@@ -71,6 +71,8 @@ function buildCondition(condition: any, payload: any) {
         condition.boost = value
       } else if(operator === "fields") {
         condition.fields = value
+      } else if(operator === "combinator") {
+        condition.combinator = value
       } else {
         condition[operator](value)
       }
