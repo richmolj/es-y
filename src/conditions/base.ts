@@ -4,6 +4,21 @@ import { NotClause } from "./not-clause"
 import { ClassHook } from "../decorators"
 import { Constructor } from "../util/util-types"
 import { ClauseOptions } from '../types'
+import { Search } from ".."
+import cloneDeep = require('lodash/cloneDeep')
+
+interface ConditionToElastic {
+  (value: any): any // todo
+}
+
+interface TransformFunction {
+  (value: any, condition: any): any // todo
+}
+
+interface Config {
+  toElastic?: ConditionToElastic
+  transforms?: TransformFunction[]
+}
 
 // TODO: Ideally, this class would have the .or function
 // But it can't because types?
@@ -17,16 +32,18 @@ export class Condition<ConditionsT, ValueType> {
   protected andClauses: AndClause<this, ConditionsT>[]
   protected notClauses: NotClause<this, ConditionsT>[]
   protected klass!: typeof Condition
+  protected config?: Config
   static currentClass: typeof Condition = Condition
   static type: string
   boost?: null | number
 
-  constructor(elasticField: string, conditions: ConditionsT) {
+  constructor(elasticField: string, conditions: ConditionsT, config?: Config) {
     this.elasticField = elasticField
     this.conditions = conditions
     this.orClauses = []
     this.andClauses = []
     this.notClauses = []
+    this.config = config
   }
 
   protected hasClause(): boolean {
@@ -38,40 +55,54 @@ export class Condition<ConditionsT, ValueType> {
     let should = [] as any
     let must_not = [] as any
     let main
-    if (this.value || (this.value as any) === 0) {
-      let clause
+    let condition = this as Condition<ConditionsT, ValueType>
+    let queryType = this.queryType
 
-      if (this.boost) {
-        if (['numeric', 'date'].includes(this.klass.type) && typeof this.value == "object") {
+    if (['numeric', 'date'].includes(condition.klass.type) && typeof condition.value == "object") {
+      queryType = 'range'
+    }
+
+    if (condition.value || (condition.value as any) === 0) {
+      if (this.config && this.config.transforms) {
+        condition = this.applyTransforms() // NB condition is now duped
+      }
+
+      let clause
+      if (condition.boost) {
+        if (['numeric', 'date'].includes(condition.klass.type) && typeof condition.value == "object") {
           clause = {
-            [this.elasticField]: { ...this.value, ...{ boost: this.boost } }
+            [condition.elasticField]: { ...condition.value, ...{ boost: condition.boost } }
           }
         } else {
           let boostKey = 'value'
-          if (this.klass.type === 'text') {
+          if (condition.klass.type === 'text') {
             boostKey = 'query'
           }
           clause = {
-            [this.elasticField]: {
-              [boostKey]: this.value,
-              boost: this.boost
+            [condition.elasticField]: {
+              [boostKey]: condition.value,
+              boost: condition.boost
             }
           }
         }
       } else {
-        clause = { [this.elasticField]: this.value }
+        clause = { [condition.elasticField]: condition.value }
       }
 
       main = {
-        [this.queryType!]: clause
+        [queryType!]: clause
       }
     }
 
-    if (this.andClauses.length > 0) {
+    if (condition.config && condition.config.toElastic) {
+      main = condition.config.toElastic(condition)
+    }
+
+    if (condition.andClauses.length > 0) {
       if (main) {
         must.push(main)
       }
-      this.andClauses.forEach((c: any) => {
+      condition.andClauses.forEach((c: any) => {
         const esPayload = c.toElastic()
 
         // foo and (this)
@@ -115,8 +146,8 @@ export class Condition<ConditionsT, ValueType> {
       }
     }
 
-    if (this.orClauses.length > 0) {
-      this.orClauses.forEach((c: any) => {
+    if (condition.orClauses.length > 0) {
+      condition.orClauses.forEach((c: any) => {
         const esPayload = c.toElastic()
         // Push to "should", because "or"
 
@@ -137,12 +168,12 @@ export class Condition<ConditionsT, ValueType> {
       })
     }
 
-    if (this.notClauses.length > 0) {
-      this.notClauses.forEach((c: any) => {
+    if (condition.notClauses.length > 0) {
+      condition.notClauses.forEach((c: any) => {
         const esPayload = c.toElastic()
         if (esPayload && esPayload.should.length > 0) {
           // Push to "should", so we can accomodate "this OR NOT that" / "not this OR that"
-          if (this.orClauses.length > 0) {
+          if (condition.orClauses.length > 0) {
             should = should.concat({
               bool: {
                 must_not: esPayload.should,
@@ -164,8 +195,14 @@ export class Condition<ConditionsT, ValueType> {
     }
   }
 
-  protected dupe<ThisType extends Condition<ConditionsT, ValueType>>(this: ThisType): ThisType {
-    return new (this as any).klass(this.elasticField, this.conditions)
+  protected dupe<ThisType extends Condition<ConditionsT, ValueType>>(this: ThisType, heavy: boolean = false): ThisType {
+    if (heavy) {
+      return cloneDeep(this)
+    } else {
+      let instance = new (this as any).klass(this.elasticField, this.conditions)
+      instance.config = this.config
+      return instance
+    }
   }
 
   protected _setSimpleValue(val: ValueType) {
@@ -174,6 +211,21 @@ export class Condition<ConditionsT, ValueType> {
     }
 
     this.value = val
+  }
+
+  private applyTransforms(): this {
+    let value = this.value
+    const dupe = this.dupe(true)
+    const config = this.config as Config
+    const transforms = config.transforms as Function[]
+    transforms.forEach((transform: Function) => {
+      const result = transform(...[value, dupe])
+
+      if (result || result === 0) {
+        dupe.value = value = result
+      }
+    })
+    return dupe
   }
 }
 
@@ -260,7 +312,6 @@ export class RangeCondition<ConditionsT, ValueType> extends Condition<Conditions
   }
 
   protected _setValue(input: ValueType, type: ComparatorOperator, options?: ClauseOptions) {
-    this.queryType = "range"
     if (this.value) {
       if (isPrimitiveValue(this.value)) {
         throw new Error("Attempted to overwrite a previously set condition with a range condition")

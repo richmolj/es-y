@@ -7,51 +7,39 @@ describe("integration", () => {
 
   describe('boosting queries', () => {
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index: ThronesSearch.index,
-        body: {
-          id: 1,
-          name: "foo",
-          bio: "foo",
-          quote: "foo",
-          rating: 1,
-          created_at: '2000-01-01'
-        },
+      await ThronesSearch.persist({
+        id: 1,
+        name: "foo",
+        bio: "foo",
+        quote: "foo",
+        rating: 1,
+        created_at: '2000-01-01'
       })
-      await ThronesSearch.client.index({
-        index: ThronesSearch.index,
-        body: {
-          id: 2,
-          name: "bar",
-          bio: "bar",
-          quote: "bar",
-          rating: 2,
-          created_at: '2000-02-02'
-        },
+      await ThronesSearch.persist({
+        id: 2,
+        name: "bar",
+        bio: "bar",
+        quote: "bar",
+        rating: 2,
+        created_at: '2000-02-02'
       })
 
-      await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+      await ThronesSearch.refresh()
     })
 
     // TODO: GQL boosting
     describe('field boosting', async() => {
       beforeEach(async () => {
-        await ThronesSearch.client.index({
-          index: ThronesSearch.index,
-          body: {
-            id: 3,
-            quote: "burn you alive",
-          },
+        await ThronesSearch.persist({
+          id: 3,
+          quote: "burn you alive",
         })
-        await ThronesSearch.client.index({
-          index: ThronesSearch.index,
-          body: {
-            id: 4,
-            bio: "burn you alive",
-          },
+        await ThronesSearch.persist({
+          id: 4,
+          bio: "burn you alive",
         })
 
-        await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+        await ThronesSearch.refresh()
       })
 
       describe('via constructor', () => {
@@ -162,15 +150,12 @@ describe("integration", () => {
 
         describe('lt', () => {
           beforeEach(async () => {
-            await ThronesSearch.client.index({
-              index: ThronesSearch.index,
-              body: {
-                id: 3,
-                rating: 1
-              },
+            await ThronesSearch.persist({
+              id: 3,
+              rating: 1
             })
 
-            await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+            await ThronesSearch.refresh()
           })
 
           it('works', async() => {
@@ -185,15 +170,12 @@ describe("integration", () => {
 
         describe('lte', () => {
           beforeEach(async () => {
-            await ThronesSearch.client.index({
-              index: ThronesSearch.index,
-              body: {
-                id: 3,
-                rating: 3
-              },
+            await ThronesSearch.persist({
+              id: 3,
+              rating: 3
             })
 
-            await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+            await ThronesSearch.refresh()
           })
 
           it('works', async() => {
@@ -269,14 +251,11 @@ describe("integration", () => {
           describe('within condition', () => {
             describe('vanilla', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo foo foo foo foo",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo foo foo foo foo",
                 })
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {
@@ -302,22 +281,16 @@ describe("integration", () => {
 
             describe('and clause', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo bar",
                 })
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 4,
-                    bio: "foo bar bar bar bar bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 4,
+                  bio: "foo bar bar bar bar bar",
                 })
 
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {
@@ -334,24 +307,18 @@ describe("integration", () => {
           describe('across conditions', () => {
             describe('vanilla', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo foo foo",
-                    quote: "bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo foo foo",
+                  quote: "bar",
                 })
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 4,
-                    bio: "foo",
-                    quote: "bar bar bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 4,
+                  bio: "foo",
+                  quote: "bar bar bar",
                 })
 
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {
@@ -376,24 +343,18 @@ describe("integration", () => {
 
             describe('and clause', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo foo foo",
-                    quote: "bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo foo foo",
+                  quote: "bar",
                 })
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 4,
-                    bio: "foo",
-                    quote: "bar bar bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 4,
+                  bio: "foo",
+                  quote: "bar bar bar",
                 })
 
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {
@@ -412,14 +373,10 @@ describe("integration", () => {
           describe('within condition', () => {
             describe('vanilla', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo foo foo foo foo",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo foo foo foo foo",
+                }, true)
               })
 
               it('works', async() => {
@@ -445,22 +402,16 @@ describe("integration", () => {
 
             describe('and clause', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo bar",
                 })
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 4,
-                    bio: "foo bar bar bar bar bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 4,
+                  bio: "foo bar bar bar bar bar",
                 })
 
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {
@@ -477,24 +428,18 @@ describe("integration", () => {
           describe('across conditions', () => {
             describe('vanilla', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo foo foo",
-                    quote: "bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo foo foo",
+                  quote: "bar",
                 })
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 4,
-                    bio: "foo",
-                    quote: "bar bar bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 4,
+                  bio: "foo",
+                  quote: "bar bar bar",
                 })
 
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {
@@ -519,24 +464,18 @@ describe("integration", () => {
 
             describe('and clause', () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 3,
-                    bio: "foo foo foo",
-                    quote: "bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 3,
+                  bio: "foo foo foo",
+                  quote: "bar",
                 })
-                await ThronesSearch.client.index({
-                  index: ThronesSearch.index,
-                  body: {
-                    id: 4,
-                    bio: "foo",
-                    quote: "bar bar bar",
-                  },
+                await ThronesSearch.persist({
+                  id: 4,
+                  bio: "foo",
+                  quote: "bar bar bar",
                 })
 
-                await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
+                await ThronesSearch.refresh()
               })
 
               it('works', async() => {

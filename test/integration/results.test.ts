@@ -1,26 +1,21 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { expect } from "chai"
 import { ThronesSearch } from "../fixtures"
+import { setupIntegrationTest } from "../util"
 
 const index = ThronesSearch.index
 
 describe("integration", () => {
+  setupIntegrationTest()
+
   describe("results", () => {
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 1,
-          otherId: 5,
-          name: "Ned Stark",
-          quote: "Winter is coming.",
-        },
-      })
-      await ThronesSearch.client.indices.refresh({ index })
-    })
-
-    afterEach(async () => {
-      await ThronesSearch.client.indices.delete({ index })
+      await ThronesSearch.persist({
+        id: 1,
+        otherId: 5,
+        name: "Ned Stark",
+        quote: "Winter is coming.",
+      }, true)
     })
 
     it("can execute basic query and get results", async () => {
@@ -38,23 +33,23 @@ describe("integration", () => {
 
     describe("meta", () => {
       beforeEach(async () => {
-        await ThronesSearch.client.index({
-          index,
-          body: { id: 2, otherId: 4 },
+        await ThronesSearch.persist({
+          id: 2,
+          otherId: 4
         })
-        await ThronesSearch.client.index({
-          index,
-          body: { id: 3, otherId: 3 },
+        await ThronesSearch.persist({
+          id: 3,
+          otherId: 3
         })
-        await ThronesSearch.client.index({
-          index,
-          body: { id: 4, otherId: 2 },
+        await ThronesSearch.persist({
+          id: 4,
+          otherId: 2
         })
-        await ThronesSearch.client.index({
-          index,
-          body: { id: 5, otherId: 1 },
+        await ThronesSearch.persist({
+          id: 5,
+          otherId: 1
         })
-        await ThronesSearch.client.indices.refresh({ index })
+        await ThronesSearch.refresh()
       })
 
       describe("via direct assignment", () => {

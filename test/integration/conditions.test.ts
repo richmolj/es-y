@@ -12,45 +12,36 @@ describe("integration", () => {
   setupIntegrationTest()
 
   beforeEach(async () => {
-    await ThronesSearch.client.index({
-      index,
-      body: {
-        id: 1,
-        name: "Daenerys Targaryen",
-        title: "Queen of Dragons",
-        rating: 250,
-        age: 13,
-        quote: "And I swear this. If you ever betray me, I’ll burn you alive.",
-        bio: "The standard dragon queen take over the world shit",
-        created_at: "1980-02-26",
-        updated_at: "1980-02-27",
-      },
+    await ThronesSearch.persist({
+      id: 1,
+      name: "Daenerys Targaryen",
+      title: "Queen of Dragons",
+      rating: 250,
+      age: 13,
+      quote: "And I swear this. If you ever betray me, I’ll burn you alive.",
+      bio: "The standard dragon queen take over the world shit",
+      created_at: "1980-02-26",
+      updated_at: "1980-02-27",
     })
 
-    await ThronesSearch.client.index({
-      index,
-      body: {
-        id: 2,
-        name: "Ned Stark",
-        title: "Warden of the North",
-        rating: 500,
-        age: 35,
-        quote: "Winter is coming.",
-        bio: "Does a lot of things, really digs vows and duty and whatnot",
-        created_at: "1960-11-14",
-        updated_at: "1960-11-15",
-      },
+    await ThronesSearch.persist({
+      id: 2,
+      name: "Ned Stark",
+      title: "Warden of the North",
+      rating: 500,
+      age: 35,
+      quote: "Winter is coming.",
+      bio: "Does a lot of things, really digs vows and duty and whatnot",
+      created_at: "1960-11-14",
+      updated_at: "1960-11-15",
     })
     // Seed something that should never come back when conditions applied
-    await ThronesSearch.client.index({
-      index,
-      body: {
-        id: 999,
-        name: "asdf",
-        quote: "asdf",
-      },
+    await ThronesSearch.persist({
+      id: 999,
+      name: "asdf",
+      quote: "asdf",
     })
-    await ThronesSearch.client.indices.refresh({ index })
+    await ThronesSearch.refresh()
   })
 
   it('can search without filters or queries', async () => {
@@ -61,14 +52,10 @@ describe("integration", () => {
 
   describe("keywords", () => {
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 333,
-          quote: "dragon dragon dragon dragon",
-        },
-      })
-      await ThronesSearch.client.indices.refresh({ index })
+      await ThronesSearch.persist({
+        id: 333,
+        quote: "dragon dragon dragon dragon",
+      }, true)
     })
 
     describe('on filters', () => {
@@ -208,15 +195,11 @@ describe("integration", () => {
           describe("AND NOT", () => {
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
-                    id: 222,
-                    name: "Ned Stark",
-                    title: "other",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                await ThronesSearch.persist({
+                  id: 222,
+                  name: "Ned Stark",
+                  title: "other",
+                }, true)
               })
 
               describe("via direct assignment", () => {
@@ -254,23 +237,18 @@ describe("integration", () => {
           describe("NOT AND", () => {
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                await ThronesSearch.persist([
+                  {
                     id: 999,
                     name: "Ned Stark",
                     title: "Warden of the North",
                   },
-                })
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                  {
                     id: 222,
                     name: "Ned Stark",
                     title: "other",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                  }
+                ], true)
               })
 
               describe("via direct assignment", () => {
@@ -339,15 +317,11 @@ describe("integration", () => {
 
           describe("NOT OR across fields", () => {
             beforeEach(async () => {
-              await ThronesSearch.client.index({
-                index,
-                body: {
-                  id: 777,
-                  name: "Ned Stark",
-                  title: "Other Ned",
-                },
-              })
-              await ThronesSearch.client.indices.refresh({ index })
+              await ThronesSearch.persist({
+                id: 777,
+                name: "Ned Stark",
+                title: "Other Ned",
+              }, true)
             })
 
             it("works", async () => {
@@ -362,15 +336,11 @@ describe("integration", () => {
 
       describe("AND clause", () => {
         beforeEach(async () => {
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 333,
-              name: "Ned Stark",
-              title: "Other Ned",
-            },
-          })
-          await ThronesSearch.client.indices.refresh({ index })
+          await ThronesSearch.persist({
+            id: 333,
+            name: "Ned Stark",
+            title: "Other Ned",
+          }, true)
         })
 
         // No "across same field" test because doesnt make sense with eq
@@ -546,21 +516,16 @@ describe("integration", () => {
           describe("AND NOT", () => {
             describe("across same field", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                await ThronesSearch.persist([
+                  {
                     id: 222,
                     quote: "Winter is here!",
                   },
-                })
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                  {
                     id: 999,
                     quote: "Winter is coming other text",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                  }
+                ], true)
               })
 
               describe("by direct assignment", () => {
@@ -594,23 +559,18 @@ describe("integration", () => {
 
             describe("across different fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                await ThronesSearch.persist([
+                  {
                     id: 999,
                     quote: "Winter is here!",
                     name: "Other Ned",
                   },
-                })
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                  {
                     id: 222,
                     quote: "Winter is here!",
                     name: "Find me!",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                  }
+                ], true)
               })
 
               describe("by direct assignment", () => {
@@ -648,21 +608,16 @@ describe("integration", () => {
           describe("NOT AND", () => {
             describe("within same field", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                await ThronesSearch.persist([
+                  {
                     id: 999,
                     quote: "winter is here!",
                   },
-                })
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                  {
                     id: 222,
                     quote: "other text",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                  }
+                ], true)
               })
 
               describe("via direct assignment", () => {
@@ -696,15 +651,11 @@ describe("integration", () => {
 
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
-                    id: 222,
-                    quote: "Something else",
-                    name: "Ned Stark",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                await ThronesSearch.persist({
+                  id: 222,
+                  quote: "Something else",
+                  name: "Ned Stark",
+                }, true)
               })
 
               describe("via direct assignment", () => {
@@ -773,15 +724,11 @@ describe("integration", () => {
 
           describe("NOT OR across fields", () => {
             beforeEach(async () => {
-              await ThronesSearch.client.index({
-                index,
-                body: {
-                  id: 777,
-                  quote: "winter",
-                  bio: "other bio",
-                },
-              })
-              await ThronesSearch.client.indices.refresh({ index })
+              await ThronesSearch.persist({
+                id: 777,
+                quote: "winter",
+                bio: "other bio",
+              }, true)
             })
 
             describe("via direct assignment", () => {
@@ -818,15 +765,11 @@ describe("integration", () => {
 
         describe("AND clause", () => {
           beforeEach(async () => {
-            await ThronesSearch.client.index({
-              index,
-              body: {
-                id: 333,
-                name: "Other Ned",
-                quote: "winter other text",
-              },
-            })
-            await ThronesSearch.client.indices.refresh({ index })
+            await ThronesSearch.persist({
+              id: 333,
+              name: "Other Ned",
+              quote: "winter other text",
+            }, true)
           })
 
           // TODO: has problems with additional levels of nesting
@@ -949,21 +892,16 @@ describe("integration", () => {
       describe("phrase match", () => {
         beforeEach(async () => {
           // Same phrase in different order
-          await ThronesSearch.client.index({
-            index,
-            body: {
+          await ThronesSearch.persist([
+            {
               id: 777,
               quote: "alive burn you",
             },
-          })
-          await ThronesSearch.client.index({
-            index,
-            body: {
+            {
               id: 888,
               bio: "vow digs",
-            },
-          })
-          await ThronesSearch.client.indices.refresh({ index })
+            }
+          ], true)
         })
 
         describe("by direct assignment", () => {
@@ -989,15 +927,11 @@ describe("integration", () => {
 
         describe("AND clause", () => {
           beforeEach(async () => {
-            await ThronesSearch.client.index({
-              index,
-              body: {
-                id: 333,
-                bio: "Other Dany",
-                quote: "burn you alive with my words",
-              },
-            })
-            await ThronesSearch.client.indices.refresh({ index })
+            await ThronesSearch.persist({
+              id: 333,
+              bio: "Other Dany",
+              quote: "burn you alive with my words",
+            }, true)
           })
 
           describe("across same field", () => {
@@ -1241,15 +1175,11 @@ describe("integration", () => {
 
           describe("NOT OR across fields", () => {
             beforeEach(async () => {
-              await ThronesSearch.client.index({
-                index,
-                body: {
-                  id: 222,
-                  quote: "burn you alive",
-                  name: "other daen",
-                },
-              })
-              await ThronesSearch.client.indices.refresh({ index })
+              await ThronesSearch.persist({
+                id: 222,
+                quote: "burn you alive",
+                name: "other daen",
+              }, true)
             })
 
             describe("via direct assignment", () => {
@@ -1358,23 +1288,18 @@ describe("integration", () => {
           describe("AND NOT", () => {
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                await ThronesSearch.persist([
+                  {
                     id: 999,
                     rating: 500,
                     age: 100,
                   },
-                })
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                  {
                     id: 222,
                     rating: 500,
                     age: 90,
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                  }
+                ], true)
               })
 
               describe("via direct assignment", () => {
@@ -1412,15 +1337,11 @@ describe("integration", () => {
           describe("NOT AND", () => {
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
-                    id: 222,
-                    rating: 600,
-                    age: 77,
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                await ThronesSearch.persist({
+                  id: 222,
+                  rating: 600,
+                  age: 77,
+                }, true)
               })
 
               describe("via direct assignment", () => {
@@ -1489,15 +1410,11 @@ describe("integration", () => {
 
           describe("NOT OR across fields", () => {
             beforeEach(async () => {
-              await ThronesSearch.client.index({
-                index,
-                body: {
-                  id: 222,
-                  rating: 500,
-                  name: "other ned",
-                },
-              })
-              await ThronesSearch.client.indices.refresh({ index })
+              await ThronesSearch.persist({
+                id: 222,
+                rating: 500,
+                name: "other ned",
+              }, true)
             })
 
             describe("via direct assignment", () => {
@@ -1534,15 +1451,11 @@ describe("integration", () => {
 
         describe("AND clause", () => {
           beforeEach(async () => {
-            await ThronesSearch.client.index({
-              index,
-              body: {
-                id: 333,
-                rating: 500,
-                age: 100,
-              },
-            })
-            await ThronesSearch.client.indices.refresh({ index })
+            await ThronesSearch.persist({
+              id: 333,
+              rating: 500,
+              age: 100,
+            }, true)
           })
 
           // across same field doesnt make sense bc only eq
@@ -1765,15 +1678,11 @@ describe("integration", () => {
 
       describe("combining gt and lt", () => {
         beforeEach(async () => {
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 999,
-              name: "Thrones",
-              rating: 300,
-            },
-          })
-          await ThronesSearch.client.indices.refresh({ index })
+          await ThronesSearch.persist({
+            id: 999,
+            name: "Thrones",
+            rating: 300,
+          }, true)
         })
 
         describe("by direct assignment", () => {
@@ -1854,15 +1763,11 @@ describe("integration", () => {
           describe("AND NOT", () => {
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
-                    id: 333,
-                    created_at: "1960-11-14",
-                    updated_at: "2000-01-01",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                await ThronesSearch.persist({
+                  id: 333,
+                  created_at: "1960-11-14",
+                  updated_at: "2000-01-01",
+                }, true)
               })
 
               describe("via direct assignment", () => {
@@ -1900,24 +1805,18 @@ describe("integration", () => {
           describe("NOT AND", () => {
             describe("across fields", () => {
               beforeEach(async () => {
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                await ThronesSearch.persist([
+                  {
                     id: 999,
                     created_at: "1960-11-14",
                     updated_at: "2000-01-01",
                   },
-                })
-
-                await ThronesSearch.client.index({
-                  index,
-                  body: {
+                  {
                     id: 333,
                     created_at: "1980-07-07",
                     updated_at: "2000-01-01",
-                  },
-                })
-                await ThronesSearch.client.indices.refresh({ index })
+                  }
+                ], true)
               })
 
               describe("via direct assignment", () => {
@@ -1986,15 +1885,11 @@ describe("integration", () => {
 
           describe("NOT OR across fields", () => {
             beforeEach(async () => {
-              await ThronesSearch.client.index({
-                index,
-                body: {
-                  id: 222,
-                  createdAt: "1960-11-14",
-                  name: "other ned",
-                },
-              })
-              await ThronesSearch.client.indices.refresh({ index })
+              await ThronesSearch.persist({
+                id: 222,
+                createdAt: "1960-11-14",
+                name: "other ned",
+              }, true)
             })
 
             describe("via direct assignment", () => {
@@ -2031,15 +1926,11 @@ describe("integration", () => {
 
         describe("AND clause", () => {
           beforeEach(async () => {
-            await ThronesSearch.client.index({
-              index,
-              body: {
-                id: 333,
-                created_at: "1960-11-14",
-                updated_at: "2000-01-01",
-              },
-            })
-            await ThronesSearch.client.indices.refresh({ index })
+            await ThronesSearch.persist({
+              id: 333,
+              created_at: "1960-11-14",
+              updated_at: "2000-01-01",
+            }, true)
           })
 
           // across same field makes no sense here
@@ -2199,28 +2090,22 @@ describe("integration", () => {
 
     describe("top-level NOT", () => {
       beforeEach(async () => {
-        // Include because age not 35
-        await ThronesSearch.client.index({
-          index,
-          body: {
+        await ThronesSearch.persist([
+          // Include because age not 35
+          {
             id: 543,
             name: "Ned Stark",
             title: "Warden of the North",
             age: 36,
           },
-        })
-
-        // Include because title not warden
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // Include because title not warden
+          {
             id: 555,
             name: "Ned Stark",
             title: "foo",
             age: 35,
-          },
-        })
-        await ThronesSearch.client.indices.refresh({ index })
+          }
+        ], true)
       })
 
       describe("via direct assignment", () => {
@@ -2289,15 +2174,11 @@ describe("integration", () => {
 
     describe("top-level AND", () => {
       beforeEach(async () => {
-        await ThronesSearch.client.index({
-          index,
-          body: {
-            id: 888,
-            name: "Ned Stark",
-            title: "findme",
-          },
-        })
-        await ThronesSearch.client.indices.refresh({ index })
+        await ThronesSearch.persist({
+          id: 888,
+          name: "Ned Stark",
+          title: "findme",
+        }, true)
       })
 
       it("works", async () => {
@@ -2312,31 +2193,23 @@ describe("integration", () => {
     describe('OR then AND', () => {
       describe('within a condition', () => {
         beforeEach(async () => {
-          // exclude, only foo
-          await ThronesSearch.client.index({
-            index,
-            body: {
+          await ThronesSearch.persist([
+            // exclude, only foo
+            {
               id: 999,
               quote: "foo"
             },
-          })
-          // exclude, only bar
-          await ThronesSearch.client.index({
-            index,
-            body: {
+            // exclude, only bar
+            {
               id: 999,
               quote: "bar"
             },
-          })
-          // include, foo and bar
-          await ThronesSearch.client.index({
-            index,
-            body: {
+            // include, foo and bar
+            {
               id: 444,
               quote: "foo bar"
             },
-          })
-          await ThronesSearch.client.indices.refresh({ index })
+          ], true)
         })
 
         it('has AND trump OR', async() => {
@@ -2350,24 +2223,19 @@ describe("integration", () => {
 
       describe('across conditions', () => {
         beforeEach(async () => {
-          // wrong age
-          await ThronesSearch.client.index({
-            index,
-            body: {
+          await ThronesSearch.persist([
+            // wrong age
+            {
               id: 999,
               name: "Ned Stark",
               title: "Other Ned",
             },
-          })
-          await ThronesSearch.client.index({
-            index,
-            body: {
+            {
               id: 777,
               name: "Ned Stark",
               age: 4
-            },
-          })
-          await ThronesSearch.client.indices.refresh({ index })
+            }
+          ], true)
         })
 
         it('opens new parens on new condition: (bio or (name and age))', async() => {
@@ -2383,21 +2251,15 @@ describe("integration", () => {
     describe('AND then OR', () => {
       describe('within same condition', () => {
         beforeEach(async () => {
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 777,
-              bio: "dragon foo",
-            },
+          await ThronesSearch.persist({
+            id: 777,
+            bio: "dragon foo",
           })
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 888,
-              bio: "bar",
-            },
+          await ThronesSearch.persist({
+            id: 888,
+            bio: "bar",
           })
-          await ThronesSearch.client.indices.refresh({ index })
+          await ThronesSearch.refresh()
         })
 
         it('has AND trump OR', async() => {
@@ -2412,43 +2274,28 @@ describe("integration", () => {
       describe('across conditions', () => {
         beforeEach(async () => {
           // excluded, correct name but not bio
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 999,
-              name: "Ned Stark"
-            },
+          await ThronesSearch.persist({
+            id: 999,
+            name: "Ned Stark"
           })
-
           // excluded, correct age but not bio
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 999,
-              age: 4
-            },
+          await ThronesSearch.persist({
+            id: 999,
+            age: 4
           })
-
           // included because correct bio and age
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 888,
-              bio: "dragon",
-              age: 4
-            },
+          await ThronesSearch.persist({
+            id: 888,
+            bio: "dragon",
+            age: 4
           })
-
           // included because correct bio and name
-          await ThronesSearch.client.index({
-            index,
-            body: {
-              id: 777,
-              bio: "dragon",
-              name: "Ned Stark"
-            },
+          await ThronesSearch.persist({
+            id: 777,
+            bio: "dragon",
+            name: "Ned Stark"
           })
-          await ThronesSearch.client.indices.refresh({ index })
+          await ThronesSearch.refresh()
         })
 
         it('opens new parens on condition: (bio and (name or age))', async() => {
@@ -2463,68 +2310,47 @@ describe("integration", () => {
 
     describe("complex, nested queries", () => {
       beforeEach(async () => {
-        // Right name
-        await ThronesSearch.client.index({
-          index,
-          body: {
+        await ThronesSearch.persist([
+          // Right name
+          {
             id: 11,
             name: "Ned Stark",
             title: "Other Ned",
           },
-        })
-
-        // Same as 11 but bio excluded by global not
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // Same as 11 but bio excluded by global not
+          {
             id: 11,
             name: "Ned Stark",
             title: "Other Ned",
             bio: "dontfindme",
           },
-        })
-
-        // Right name, right age + rating
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // Right name, right age + rating
+          {
             id: 111,
             name: "Ned Stark",
             age: 10,
             rating: 77,
           },
-        })
-
-        // OR name
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // OR name
+          {
             id: 345,
             name: "Rando name",
           },
-        })
-
-        // Right name, right age, wrong rating
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // Right name, right age, wrong rating
+          {
             id: 999,
             name: "Ned Stark",
             age: 10,
             rating: 10,
           },
-        })
-        // Right name, wrong title/age
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // Right name, wrong title/age
+          {
             id: 999,
             name: "Ned Stark",
             title: "dontfindme",
             age: 9,
-          },
-        })
-        await ThronesSearch.client.indices.refresh({ index })
+          }
+        ], true)
       })
 
       describe("via direct assignment", () => {
@@ -2585,14 +2411,10 @@ describe("integration", () => {
 
   describe('queries', () => {
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index,
-        body: {
-          id: 333,
-          bio: "dragon dragon dragon"
-        },
-      })
-      await ThronesSearch.client.indices.refresh({ index })
+      await ThronesSearch.persist({
+        id: 333,
+        bio: "dragon dragon dragon"
+      }, true)
     })
 
     describe('via direct assignment', () => {
@@ -2621,33 +2443,25 @@ describe("integration", () => {
     describe('with and/or/not', () => {
       beforeEach(async () => {
         // exclude, because age > 10
-        await ThronesSearch.client.index({
-          index,
-          body: {
+        await ThronesSearch.persist([
+          {
             id: 999,
             quote: "foo",
             age: 9
           },
-        })
-        // rank lower, only one foo
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // rank lower, only one foo
+          {
             id: 7,
             quote: "foo",
             age: 20
           },
-        })
-        // rank higher, many foos
-        await ThronesSearch.client.index({
-          index,
-          body: {
+          // rank higher, many foos
+          {
             id: 8,
             quote: "foo foo foo foo foo foo foo foo foo foo foo foo",
             age: 20
-          },
-        })
-        await ThronesSearch.client.indices.refresh({ index })
+          }
+        ], true)
       })
 
       // 8 first, because tons of foos
@@ -2665,15 +2479,11 @@ describe("integration", () => {
 
     describe('when combined with filters', () => {
       beforeEach(async () => {
-        await ThronesSearch.client.index({
-          index,
-          body: {
-            id: 444,
-            bio: "dragon dragon dragon dragon dragon",
-            age: 77
-          },
-        })
-        await ThronesSearch.client.indices.refresh({ index })
+        await ThronesSearch.persist({
+          id: 444,
+          bio: "dragon dragon dragon dragon dragon",
+          age: 77
+        }, true)
       })
 
       it('works', async() => {

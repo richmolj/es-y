@@ -16,9 +16,10 @@ import {
 } from "../src/index"
 
 @ClassHook()
-class ThronesSearchConditions extends Conditions {
+export class ThronesSearchConditions extends Conditions {
   name = new KeywordCondition<this>("name", this)
   title = new KeywordCondition<this>("title", this)
+  titleAlias = new KeywordCondition<this>("title", this)
   quote = new TextCondition<this>("quote", this)
   bio = new TextCondition<this>("bio", this)
   bioAlias = new TextCondition<this>("bio", this)

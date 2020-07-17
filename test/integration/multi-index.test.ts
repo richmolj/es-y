@@ -42,41 +42,29 @@ describe("integration", () => {
 
   describe('multi-index queries', () => {
     beforeEach(async () => {
-      await ThronesSearch.client.index({
-        index: ThronesSearch.index,
-        body: {
-          id: 1,
-          title: "Mother of Dragons",
-          rating: 250
-        },
+      await ThronesSearch.persist({
+        id: 1,
+        title: "Mother of Dragons",
+        rating: 250
       })
-      await ThronesSearch.client.index({
-        index: ThronesSearch.index,
-        body: {
-          id: 2,
-          title: "Warden of the North",
-          rating: 500
-        },
+      await ThronesSearch.persist({
+        id: 2,
+        title: "Warden of the North",
+        rating: 500
       })
 
-      await JustifiedSearch.client.index({
-        index: JustifiedSearch.index,
-        body: {
-          id: 901,
-          name: "Boyd Crowder",
-          rating: 250
-        },
+      await JustifiedSearch.persist({
+        id: 901,
+        name: "Boyd Crowder",
+        rating: 250
       })
-      await JustifiedSearch.client.index({
-        index: JustifiedSearch.index,
-        body: {
-          id: 902,
-          name: "Raylan Givens",
-          rating: 500
-        },
+      await JustifiedSearch.persist({
+        id: 902,
+        name: "Raylan Givens",
+        rating: 500
       })
-      await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
-      await JustifiedSearch.client.indices.refresh({ index: JustifiedSearch.index })
+      await ThronesSearch.refresh()
+      await JustifiedSearch.refresh()
     })
 
     describe('via constructor', async() => {
@@ -138,24 +126,16 @@ describe("integration", () => {
 
       describe('and also passing conditions that apply to both', () => {
         beforeEach(async() => {
-          await ThronesSearch.client.index({
-            index: ThronesSearch.index,
-            body: {
-              id: 3,
-              title: "Warden of the North",
-              rating: 600
-            },
-          })
-          await JustifiedSearch.client.index({
-            index: JustifiedSearch.index,
-            body: {
-              id: 903,
-              name: "Boyd Crowder",
-              rating: 600
-            },
-          })
-          await ThronesSearch.client.indices.refresh({ index: ThronesSearch.index })
-          await JustifiedSearch.client.indices.refresh({ index: JustifiedSearch.index })
+          await ThronesSearch.persist({
+            id: 3,
+            title: "Warden of the North",
+            rating: 600
+          }, true)
+          await JustifiedSearch.persist({
+            id: 903,
+            name: "Boyd Crowder",
+            rating: 600
+          }, true)
         })
 
         it('works', async() => {

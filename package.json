@@ -1,6 +1,6 @@
 {
   "name": "search-resource",
-  "version": "0.0.47",
+  "version": "0.0.50",
   "description": "",
   "main": "lib/src/index.js",
   "module": "lib/src/index.js",
@@ -15,14 +15,16 @@
   "license": "ISC",
   "dependencies": {
     "@elastic/elasticsearch": "7.6.0",
-    "@types/rimraf": "3.0.0",
     "graphql-type-json": "^0.3.1",
+    "lodash.clonedeep": "4.5.0",
     "rimraf": "3.0.2"
   },
   "devDependencies": {
     "@types/chai": "4.2.9",
+    "@types/lodash.clonedeep": "4.5.6",
     "@types/mocha": "7.0.1",
     "@types/node": "13.7.6",
+    "@types/rimraf": "3.0.0",
     "@typescript-eslint/eslint-plugin": "2.22.0",
     "@typescript-eslint/parser": "2.22.0",
     "chai": "4.2.0",
