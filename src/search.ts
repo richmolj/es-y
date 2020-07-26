@@ -100,7 +100,9 @@ export class Search {
   }
 
   fieldFor(name: string) {
-    return (this.filters as any)[name].elasticField
+    if ((this.filters as any)[name]) {
+      return (this.filters as any)[name].elasticField
+    }
   }
 
   get includeMetadata() {

@@ -35,8 +35,54 @@ describe("integration", () => {
           rating: {
             type: "integer",
           },
+          characterAge: {
+            type: "integer",
+          },
+          age: {
+            type: "alias",
+            path: "characterAge"
+          }
         }
       }
+    })
+  })
+
+  describe('multi-index aggregations', () => {
+    beforeEach(async() => {
+      await ThronesSearch.persist({
+        id: 1,
+        name: "John Doe",
+        age: 50
+      }, true)
+
+      await JustifiedSearch.persist({
+        id: 901,
+        name: "John Doe",
+        characterAge: 60
+      }, true)
+    })
+
+    // Note we go through the characterAge/age alias
+    // bgc1922_TODO test constructor vs direct
+    // bgc1922_TODO splitting
+    // bgc1922_TODO: constructor calcs need to support array ie avg ['a', 'b'] bc key same
+    it('works', async() => {
+      const search = new GlobalSearch({
+        thrones: {},
+        justified: {},
+        aggregations: {
+          terms: [{
+            name: "name",
+            avg: "age"
+          }]
+        }
+      })
+      await search.execute()
+      expect(search.aggResults).to.deep.eq({
+        name: [
+          { key: "John Doe", count: 2, avg_age: 55 }
+        ]
+      })
     })
   })
 

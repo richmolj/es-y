@@ -20,10 +20,11 @@ export class DateHistogramAggregation extends BucketAggregation {
     return 'date_histogram'
   }
 
+  // bgc1922_TODO interval becomes calendar_interval in new ES version
   toElastic(options?: BucketToElasticOptions) {
     let payloadOptions = {
       field: this.field,
-      calendar_interval: this.interval
+      interval: this.interval
     } as any
 
     if (this.min_doc_count) {
