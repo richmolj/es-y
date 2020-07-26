@@ -6,6 +6,7 @@ import { execute } from './util/execute'
 import { LoggerInterface } from "./util/logger"
 import { Client } from "@elastic/elasticsearch"
 import { assignSortAndPage } from './util/build-request'
+import { buildAggRequest } from "./aggregations"
 
 @ClassHook()
 export class MultiSearch extends Search {
@@ -38,7 +39,21 @@ export class MultiSearch extends Search {
           this.searchInstances.push(instance)
         }
       })
+
+      if (input && (input.aggs || input.aggregations)) {
+        this.aggs.build(input.aggs || input.aggregations)
+      }
     }
+  }
+
+  fieldFor(name: string) {
+    let field
+    this.searchInstances.forEach((instance) => {
+      if ((instance.filters as any)[name]) {
+        field = (instance.filters as any)[name].elasticField
+      }
+    })
+    return field
   }
 
   get client(): Client {
@@ -81,6 +96,7 @@ export class MultiSearch extends Search {
 
   async toElastic() {
     let subQueries = [] as any[]
+    // TODO: promise.all
     await asyncForEach(this.searchInstances, async (search: Search) => {
       const payload = await search.toElastic()
 
@@ -105,8 +121,10 @@ export class MultiSearch extends Search {
       })
     })
 
+    // bgc1922_TODO track_total_hits
     const payload = {
       body: {
+        track_total_hits: true,
         query: {
           bool: {
             should: subQueries
@@ -115,6 +133,7 @@ export class MultiSearch extends Search {
       }
     } as any
 
+    await buildAggRequest(this, payload)
     assignSortAndPage(this, payload)
     return payload
   }

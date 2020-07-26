@@ -45,6 +45,8 @@ export async function buildRequest(search: Search) {
     applyScriptScore(searchPayload, scriptScore)
   }
 
+  // bgc1922_TODO track_total_hits
+  searchPayload.track_total_hits = true
   return searchPayload
 }
 

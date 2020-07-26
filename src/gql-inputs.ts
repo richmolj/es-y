@@ -91,7 +91,7 @@ export class ${name}AggregationsInput {
   terms!: ${name}TermsInput[]
 
   @Field(type => [${name}DateHistogramInput], { nullable: true })
-  dateHistograms!: ${name}DateHistogramsInput[]
+  dateHistograms!: ${name}DateHistogramInput[]
 
   @Field(type => [${name}RangeInput], { nullable: true })
   ranges!: ${name}RangeInput[]
@@ -653,7 +653,7 @@ import { ${name}AggregationsInput } from '../index'
 import { Field, InputType } from 'type-graphql'
 
 @InputType()
-class ToFrom {
+class ${name}ToFrom {
   @Field({ nullable: true })
   from!: number
 
@@ -678,8 +678,8 @@ export class ${name}RangeInput {
   @Field({ nullable: true })
   min_doc_count!: number
 
-  @Field(type => [ToFrom], { nullable: true })
-  ranges!: ToFrom[]
+  @Field(type => [${name}ToFrom], { nullable: true })
+  ranges!: ${name}ToFrom[]
 
   @Field(type => [${name}AggregationsInput], { nullable: true })
   children!: ${name}AggregationsInput[]

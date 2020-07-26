@@ -32,7 +32,6 @@ function parseAggBucket(bucket: any) {
 }
 
 export function buildAggResults(search: Search, payload: any) {
-  console.log(JSON.stringify(payload))
   const aggResults = {} as any
   Object.keys(payload).forEach(aggName => {
     if (aggName.match(/^calc_/)) {
