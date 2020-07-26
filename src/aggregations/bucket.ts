@@ -23,7 +23,8 @@ export class BucketAggregation {
   constructor(search: Search, name: string, options: BucketOptions) {
     this.search = search
     this.name = name
-    this.field = options.field || search.fieldFor(name)
+    // bgc1922_TODO: ensure no specific field and no corresponding condition works
+    this.field = options.field || search.fieldFor(name) || name
     this.children = []
     this.calculations = []
 
