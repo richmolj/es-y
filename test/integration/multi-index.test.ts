@@ -63,25 +63,161 @@ describe("integration", () => {
     })
 
     // Note we go through the characterAge/age alias
-    // bgc1922_TODO test constructor vs direct
-    // bgc1922_TODO splitting
-    // bgc1922_TODO: constructor calcs need to support array ie avg ['a', 'b'] bc key same
-    it('works', async() => {
-      const search = new GlobalSearch({
-        thrones: {},
-        justified: {},
-        aggregations: {
-          terms: [{
-            name: "name",
-            avg: "age"
-          }]
-        }
+    describe('via direct assignment', () => {
+      it('works', async() => {
+        const thrones = new ThronesSearch()
+        const justified = new JustifiedSearch()
+        const search = new GlobalSearch()
+        search.searchInstances = [thrones, justified]
+        search.aggs.terms("name", { avg: "age" })
+        await search.execute()
+        expect(search.aggResults).to.deep.eq({
+          name: [
+            { key: "John Doe", count: 2, avg_age: 55 }
+          ]
+        })
       })
-      await search.execute()
-      expect(search.aggResults).to.deep.eq({
-        name: [
-          { key: "John Doe", count: 2, avg_age: 55 }
-        ]
+    })
+
+    describe('via constructor', () => {
+      it('works', async() => {
+        const search = new GlobalSearch({
+          thrones: {},
+          justified: {},
+          aggregations: {
+            terms: [{
+              name: "name",
+              avg: "age"
+            }]
+          }
+        })
+        await search.execute()
+        expect(search.aggResults).to.deep.eq({
+          name: [
+            { key: "John Doe", count: 2, avg_age: 55 }
+          ]
+        })
+      })
+    })
+
+    describe('when splitting', () => {
+      describe('via constructor', () => {
+        describe('within-search', () => {
+          it('works', async () => {
+            const search = new GlobalSearch({
+              split: 2,
+              thrones: {
+                aggregations: {
+                  terms: [{
+                    name: "name",
+                    avg: "age"
+                  }]
+                },
+              },
+              justified: {
+                aggregations: {
+                  terms: [{
+                    name: "name",
+                    avg: "age"
+                  }]
+                },
+              },
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              thrones: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 50 }
+                ]
+              },
+              justified: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 60 }
+                ]
+              }
+            })
+          })
+        })
+
+        describe('cross-search', () => {
+          it('works', async () => {
+            const search = new GlobalSearch({
+              split: 2,
+              thrones: {},
+              justified: {},
+              aggregations: {
+                terms: [{
+                  name: "name",
+                  avg: "age"
+                }]
+              },
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              thrones: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 50 }
+                ]
+              },
+              justified: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 60 }
+                ]
+              }
+            })
+          })
+        })
+      })
+
+      describe('via direct assignment', () => {
+        describe('within search', () => {
+          it('works', async() => {
+            const thrones = new ThronesSearch()
+            thrones.aggs.terms("name", { avg: "age" })
+            const justified = new JustifiedSearch()
+            justified.aggs.terms("name", { avg: "age" })
+            const search = new GlobalSearch()
+            search.split(2)
+            search.searchInstances = [thrones, justified]
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              thrones: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 50 }
+                ]
+              },
+              justified: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 60 }
+                ]
+              }
+            })
+          })
+        })
+
+        describe('cross-search', () => {
+          it('works', async() => {
+            const thrones = new ThronesSearch()
+            const justified = new JustifiedSearch()
+            const search = new GlobalSearch()
+            search.split(2)
+            search.searchInstances = [thrones, justified]
+            search.aggs.terms("name", { avg: "age" })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              thrones: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 50 }
+                ]
+              },
+              justified: {
+                name: [
+                  { key: "John Doe", count: 1, avg_age: 60 }
+                ]
+              }
+            })
+          })
+        })
       })
     })
   })

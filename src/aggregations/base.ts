@@ -59,17 +59,27 @@ export class Aggregations {
     return agg
   }
 
-  // TODO mixin between this and terms
-  sum(field: string) {
-    const calc = new Calculation("sum", field)
-    this.calculations.push(calc)
+  // Todo mixin between this and Bucket
+  sum(fields: string | string[]) {
+    if (!Array.isArray(fields)) fields = [fields]
+    fields.forEach((field) => {
+      const calc = new Calculation("sum", field)
+      this.calculations.push(calc)
+    })
     return this
   }
 
-  avg(field: string) {
-    const calc = new Calculation("avg", field)
-    this.calculations.push(calc)
+  avg(fields: string | string[]) {
+    if (!Array.isArray(fields)) fields = [fields]
+    fields.forEach((field) => {
+      const calc = new Calculation("avg", field)
+      this.calculations.push(calc)
+    })
     return this
+  }
+
+  get isPresent(): boolean {
+    return this.bucketAggs.length + this.calculations.length > 0
   }
 
   toElastic(options?: ToElasticOptions) {
