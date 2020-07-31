@@ -72,6 +72,10 @@ export class Aggregations {
     return this
   }
 
+  get isPresent(): boolean {
+    return this.bucketAggs.length + this.calculations.length > 0
+  }
+
   toElastic(options?: ToElasticOptions) {
     let payload = {}
     this.bucketAggs.forEach(ba => {

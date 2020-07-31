@@ -32,6 +32,7 @@ export class MultiSearch extends Search {
           const searchInput = input[k]
           searchInput.queries = { ...input.queries, ...searchInput.queries }
           searchInput.filters = { ...input.filters, ...searchInput.filters }
+          searchInput.aggregations = { ...input.aggregations, ...searchInput.aggregations }
           const instance = new searchClass(searchInput)
           if (searchInput.boost) {
             instance.boost = searchInput.boost
@@ -73,14 +74,16 @@ export class MultiSearch extends Search {
       this.searchInstances.forEach((s) => {
         s.page.size = this._split
         s.resultMetadata = this.klass.resultMetadata
+        if (this.aggs.isPresent && !s.aggs.isPresent) {
+          (s as any)._aggs = this._aggs
+        }
       })
       const promises = this.searchInstances.map((s) => s.execute())
       const resultArray = await Promise.all(promises)
       const classSearches = (this as any).constructor.searches
       let results = [] as any[]
       resultArray.forEach((group, index: number) => {
-        const searchClass = this.searchInstances[index].klass
-        const type = Object.keys(classSearches).find(k => classSearches[k] === searchClass)
+        const type = this.typeFor(this.searchInstances[index])
         group.forEach((result) => {
           result._type = type
         })
@@ -88,6 +91,11 @@ export class MultiSearch extends Search {
       })
 
       this.results = this.transformResults(results)
+      this.aggResults = {}
+      this.searchInstances.forEach((search) => {
+        const type = this.typeFor(search)
+        this.aggResults[type] = search.aggResults
+      })
       return this.results
     } else {
       return super.execute()
@@ -190,5 +198,11 @@ export class MultiSearch extends Search {
 
     const transformed = super.transformResults(results)
     return this.applyMetadata(transformed, results)
+  }
+
+  private typeFor(search: Search): string {
+    const classSearches = (this.constructor as any).searches;
+    const searchClass = search.klass
+    return Object.keys(classSearches).find(k => classSearches[k] === searchClass) as string
   }
 }
