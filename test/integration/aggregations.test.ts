@@ -540,6 +540,42 @@ describe("integration", () => {
             })
           })
         })
+
+        describe('array of fields per calculation', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.aggs
+                .terms("title")
+                .avg(["age", "rating"])
+                .sum(["age", "rating"])
+              await search.execute()
+              expect(search.aggResults.title).to.deep.eq([
+                { key: "A", count: 2, avg_age: 15, sum_age: 30, avg_rating: 150, sum_rating: 300 },
+                { key: "B", count: 1, avg_age: 30, sum_age: 30, avg_rating: 100, sum_rating: 100 },
+              ])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                aggs: {
+                  terms: [{
+                    name: "title",
+                    avg: ['age', 'rating'],
+                    sum: ['age', 'rating']
+                  }]
+                }
+              })
+              await search.execute()
+              expect(search.aggResults.title).to.deep.eq([
+                { key: "A", count: 2, avg_age: 15, sum_age: 30, avg_rating: 150, sum_rating: 300 },
+                { key: "B", count: 1, avg_age: 30, sum_age: 30, avg_rating: 100, sum_rating: 100 },
+              ])
+            })
+          })
+        })
       })
     })
 
@@ -612,6 +648,37 @@ describe("integration", () => {
             await search.execute()
             expect(search.aggResults.sum_rating).to.eq(400)
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
+          })
+        })
+      })
+
+      describe('array of fields per calculation', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.sum(["rating", "age"])
+            search.aggs.avg(["rating", "age"])
+            await search.execute()
+            expect(search.aggResults.sum_rating).to.eq(400)
+            expect(search.aggResults.sum_age).to.eq(60)
+            expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
+            expect(Math.round(search.aggResults.avg_age * 100) / 100).to.eq(20)
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                sum: ['rating', 'age'],
+                avg: ['rating', 'age'],
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.sum_rating).to.eq(400)
+            expect(search.aggResults.sum_age).to.eq(60)
+            expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
+            expect(Math.round(search.aggResults.avg_age * 100) / 100).to.eq(20)
           })
         })
       })

@@ -5,8 +5,8 @@ import { DateHistogramOptions } from './date-histogram'
 
 export interface BucketOptions {
   field?: string
-  avg?: string
-  sum?: string
+  avg?: string | string[]
+  sum?: string | string[]
   children?: any[] // todo
 }
 
@@ -43,15 +43,21 @@ export class BucketAggregation {
     }
   }
 
-  sum(field: string) {
-    const calc = new Calculation("sum", field)
-    this.calculations.push(calc)
+  sum(fields: string | string[]) {
+    if (!Array.isArray(fields)) fields = [fields]
+    fields.forEach((field) => {
+      const calc = new Calculation("sum", field)
+      this.calculations.push(calc)
+    })
     return this
   }
 
-  avg(field: string) {
-    const calc = new Calculation("avg", field)
-    this.calculations.push(calc)
+  avg(fields: string | string[]) {
+    if (!Array.isArray(fields)) fields = [fields]
+    fields.forEach((field) => {
+      const calc = new Calculation("avg", field)
+      this.calculations.push(calc)
+    })
     return this
   }
 

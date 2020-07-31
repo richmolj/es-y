@@ -63,8 +63,6 @@ describe("integration", () => {
     })
 
     // Note we go through the characterAge/age alias
-    // bgc1922_TODO splitting
-    // bgc1922_TODO: constructor calcs need to support array ie avg ['a', 'b'] bc key same
     describe('via direct assignment', () => {
       it('works', async() => {
         const thrones = new ThronesSearch()

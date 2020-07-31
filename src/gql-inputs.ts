@@ -81,11 +81,11 @@ import { ${searchName}Input } from '../${searchName}'
   searchInput = searchInput.concat(`
 @InputType()
 export class ${name}AggregationsInput {
-  @Field({ nullable: true })
-  sum!: string
+  @Field(type => [String, [String]], { nullable: true })
+  sum!: string | string[]
 
-  @Field({ nullable: true })
-  avg!: string
+  @Field(type => [String, [String]], { nullable: true })
+  avg!: string | string[]
 
   @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
@@ -202,11 +202,11 @@ export class ${name}ConditionsInput {
 
 @InputType()
 export class ${name}AggregationsInput {
-  @Field({ nullable: true })
-  sum!: string
+  @Field(type => [String, [String]], { nullable: true })
+  sum!: string | string[]
 
-  @Field({ nullable: true })
-  avg!: string
+  @Field(type => [String, [String]], { nullable: true })
+  avg!: string | string[]
 
   @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
@@ -630,11 +630,11 @@ export class ${name}DateHistogramInput {
   @Field()
   name!: string
 
-  @Field({ nullable: true })
-  sum!: string
+  @Field(type => [String, [String]], { nullable: true })
+  sum!: string | string[]
 
-  @Field({ nullable: true })
-  avg!: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  avg!: string | string[]
 
   @Field()
   interval!: string
@@ -675,11 +675,11 @@ export class ${name}RangeInput {
   @Field()
   name!: string
 
-  @Field({ nullable: true })
-  sum!: string
+  @Field(type => [String, [String]], { nullable: true })
+  sum!: string | string[]
 
-  @Field({ nullable: true })
-  avg!: string
+  @Field(type => [String, [String]], { nullable: true })
+  avg!: string | string[]
 
   @Field({ nullable: true })
   min_doc_count!: number
@@ -714,11 +714,11 @@ export class ${name}TermsInput {
   @Field({ nullable: true })
   size!: number
 
-  @Field({ nullable: true })
-  sum!: string
+  @Field(type => [String, [String]], { nullable: true })
+  sum!: string | string[]
 
-  @Field({ nullable: true })
-  avg!: string
+  @Field(type => [String, [String]], { nullable: true })
+  avg!: string | string[]
 
   @Field({ nullable: true })
   ensureQuality!: boolean
