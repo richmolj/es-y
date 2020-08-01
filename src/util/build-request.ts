@@ -1,6 +1,7 @@
 import { Scripting } from './../scripting';
 import { Search } from '../search'
 import { buildAggRequest } from "../aggregations"
+import { buildHighlightRequest } from './build-highlight-request'
 import { applyScriptQuery, applyScriptScore } from "../scripting"
 
 export async function buildRequest(search: Search) {
@@ -30,6 +31,10 @@ export async function buildRequest(search: Search) {
 
   if (numQueries + numFilters === 0) {
     delete searchPayload.body.query
+  }
+
+  if ((search as any)._highlights) {
+    searchPayload.body.highlight = buildHighlightRequest(search)
   }
 
   assignSortAndPage(search, searchPayload)

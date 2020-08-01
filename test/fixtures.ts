@@ -44,6 +44,7 @@ export class ThronesSearch extends Search {
 class JustifiedSearchConditions extends Conditions {
   name = new KeywordCondition<this>("name", this)
   rating = new NumericCondition<this>("rating", this)
+  bio = new TextCondition<this>("bio", this)
 }
 
 @SearchClass()

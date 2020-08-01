@@ -7,6 +7,7 @@ import { LoggerInterface } from "./util/logger"
 import { Client } from "@elastic/elasticsearch"
 import { assignSortAndPage } from './util/build-request'
 import { buildAggRequest } from "./aggregations"
+import { buildHighlightRequest } from "./util/build-highlight-request"
 
 @ClassHook()
 export class MultiSearch extends Search {
@@ -44,6 +45,10 @@ export class MultiSearch extends Search {
       if (input && (input.aggs || input.aggregations)) {
         this.aggs.build(input.aggs || input.aggregations)
       }
+
+      if (input && input.highlights) {
+        this.buildHighlights(input)
+      }
     }
   }
 
@@ -76,6 +81,9 @@ export class MultiSearch extends Search {
         s.resultMetadata = this.klass.resultMetadata
         if (this.aggs.isPresent && !s.aggs.isPresent) {
           (s as any)._aggs = this._aggs
+        }
+        if (this._highlights && !(s as any)._highlights) {
+          (s as any)._highlights = this._highlights
         }
       })
       const promises = this.searchInstances.map((s) => s.execute())
@@ -143,6 +151,9 @@ export class MultiSearch extends Search {
 
     await buildAggRequest(this, payload)
     assignSortAndPage(this, payload)
+    if (this._highlights) {
+      payload.body.highlight = buildHighlightRequest(this)
+    }
     return payload
   }
 
@@ -176,6 +187,7 @@ export class MultiSearch extends Search {
       const builtResults = search.buildResults(relevantHits, this.klass.resultMetadata)
       const transformed = search.transformResults(builtResults)
       this.applyMetadata(transformed, builtResults)
+      this.applyHighlights(transformed, builtResults)
 
       transformed.forEach((r: any, index: number) => {
         r._order = relevantHits[index]._order
@@ -198,6 +210,7 @@ export class MultiSearch extends Search {
 
     const transformed = super.transformResults(results)
     return this.applyMetadata(transformed, results)
+    return this.applyHighlights(transformed, results)
   }
 
   private typeFor(search: Search): string {

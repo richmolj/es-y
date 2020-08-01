@@ -8,6 +8,13 @@ import { Meta } from "./meta"
 import { Pagination, Sort } from './types'
 import { Scripting, ElasticScript } from "./scripting"
 import { applyMixins } from './util'
+import { config } from "./util/env"
+
+interface HighlightConfig {
+  field: string
+  name: string
+  options: Record<string, any>
+}
 
 export class Search {
   static index: string
@@ -33,6 +40,7 @@ export class Search {
   boost?: number // multisearch
   resultMetadata: boolean = false
   protected _aggs?: Aggregations
+  protected _highlights?: HighlightConfig[]
   protected _scriptQuery?: ElasticScript
   protected _scriptScore?: ElasticScript
 
@@ -96,6 +104,10 @@ export class Search {
       if (input && (input.aggs || input.aggregations)) {
         this.aggs.build(input.aggs || input.aggregations)
       }
+
+      if (input && input.highlights) {
+        this.buildHighlights(input)
+      }
     }
   }
 
@@ -114,6 +126,19 @@ export class Search {
       this._aggs = new Aggregations(this)
       return this._aggs
     }
+  }
+
+  highlight(name: string, options: Record<string, any> = {}) {
+    if (!this._highlights) this._highlights = []
+    const field = options.field
+    delete options.field
+
+    this._highlights.push({
+      name,
+      field: field || this.fieldFor(name) || name,
+      options
+    })
+    return this
   }
 
   // TODO: dupe _conditions for different configs
@@ -155,6 +180,7 @@ export class Search {
     this.total = response.body.hits.total.value
     const builtResults = this.buildResults(response.body.hits.hits, this.includeMetadata)
     const transformedResults = this.transformResults(builtResults)
+    this.applyHighlights(transformedResults, response.body.hits.hits)
     this.results = this.applyMetadata(transformedResults, builtResults)
 
     if (response.body.aggregations) {
@@ -183,6 +209,7 @@ export class Search {
       return result
     })
   }
+
 
   protected buildMetadata(rawResult: any) {
     return {
@@ -215,6 +242,29 @@ export class Search {
       results.forEach((r, index) => {
         if (originalResults[index] && originalResults[index]._meta) {
           r._meta = originalResults[index]._meta
+        }
+      })
+    }
+    return results
+  }
+
+  protected buildHighlights(input: any) {
+    input.highlights.forEach((highlight: any) => {
+      const name = highlight.name
+      delete highlight.name
+      this.highlight(name, highlight)
+    })
+  }
+
+  protected applyHighlights(results: any[], originalResults: any[]) {
+    if (this._highlights) {
+      results.forEach((r, index) => {
+        if (originalResults[index] && originalResults[index].highlight) {
+          let highlights = {} as any
+          (this._highlights as HighlightConfig[]).forEach((config) => {
+            highlights[config.name] = originalResults[index].highlight[config.field]
+          })
+          r._highlights = highlights
         }
       })
     }

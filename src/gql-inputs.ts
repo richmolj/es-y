@@ -154,6 +154,9 @@ export class ${name}Input {
 
   @Field(type => ${name}AggregationsInput, { nullable: true })
   aggregations!: ${name}AggregationsInput
+
+  @Field(type => [GraphQLJSONObject], { nullable: true })
+  highlights!: any[]
   `)
 
   Object.keys(klass.searches).forEach((k) => {
@@ -253,6 +256,9 @@ export class ${name}Input {
 
   @Field(type => ${name}AggregationsInput, { nullable: true })
   aggregations!: ${name}AggregationsInput
+
+  @Field(type => [GraphQLJSONObject], { nullable: true })
+  highlights!: any[]
 
   // for multisearch
   @Field({ nullable: true })
