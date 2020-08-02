@@ -112,6 +112,17 @@ describe("integration", () => {
             expect(search.results.map(r => r.id)).to.deep.eq([2, 1])
           })
         })
+
+        describe('prefix', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.name
+              .prefix("f")
+              .or.prefix("b", { boost: 5 })
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.deep.eq([2, 1])
+          })
+        })
       })
 
       describe('numeric conditions', () => {
