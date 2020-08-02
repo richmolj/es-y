@@ -299,6 +299,9 @@ export class ${name}KeywordNotInput {
   eq?: string
 
   @Field({ nullable: true })
+  prefix?: string
+
+  @Field({ nullable: true })
   boost?: number
 }
 
@@ -306,6 +309,9 @@ export class ${name}KeywordNotInput {
 export class ${name}KeywordConditionInput {
   @Field({ nullable: true })
   eq?: string
+
+  @Field({ nullable: true })
+  prefix?: string
 
   @Field({ nullable: true })
   boost?: number
@@ -334,6 +340,9 @@ import { ${name}SimpleKeywordsInput } from './simple-keywords'
 export class ${name}KeywordOrInput {
   @Field({ nullable: true })
   eq?: string
+
+  @Field({ nullable: true })
+  prefix?: string
 
   @Field({ nullable: true })
   boost?: number
