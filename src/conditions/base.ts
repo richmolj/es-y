@@ -25,8 +25,8 @@ interface Config {
 @ClassHook()
 export class Condition<ConditionsT, ValueType> {
   protected elasticField: string
-  private conditions: ConditionsT
-  protected queryType?: "term" | "match" | "match_phrase" | "range"
+  protected conditions: ConditionsT
+  protected queryType?: "term" | "prefix" | "match" | "match_phrase" | "range"
   protected value?: ValueType | RangeConditionValue<ValueType>
   protected orClauses: OrClause<this, ConditionsT>[]
   protected andClauses: AndClause<this, ConditionsT>[]

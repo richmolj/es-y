@@ -16,7 +16,7 @@ class TransformedThronesSearchConditions extends ThronesSearchConditions {
   titleOrName = new KeywordCondition<this>("name", this, {
     transforms: [
       (value: any, condition: any) => {
-        condition.or.title.match(value)
+        condition.or.title.eq(value)
       }
     ]
   })

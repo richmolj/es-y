@@ -4,7 +4,7 @@ import { AndClause } from "./and-clause"
 import { NotClause } from "./not-clause"
 import { applyMixins } from "../util"
 import { ClassHook } from "../decorators"
-import { Condition, EqCondition, MatchCondition } from "../conditions"
+import { Condition, EqCondition, MatchCondition, PrefixCondition } from "../conditions"
 import { applyOrClause, applyNotClause, applyAndClause } from "./base"
 
 class KeywordNotClause<ConditionT extends KeywordCondition<ConditionsT>, ConditionsT> extends NotClause<
@@ -13,6 +13,11 @@ class KeywordNotClause<ConditionT extends KeywordCondition<ConditionsT>, Conditi
 > {
   eq(value: string, options?: ClauseOptions): ConditionT {
     this.value = this.condition.eq(value, options)
+    return this.originalCondition
+  }
+
+  prefix(value: string, options?: ClauseOptions): ConditionT {
+    this.value = this.condition.prefix(value, options)
     return this.originalCondition
   }
 }
@@ -26,6 +31,11 @@ class KeywordOrClause<ConditionT extends KeywordCondition<ConditionsT>, Conditio
     return this.value
   }
 
+  prefix(value: string, options?: ClauseOptions) {
+    this.value = this.condition.prefix(value, options)
+    return this.value
+  }
+
   get not(): KeywordNotClause<ConditionT, ConditionsT> {
     return applyNotClause(this.condition, KeywordNotClause)
   }
@@ -34,7 +44,12 @@ class KeywordOrClause<ConditionT extends KeywordCondition<ConditionsT>, Conditio
 class KeywordAndClause<ConditionT extends KeywordCondition<ConditionsT>, ConditionsT> extends AndClause<
   ConditionT,
   ConditionsT
-> {}
+> {
+  prefix(value: string, options?: ClauseOptions) {
+    this.value = this.condition.prefix(value, options)
+    return this.value
+  }
+}
 
 @ClassHook()
 export class KeywordCondition<ConditionsT> extends Condition<ConditionsT, string> {
@@ -55,5 +70,6 @@ export class KeywordCondition<ConditionsT> extends Condition<ConditionsT, string
 
 export interface KeywordCondition<ConditionsT>
   extends Condition<ConditionsT, string>,
-    EqCondition<ConditionsT, string> {}
-applyMixins(KeywordCondition, [EqCondition, MatchCondition])
+    EqCondition<ConditionsT, string>,
+    PrefixCondition<ConditionsT, string> {}
+applyMixins(KeywordCondition, [EqCondition, PrefixCondition, MatchCondition])
