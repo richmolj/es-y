@@ -462,6 +462,385 @@ describe("integration", () => {
           })
         })
       })
+
+      // TODO GQL
+      describe('prefix', () => {
+        describe('basic', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.name.prefix("Ne")
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([2])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: { name: { prefix: "Ne" } }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([2])
+            })
+          })
+        })
+
+        describe('not', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.name.not.prefix("Ne")
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([1, 999])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: { name: { not: { prefix: "Ne" } } }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([1, 999])
+            })
+          })
+        })
+
+        describe('and not', () => {
+          describe('within field', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 333,
+                name: "Neil Stark"
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.prefix("Ne").and.not.prefix("Ned")
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([333])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      prefix: "Ne",
+                      and: {
+                        not: {
+                          prefix: "Ned"
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([333])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 333,
+                name: "Ned Stark",
+                title: "blah"
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.prefix("Ne").and.title.not.prefix("War")
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      prefix: "Ne",
+                      and: {
+                        title: {
+                          not: {
+                            prefix: "War"
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+          })
+        })
+
+        describe('not and', () => {
+          describe('within field', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 333,
+                name: "Neil Stark"
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.not.prefix("Ned").and.prefix("Ne")
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      not: {
+                        prefix: "Ned",
+                        and: {
+                          prefix: "Ne"
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 333,
+                name: "Ned Stark",
+                title: "blah"
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.title.not.prefix("War").and.name.prefix("Ne")
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    title: {
+                      not: {
+                        prefix: "War",
+                        and: {
+                          name: {
+                            prefix: "Ne"
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+          })
+        })
+
+        describe('or not', () => {
+          describe('across fields', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.prefix("Ne").or.title.not.prefix("Que")
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([2, 999])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      prefix: "Ne",
+                      or: {
+                        title: {
+                          not: {
+                            prefix: "Qu"
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([2, 999])
+              })
+            })
+          })
+        })
+
+        describe('not or', () => {
+          describe('across fields', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 333,
+                name: "Ned Stark",
+                title: "other ned"
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.not.prefix("Ne").or.title.prefix("other")
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([1, 999, 333])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      not: {
+                        prefix: "Ne",
+                        or: {
+                          title: {
+                            prefix: "other"
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([1, 999, 333])
+              })
+            })
+          })
+        })
+
+        describe('and', () => {
+          describe('across fields', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 333,
+                name: "Ned Stark",
+                title: "other ned"
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.prefix("Ne").and.title.prefix("other")
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      prefix: "Ne",
+                      and: {
+                        title: {
+                          prefix: "other"
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([333])
+              })
+            })
+          })
+        })
+
+        describe('or', () => {
+          describe('within field', () => {
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.prefix("Ne").or.prefix("Da")
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 2])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      prefix: "Ne",
+                      or: {
+                        prefix: "Da"
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 2])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.prefix("Ne").or.title.prefix("Qu")
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 2])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      prefix: "Ne",
+                      or: {
+                        title: {
+                          prefix: "Qu"
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 2])
+              })
+            })
+          })
+        })
+      })
     })
 
     describe("text type", () => {

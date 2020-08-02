@@ -24,7 +24,7 @@ export class BucketAggregation {
     this.search = search
     this.name = name
     // bgc1922_TODO: ensure no specific field and no corresponding condition works
-    this.field = options.field || search.fieldFor(name) || name
+    this.field = options.field || (search as any).fieldFor(name) || name
     this.children = []
     this.calculations = []
 

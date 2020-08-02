@@ -99,12 +99,6 @@ export class Search {
     }
   }
 
-  fieldFor(name: string) {
-    if ((this.filters as any)[name]) {
-      return (this.filters as any)[name].elasticField
-    }
-  }
-
   get includeMetadata() {
     return this.resultMetadata || this.klass.resultMetadata
   }
@@ -131,6 +125,12 @@ export class Search {
       subclass.client = new Client({ node: subclass.host })
     }
     subclass.logger = logger
+  }
+
+  protected fieldFor(name: string) {
+    if ((this.filters as any)[name]) {
+      return (this.filters as any)[name].elasticField
+    }
   }
 
   protected transformResults(results: Record<string, any>[]) {

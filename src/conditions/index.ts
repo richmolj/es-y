@@ -4,6 +4,7 @@ import { AndClause } from "./and-clause"
 import { NotClause } from "./not-clause"
 import { Condition } from "./base"
 import { EqCondition, StringEqConditionInput } from "./eq"
+import { PrefixCondition, StringPrefixConditionInput } from "./prefix"
 import { MatchCondition, MatchConditionInput } from "./match"
 import { MatchPhraseCondition } from "./match-phrase"
 import { NumericRangeCondition } from "./numeric-range"
@@ -110,6 +111,7 @@ export {
   NotClause,
   Condition,
   EqCondition,
+  PrefixCondition,
   StringEqConditionInput,
   MatchCondition,
   MatchConditionInput,
