@@ -58,7 +58,11 @@ export class Condition<ConditionsT, ValueType> {
     let condition = this as Condition<ConditionsT, ValueType>
     let queryType = this.queryType
 
-    if (['numeric', 'date'].includes(condition.klass.type) && typeof condition.value == "object") {
+    if (
+      ['numeric', 'date'].includes(condition.klass.type) &&
+      !Array.isArray(condition.value) &&
+      typeof condition.value == "object"
+    ) {
       queryType = 'range'
     }
 
