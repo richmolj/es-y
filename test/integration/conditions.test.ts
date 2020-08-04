@@ -2917,6 +2917,56 @@ describe("integration", () => {
           })
         })
       })
+
+      describe('numeric', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.age.eq([35, 13])
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([1, 2])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                age: {
+                  eq: [35, 13]
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([1, 2])
+          })
+        })
+      })
+
+      describe('date', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.createdAt.eq(["1980-02-26", "1960-11-14"])
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([1, 2])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                createdAt: {
+                  eq: ["1980-02-26", "1960-11-14"]
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([1, 2])
+          })
+        })
+      })
     })
   })
 

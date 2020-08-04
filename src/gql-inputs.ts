@@ -295,11 +295,11 @@ import { ${name}KeywordAndInput } from './keyword-and'
 
 @InputType()
 export class ${name}KeywordNotInput {
-  @Field({ nullable: true })
-  eq?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
 
-  @Field({ nullable: true })
-  prefix?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  prefix?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -307,11 +307,11 @@ export class ${name}KeywordNotInput {
 
 @InputType()
 export class ${name}KeywordConditionInput {
-  @Field({ nullable: true })
-  eq?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
 
-  @Field({ nullable: true })
-  prefix?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  prefix?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -338,11 +338,11 @@ import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}KeywordOrInput {
-  @Field({ nullable: true })
-  eq?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
 
-  @Field({ nullable: true })
-  prefix?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  prefix?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -379,11 +379,11 @@ import { ${name}TextAndInput } from './text-and'
 
 @InputType()
 export class ${name}TextNotInput {
-  @Field({ nullable: true })
-  match?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  match?: string | string[]
 
-  @Field({ nullable: true })
-  matchPhrase?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  matchPhrase?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -391,11 +391,11 @@ export class ${name}TextNotInput {
 
 @InputType()
 export class ${name}TextConditionInput {
-  @Field({ nullable: true })
-  match?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  match?: string | string[]
 
-  @Field({ nullable: true })
-  matchPhrase?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  matchPhrase?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -422,11 +422,11 @@ import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}TextOrInput {
-  @Field({ nullable: true })
-  match?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  match?: string | string[]
 
-  @Field({ nullable: true })
-  matchPhrase?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  matchPhrase?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -446,11 +446,11 @@ import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}TextAndInput {
-  @Field({ nullable: true })
-  match?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  match?: string | string[]
 
-  @Field({ nullable: true })
-  matchPhrase?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  matchPhrase?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -463,14 +463,14 @@ export class ${name}TextAndInput {
 
 function generateNumericInput(klass: typeof Search, name: string) {
   const numericContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${name}NumericOrInput } from './numeric-or'
 import { ${name}NumericAndInput } from './numeric-and'
 
 @InputType()
 export class ${name}NumericNotInput {
-  @Field({ nullable: true })
-  eq?: number
+  @Field(type => [Float, [Float]] as const, { nullable: true })
+  eq?: number | number[]
 
   @Field({ nullable: true })
   boost?: number
@@ -478,8 +478,8 @@ export class ${name}NumericNotInput {
 
 @InputType()
 export class ${name}NumericConditionInput {
-  @Field({ nullable: true })
-  eq?: number
+  @Field(type => [Float, [Float]] as const, { nullable: true })
+  eq?: number | number[]
 
   @Field({ nullable: true })
   gt?: number
@@ -509,7 +509,7 @@ export class ${name}NumericConditionInput {
   fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric.ts`, numericContent)
 
   const numericOrContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
@@ -518,8 +518,8 @@ import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}NumericOrInput {
-  @Field({ nullable: true })
-  eq?: number
+  @Field(type => [Float, [Float]] as const, { nullable: true })
+  eq?: number | number[]
 
   @Field({ nullable: true })
   boost?: number
@@ -530,7 +530,7 @@ export class ${name}NumericOrInput {
   fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric-or.ts`, numericOrContent)
 
   const numericAndContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${name}KeywordConditionInput } from './keyword'
 import { ${name}TextConditionInput } from './text'
 import { ${name}NumericConditionInput } from './numeric'
@@ -553,8 +553,8 @@ import { ${name}DateAndInput } from './date-and'
 
 @InputType()
 export class ${name}DateNotInput {
-  @Field({ nullable: true })
-  eq?: number
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
@@ -562,8 +562,8 @@ export class ${name}DateNotInput {
 
 @InputType()
 export class ${name}DateConditionInput {
-  @Field({ nullable: true })
-  eq?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
 
   @Field({ nullable: true })
   gt?: string
@@ -605,8 +605,8 @@ import { ${name}SimpleKeywordsInput } from './simple-keywords'
 
 @InputType()
 export class ${name}DateOrInput {
-  @Field({ nullable: true })
-  eq?: string
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
