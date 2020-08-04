@@ -8,24 +8,24 @@ class TextOrClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> e
   ConditionT,
   ConditionsT
 > {
-  match(value: string, options?: ClauseOptions) {
+  match(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.match(value, options)
     return this.value
   }
 
-  matchPhrase(value: string, options?: ClauseOptions) {
+  matchPhrase(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.matchPhrase(value, options)
     return this.value
   }
 }
 
 class TextNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  match(value: string, options?: ClauseOptions) {
+  match(value: string | string[], options?: ClauseOptions) {
     this.value = (this.condition as any).match(value, options)
     return this.originalCondition
   }
 
-  matchPhrase(value: string, options?: ClauseOptions) {
+  matchPhrase(value: string | string[], options?: ClauseOptions) {
     this.value = (this.condition as any).matchPhrase(value, options)
     return this.originalCondition
   }
@@ -35,12 +35,12 @@ class TextAndClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> 
   ConditionT,
   ConditionsT
 > {
-  match(value: string, options?: ClauseOptions) {
+  match(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.match(value, options)
     return this.value
   }
 
-  matchPhrase(value: string, options?: ClauseOptions) {
+  matchPhrase(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.matchPhrase(value, options)
     return this.value
   }

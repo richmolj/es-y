@@ -2,7 +2,7 @@ import { ClauseOptions } from './../types'
 import { Condition } from "./base"
 
 export class EqCondition<ConditionsT, ValueType> extends Condition<ConditionsT, ValueType> {
-  eq(input: ValueType, options?: ClauseOptions): this {
+  eq(input: ValueType | ValueType[], options?: ClauseOptions): this {
     this.queryType = "term"
     this._setSimpleValue(input)
     if (options && options.boost) {
@@ -13,7 +13,7 @@ export class EqCondition<ConditionsT, ValueType> extends Condition<ConditionsT, 
 }
 
 interface JustEq {
-  eq: string
+  eq: string | string[]
 }
 
 interface ConditionInput<ConditionsT> {
@@ -21,7 +21,7 @@ interface ConditionInput<ConditionsT> {
 }
 
 export interface StringEqConditionInput<ConditionsT> {
-  eq?: string
+  eq?: string | string[]
   not?: JustEq
   or?: JustEq | ConditionInput<ConditionsT>
 }

@@ -8,7 +8,7 @@ class DateOrClause<ConditionT extends DateCondition<ConditionsT>, ConditionsT> e
   ConditionT,
   ConditionsT
 > {
-  eq(value: string, options?: ClauseOptions) {
+  eq(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.eq(value, options)
     return this.value
   }
@@ -35,7 +35,7 @@ class DateOrClause<ConditionT extends DateCondition<ConditionsT>, ConditionsT> e
 }
 
 class DateNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  eq(value: string, options?: ClauseOptions) {
+  eq(value: string | string[], options?: ClauseOptions) {
     this.value = (this.condition as any).eq(value, options)
     return this.originalCondition
   }
@@ -88,7 +88,7 @@ export interface DateCondition<ConditionsT>
 applyMixins(DateCondition, [Condition, EqCondition, RangeCondition])
 
 interface JustDate {
-  eq?: string
+  eq?: string | string[]
   gt?: string
   gte?: string
   lt?: string
@@ -100,7 +100,7 @@ interface ConditionInput<ConditionsT> {
 }
 
 export interface DateConditionInput<ConditionsT> {
-  eq?: string
+  eq?: string | string[]
   gt?: string
   gte?: string
   lt?: string

@@ -463,7 +463,6 @@ describe("integration", () => {
         })
       })
 
-      // TODO GQL
       describe('prefix', () => {
         describe('basic', () => {
           describe('via direct assignment', () => {
@@ -2783,6 +2782,139 @@ describe("integration", () => {
           })
           await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
+        })
+      })
+    })
+
+    describe('array support', () => {
+      describe('keywords', () => {
+        describe('basic equality', () => {
+          describe('via direct assignment', () => {
+            it('works with keywords', async () => {
+              const search = new ThronesSearch()
+              search.filters.name.eq(["Ned Stark", "Daenerys Targaryen"])
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  name: {
+                    eq: ["Ned Stark", "Daenerys Targaryen"]
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+        })
+
+        describe('NOT', () => {
+          describe('via direct assignment', () => {
+            it('works with keywords', async () => {
+              const search = new ThronesSearch()
+              search.filters.name.not.eq(["Ned Stark", "Daenerys Targaryen"])
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([999])
+            })
+          })
+
+          describe('via direct constructor', () => {
+            it('works with keywords', async () => {
+              const search = new ThronesSearch({
+                filters: {
+                  name: {
+                    not: {
+                      eq: ["Ned Stark", "Daenerys Targaryen"]
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([999])
+            })
+          })
+        })
+
+        describe('prefix', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.name.prefix(["Ned Stark", "Daenerys Targaryen"])
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  name: {
+                    prefix: ["Ned Stark", "Daenerys Targaryen"]
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+        })
+      })
+
+      describe('text', () => {
+        describe('match', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.quote.match(["winter", "burn"])
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  quote: {
+                    match: ["winter", "burn"]
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+        })
+
+        describe('matchPhrase', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.quote.matchPhrase(["winter", "burn"])
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  quote: {
+                    matchPhrase: ["winter", "burn"]
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([1, 2])
+            })
+          })
         })
       })
     })
