@@ -2,7 +2,7 @@ import { ClauseOptions } from './../types'
 import { Condition } from "./base"
 
 export class PrefixCondition<ConditionsT, ValueType> extends Condition<ConditionsT, ValueType> {
-  prefix(input: ValueType, options?: ClauseOptions): this {
+  prefix(input: ValueType | ValueType[], options?: ClauseOptions): this {
     this.queryType = "prefix"
     this._setSimpleValue(input)
     if (options && options.boost) {
@@ -13,7 +13,7 @@ export class PrefixCondition<ConditionsT, ValueType> extends Condition<Condition
 }
 
 interface JustPrefix {
-  prefix: string
+  prefix: string | string[]
 }
 
 interface ConditionInput<ConditionsT> {
@@ -21,7 +21,7 @@ interface ConditionInput<ConditionsT> {
 }
 
 export interface StringPrefixConditionInput<ConditionsT> {
-  eq?: string
+  eq?: string | string[]
   not?: JustPrefix
   or?: JustPrefix | ConditionInput<ConditionsT>
 }

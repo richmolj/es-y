@@ -4,7 +4,7 @@ import { ClauseOptions } from '../types'
 export class MatchCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "match"
 
-  match(input: string, options?: ClauseOptions): this {
+  match(input: string | string[], options?: ClauseOptions): this {
     this.queryType = "match"
     this._setSimpleValue(input)
     if (options && options.boost) {
@@ -15,8 +15,8 @@ export class MatchCondition<ConditionsT> extends Condition<ConditionsT, string> 
 }
 
 interface JustMatches {
-  match?: string
-  matchPhrase?: string
+  match?: string | string[]
+  matchPhrase?: string | string[]
 }
 
 interface ConditionInput<ConditionsT> {
@@ -24,8 +24,8 @@ interface ConditionInput<ConditionsT> {
 }
 
 export interface MatchConditionInput<ConditionsT> {
-  match?: string
-  matchPhrase?: string
+  match?: string | string[]
+  matchPhrase?: string | string[]
   not?: JustMatches
   or?: JustMatches | ConditionInput<ConditionsT>
 }

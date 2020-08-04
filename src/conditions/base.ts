@@ -26,8 +26,8 @@ interface Config {
 export class Condition<ConditionsT, ValueType> {
   protected elasticField: string
   protected conditions: ConditionsT
-  protected queryType?: "term" | "prefix" | "match" | "match_phrase" | "range"
-  protected value?: ValueType | RangeConditionValue<ValueType>
+  protected queryType!: "term" | "prefix" | "match" | "match_phrase" | "range"
+  protected value?: ValueType | ValueType[] | RangeConditionValue<ValueType>
   protected orClauses: OrClause<this, ConditionsT>[]
   protected andClauses: AndClause<this, ConditionsT>[]
   protected notClauses: NotClause<this, ConditionsT>[]
@@ -67,30 +67,15 @@ export class Condition<ConditionsT, ValueType> {
         condition = this.applyTransforms() // NB condition is now duped
       }
 
-      let clause
-      if (condition.boost) {
-        if (['numeric', 'date'].includes(condition.klass.type) && typeof condition.value == "object") {
-          clause = {
-            [condition.elasticField]: { ...condition.value, ...{ boost: condition.boost } }
-          }
-        } else {
-          let boostKey = 'value'
-          if (condition.klass.type === 'text') {
-            boostKey = 'query'
-          }
-          clause = {
-            [condition.elasticField]: {
-              [boostKey]: condition.value,
-              boost: condition.boost
-            }
-          }
-        }
+      let values = condition.value as any[]
+      if (Array.isArray(values)) {
+        let should = [] as any[]
+        values.forEach((v) => {
+          should.push(this.elasticClause(queryType, v, condition))
+        })
+        main = { bool: { should } }
       } else {
-        clause = { [condition.elasticField]: condition.value }
-      }
-
-      main = {
-        [queryType!]: clause
+        main = this.elasticClause(queryType, condition.value, condition)
       }
     }
 
@@ -205,7 +190,7 @@ export class Condition<ConditionsT, ValueType> {
     }
   }
 
-  protected _setSimpleValue(val: ValueType) {
+  protected _setSimpleValue(val: ValueType | ValueType[]) {
     if (this.value) {
       throw new Error("Attempted to reassign value condition")
     }
@@ -226,6 +211,33 @@ export class Condition<ConditionsT, ValueType> {
       }
     })
     return dupe
+  }
+
+  private elasticClause(queryType: string, value: any, condition: Condition<ConditionsT, ValueType>) {
+    let main
+    let clause
+    if (condition.boost) {
+      if (['numeric', 'date'].includes(condition.klass.type) && typeof value == "object") {
+        clause = {
+          [condition.elasticField]: { ...value, ...{ boost: condition.boost } }
+        }
+      } else {
+        let boostKey = 'value'
+        if (condition.klass.type === 'text') {
+          boostKey = 'query'
+        }
+        clause = {
+          [condition.elasticField]: {
+            [boostKey]: value,
+            boost: condition.boost
+          }
+        }
+      }
+    } else {
+      clause = { [condition.elasticField]: value }
+    }
+
+    return { [queryType!]: clause }
   }
 }
 

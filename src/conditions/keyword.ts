@@ -11,12 +11,12 @@ class KeywordNotClause<ConditionT extends KeywordCondition<ConditionsT>, Conditi
   ConditionT,
   ConditionsT
 > {
-  eq(value: string, options?: ClauseOptions): ConditionT {
+  eq(value: string | string[], options?: ClauseOptions): ConditionT {
     this.value = this.condition.eq(value, options)
     return this.originalCondition
   }
 
-  prefix(value: string, options?: ClauseOptions): ConditionT {
+  prefix(value: string | string[], options?: ClauseOptions): ConditionT {
     this.value = this.condition.prefix(value, options)
     return this.originalCondition
   }
@@ -26,12 +26,12 @@ class KeywordOrClause<ConditionT extends KeywordCondition<ConditionsT>, Conditio
   ConditionT,
   ConditionsT
 > {
-  eq(value: string, options?: ClauseOptions) {
+  eq(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.eq(value, options)
     return this.value
   }
 
-  prefix(value: string, options?: ClauseOptions) {
+  prefix(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.prefix(value, options)
     return this.value
   }
@@ -45,7 +45,7 @@ class KeywordAndClause<ConditionT extends KeywordCondition<ConditionsT>, Conditi
   ConditionT,
   ConditionsT
 > {
-  prefix(value: string, options?: ClauseOptions) {
+  prefix(value: string | string[], options?: ClauseOptions) {
     this.value = this.condition.prefix(value, options)
     return this.value
   }

@@ -347,6 +347,9 @@ export class ${name}KeywordOrInput {
   @Field({ nullable: true })
   boost?: number
 
+  @Field({ nullable: true })
+  or?: ${name}KeywordOrInput
+
   ${generateConditionInputs(klass)}
 }
   `

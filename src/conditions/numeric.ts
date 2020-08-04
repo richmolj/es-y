@@ -8,7 +8,7 @@ class NumericOrClause<ConditionT extends NumericCondition<ConditionsT>, Conditio
   ConditionT,
   ConditionsT
 > {
-  eq(value: number, options?: ClauseOptions) {
+  eq(value: number | number[], options?: ClauseOptions) {
     this.value = this.condition.eq(value, options)
     return this.value
   }
@@ -35,7 +35,7 @@ class NumericOrClause<ConditionT extends NumericCondition<ConditionsT>, Conditio
 }
 
 class NumericNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  eq(value: number, options?: ClauseOptions) {
+  eq(value: number | number[], options?: ClauseOptions) {
     this.value = (this.condition as any).eq(value, options)
     return this.originalCondition
   }
@@ -69,7 +69,7 @@ export interface NumericCondition<ConditionsT>
 applyMixins(NumericCondition, [Condition, EqCondition, RangeCondition])
 
 interface JustNumeric {
-  eq?: number
+  eq?: number | number[]
   gt?: number
   gte?: number
   lt?: number
@@ -81,7 +81,7 @@ interface ConditionInput<ConditionsT> {
 }
 
 export interface NumericConditionInput<ConditionsT> {
-  eq?: number
+  eq?: number | number[]
   gt?: number
   gte?: number
   lt?: number
