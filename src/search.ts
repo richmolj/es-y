@@ -9,12 +9,12 @@ import { Pagination, Sort } from './types'
 import { Scripting, ElasticScript } from "./scripting"
 import { applyMixins } from './util'
 import { config } from "./util/env"
-
-interface HighlightConfig {
-  field: string
-  name: string
-  options: Record<string, any>
-}
+import {
+  HighlightConfig,
+  buildHighlightsFromInput,
+  attachHighlightsToResults
+} from "./util/highlighting"
+import { mergeOnlyHighlightInnerHits } from './util/source-fields'
 
 export class Search {
   static index: string
@@ -43,6 +43,7 @@ export class Search {
   protected _highlights?: HighlightConfig[]
   protected _scriptQuery?: ElasticScript
   protected _scriptScore?: ElasticScript
+  protected _sourceFields?: Partial<Record<'includes' | 'excludes' | 'onlyHighlights', string[]>>
 
   static async persist(payload: Record<string, any> | Record<string, any>[], refresh: boolean = false) {
     if (!Array.isArray(payload)) payload = [payload]
@@ -101,14 +102,26 @@ export class Search {
         ;(this.queries as any).isQuery = true;
       }
 
+      ;(this.filters as any).search = this;
+      ;(this.queries as any).search = this;
+
       if (input && (input.aggs || input.aggregations)) {
         this.aggs.build(input.aggs || input.aggregations)
       }
 
       if (input && input.highlights) {
-        this.buildHighlights(input)
+        buildHighlightsFromInput(input, this)
+      }
+
+      if (input && input.sourceFields) {
+        this.sourceFields(input.sourceFields)
       }
     }
+  }
+
+  sourceFields(config: Partial<Record<'excludes' | 'includes' | 'onlyHighlights', string[]>>): this {
+    this._sourceFields = config
+    return this
   }
 
   get includeMetadata() {
@@ -138,6 +151,7 @@ export class Search {
       field: field || this.fieldFor(name) || name,
       options
     })
+
     return this
   }
 
@@ -178,9 +192,11 @@ export class Search {
     const searchPayload = await this.toElastic()
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
-    const builtResults = this.buildResults(response.body.hits.hits, this.includeMetadata)
+    const rawResults = response.body.hits.hits
+    mergeOnlyHighlightInnerHits(this, rawResults)
+    const builtResults = this.buildResults(rawResults, this.includeMetadata)
     const transformedResults = this.transformResults(builtResults)
-    this.applyHighlights(transformedResults, response.body.hits.hits)
+    attachHighlightsToResults(this, transformedResults, rawResults)
     this.results = this.applyMetadata(transformedResults, builtResults)
 
     if (response.body.aggregations) {
@@ -201,7 +217,8 @@ export class Search {
   }
 
   protected buildResults(rawResults: any[], metadata: boolean = false): any[] {
-    return rawResults.map(raw => {
+    let results = rawResults.map((raw) => Object.assign({}, raw))
+    return results.map(raw => {
       const result = raw._source
       if (metadata) {
         result._meta = this.buildMetadata(raw)
@@ -209,7 +226,6 @@ export class Search {
       return result
     })
   }
-
 
   protected buildMetadata(rawResult: any) {
     return {
@@ -242,29 +258,6 @@ export class Search {
       results.forEach((r, index) => {
         if (originalResults[index] && originalResults[index]._meta) {
           r._meta = originalResults[index]._meta
-        }
-      })
-    }
-    return results
-  }
-
-  protected buildHighlights(input: any) {
-    input.highlights.forEach((highlight: any) => {
-      const name = highlight.name
-      delete highlight.name
-      this.highlight(name, highlight)
-    })
-  }
-
-  protected applyHighlights(results: any[], originalResults: any[]) {
-    if (this._highlights) {
-      results.forEach((r, index) => {
-        if (originalResults[index] && originalResults[index].highlight) {
-          let highlights = {} as any
-          (this._highlights as HighlightConfig[]).forEach((config) => {
-            highlights[config.name] = originalResults[index].highlight[config.field]
-          })
-          r._highlights = highlights
         }
       })
     }

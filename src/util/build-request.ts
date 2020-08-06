@@ -1,8 +1,9 @@
 import { Scripting } from './../scripting';
 import { Search } from '../search'
 import { buildAggRequest } from "../aggregations"
-import { buildHighlightRequest } from './build-highlight-request'
+import { buildHighlightRequest } from './highlighting'
 import { applyScriptQuery, applyScriptScore } from "../scripting"
+import { sourceFieldsRequestPayload } from "./source-fields"
 
 export async function buildRequest(search: Search) {
   const searchPayload = { index: search.klass.index, body: {} } as any
@@ -33,8 +34,9 @@ export async function buildRequest(search: Search) {
     delete searchPayload.body.query
   }
 
-  if ((search as any)._highlights) {
-    searchPayload.body.highlight = buildHighlightRequest(search)
+  const highlightPayload = buildHighlightRequest(search)
+  if (highlightPayload) {
+    searchPayload.body.highlight = highlightPayload
   }
 
   assignSortAndPage(search, searchPayload)
@@ -48,6 +50,11 @@ export async function buildRequest(search: Search) {
   const scriptScore = (search as any)._scriptScore
   if (scriptScore) {
     applyScriptScore(searchPayload, scriptScore)
+  }
+
+  const sourceFieldsPayload = sourceFieldsRequestPayload(search)
+  if (sourceFieldsPayload) {
+    searchPayload.body._source = sourceFieldsPayload
   }
 
   // bgc1922_TODO track_total_hits

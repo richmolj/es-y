@@ -95,7 +95,12 @@ export function buildConditions(base: any, input: any) {
         })
       } else {
         const condition = base[key]
-        buildCondition(condition, input[key])
+        // Accomodate nested conditions
+        if (condition.isConditions) {
+          buildConditions(condition, input[key])
+        } else {
+          buildCondition(condition, input[key])
+        }
       }
     })
   }

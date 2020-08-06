@@ -24,8 +24,8 @@ interface Config {
 // But it can't because types?
 @ClassHook()
 export class Condition<ConditionsT, ValueType> {
-  protected elasticField: string
-  protected conditions: ConditionsT
+  protected _elasticField: string
+  private conditions: ConditionsT
   protected queryType!: "term" | "prefix" | "match" | "match_phrase" | "range"
   protected value?: ValueType | ValueType[] | RangeConditionValue<ValueType>
   protected orClauses: OrClause<this, ConditionsT>[]
@@ -38,12 +38,21 @@ export class Condition<ConditionsT, ValueType> {
   boost?: null | number
 
   constructor(elasticField: string, conditions: ConditionsT, config?: Config) {
-    this.elasticField = elasticField
+    this._elasticField = elasticField
     this.conditions = conditions
     this.orClauses = []
     this.andClauses = []
     this.notClauses = []
     this.config = config
+  }
+
+  get elasticField() {
+    let field = this._elasticField
+    const nested = ((this.conditions as any).klass.nested)
+    if (nested) {
+      field = `${nested}.${field}`
+    }
+    return field
   }
 
   protected hasClause(): boolean {

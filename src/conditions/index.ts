@@ -15,14 +15,20 @@ import { TextCondition } from "./text"
 import { NumericCondition, NumericConditionInput } from "./numeric"
 import { DateCondition, DateConditionInput } from "./date"
 import { buildConditions } from "./builder"
+import { Search } from "../search"
+import { buildHighlightRequest } from "../util/highlighting"
+import { sourceFieldsRequestPayload } from "../util/source-fields"
+import { buildNestedQueryPayloads } from "../util/nesting"
 
 @ClassHook()
 class Conditions {
+  isConditions = true
   protected klass!: typeof Conditions
   static currentClass: typeof Conditions = Conditions
   protected _not!: Conditions
   protected _or!: Conditions
   protected isQuery: boolean = false
+  protected search!: Search
 
   keywords = new SimpleQueryStringCondition<this>("", this)
 
@@ -52,6 +58,13 @@ class Conditions {
     }
   }
 
+  protected nestedConditions() {
+    const _this = this as any
+    return Object.keys(this)
+      .filter(k => _this[k].isConditions && k !== '_not' && k !== '_or')
+      .map(k => _this[k])
+  }
+
   protected buildQuery() {
     let must = [] as any[]
     let must_not = [] as any[]
@@ -73,6 +86,11 @@ class Conditions {
     presentConditions.forEach(c => {
       const clause = c.toElastic()
       must = must.concat(clause)
+    })
+
+    const nestedPayloads = buildNestedQueryPayloads(this)
+    nestedPayloads.forEach((nested) => {
+      must = must.concat({ nested })
     })
 
     if (must.length > 0) {

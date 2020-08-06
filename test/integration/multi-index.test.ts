@@ -2,7 +2,7 @@ import { expect } from "chai"
 import { GlobalSearch, ThronesSearch , JustifiedSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
-describe("integration", () => {
+describe("multi-index integration", () => {
   setupIntegrationTest()
 
   afterEach(async () => {
@@ -775,6 +775,36 @@ describe("integration", () => {
           })
           expect(search.results[1]._highlights).to.deep.eq({
             bio: ["this is a justified <em>foo</em> bar bio"]
+          })
+        })
+
+        describe('when nested field', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist({
+              bio: 'blah',
+              skills: [
+                { description: "foo bar baz" }
+              ]
+            }, true)
+          })
+
+          it('works', async() => {
+            const thrones = new ThronesSearch()
+            thrones.queries.skills.keywords.eq("foo")
+            thrones.highlight("skills.description")
+            const search = new GlobalSearch()
+            search.searchInstances = [thrones]
+            await search.execute()
+            expect(search.results[0]).to.deep.eq({
+              _type: 'thrones',
+              bio: 'blah',
+              skills: [{
+                description: 'foo bar baz',
+                _highlights: {
+                  description: ["<em>foo</em> bar baz"]
+                }
+              }]
+            })
           })
         })
       })

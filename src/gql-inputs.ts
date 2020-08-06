@@ -3,10 +3,12 @@ import * as rimraf from "rimraf"
 import { Search } from "./search"
 import { MultiSearch } from "./multi-search"
 
-function eachCondition(klass: typeof Search, callback: Function) {
-  const instance = new klass.conditionsClass()
+// NB: all of this code is shit
+
+function eachCondition(conditionsClassInstance: any, callback: Function) {
+  const instance = conditionsClassInstance
   Object.keys(instance).forEach(k => {
-    if (k === "_or" || k === "_not" || k === "isQuery") {
+    if (k === "_or" || k === "_not" || k === "isQuery" || k === "isConditions") {
       return
     }
     const value = (instance as any)[k]
@@ -15,44 +17,50 @@ function eachCondition(klass: typeof Search, callback: Function) {
   })
 }
 
-function generateConditionInputs(klass: typeof Search): string {
+function generateConditionInputs(name: string, conditionsClassInstance: any): string {
   let inputs = ''
-  const instance = new klass()
-  const name = instance.constructor.name
 
-  eachCondition(klass, (conditionName: string, type: string, condition: any) => {
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
     if (type === "query") {
       inputs = inputs.concat(`
-@Field(type => ${name}SimpleKeywordsInput, { nullable: true })
-${conditionName}!: ${name}SimpleKeywordsInput
+  @Field(type => ${name}SimpleKeywordsInput, { nullable: true })
+  ${conditionName}!: ${name}SimpleKeywordsInput
       `)
     }
 
     if (type === "keyword") {
       inputs = inputs.concat(`
-@Field(type => ${name}KeywordConditionInput, { nullable: true })
-${conditionName}!: ${name}KeywordConditionInput
+  @Field(type => ${name}KeywordConditionInput, { nullable: true })
+  ${conditionName}!: ${name}KeywordConditionInput
       `)
     }
 
     if (type == "text") {
       inputs = inputs.concat(`
-@Field(type => ${name}TextConditionInput, { nullable: true })
-${conditionName}!: ${name}TextConditionInput
+  @Field(type => ${name}TextConditionInput, { nullable: true })
+  ${conditionName}!: ${name}TextConditionInput
       `)
     }
 
     if (type == "numeric") {
       inputs = inputs.concat(`
-@Field(type => ${name}NumericConditionInput, { nullable: true })
-${conditionName}!: ${name}NumericConditionInput
+  @Field(type => ${name}NumericConditionInput, { nullable: true })
+  ${conditionName}!: ${name}NumericConditionInput
       `)
     }
 
     if (type == "date") {
       inputs = inputs.concat(`
-@Field(type => ${name}DateConditionInput, { nullable: true })
-${conditionName}!: ${name}DateConditionInput
+  @Field(type => ${name}DateConditionInput, { nullable: true })
+  ${conditionName}!: ${name}DateConditionInput
+      `)
+    }
+
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      inputs = inputs.concat(`
+  @Field(type => ${capName}Input, { nullable: true })
+  ${conditionName}!: ${capName}Input
       `)
     }
   })
@@ -66,6 +74,7 @@ import { InputType, Field } from 'type-graphql'
 import { ${name}TermsInput } from './aggregations/terms'
 import { ${name}DateHistogramInput } from './aggregations/date-histogram'
 import { ${name}RangeInput } from './aggregations/range'
+import { GraphQLJSONObject } from 'graphql-type-json'
   `
 
   Object.keys(klass.searches).forEach((k) => {
@@ -117,6 +126,18 @@ class ${name}SortInput {
 }
 
 @InputType()
+class ${name}SourceFieldsInput {
+  @Field(type => [String], { nullable: true })
+  includes!: string[]
+
+  @Field(type => [String], { nullable: true })
+  excludes!: string[]
+
+  @Field(type => [String], { nullable: true })
+  onlyHighlights!: string[]
+}
+
+@InputType()
 class ${name}SimpleKeywordsInput {
   @Field()
   eq!: string
@@ -157,6 +178,9 @@ export class ${name}Input {
 
   @Field(type => [GraphQLJSONObject], { nullable: true })
   highlights!: any[]
+
+  @Field(type => ${name}SourceFieldsInput, { nullable: true })
+  sourceFields!: ${name}SourceFieldsInput
   `)
 
   Object.keys(klass.searches).forEach((k) => {
@@ -176,6 +200,40 @@ export class ${name}Input {
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
+function generateNestedSearchInput(conditionsClassInstance: any, searchName: string, conditionName: string) {
+  const name = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+  let searchInput = `
+import { InputType, Field } from 'type-graphql'
+import { ${name}KeywordConditionInput } from './conditions/keyword'
+import { ${name}TextConditionInput } from './conditions/text'
+import { ${name}NumericConditionInput } from './conditions/numeric'
+import { ${name}DateConditionInput } from './conditions/date'
+import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
+import { GraphQLJSONObject } from 'graphql-type-json'
+
+@InputType()
+export class ${name}Input {
+  @Field(type => ${name}Input, { nullable: true })
+  not!: ${name}Input
+
+  @Field(type => ${name}Input, { nullable: true })
+  or!: ${name}Input
+
+  ${generateConditionInputs(name, conditionsClassInstance)}
+}
+  `
+  if (!fs.existsSync(`src/search-inputs/${searchName}/nested`)) {
+    fs.mkdirSync(`src/search-inputs/${searchName}/nested`)
+  }
+  if (!fs.existsSync(`src/search-inputs/${searchName}/nested/${name}`)) {
+    fs.mkdirSync(`src/search-inputs/${searchName}/nested/${name}`)
+  }
+  if (!fs.existsSync(`src/search-inputs/${searchName}/nested/${name}/conditions`)) {
+    fs.mkdirSync(`src/search-inputs/${searchName}/nested/${name}/conditions`)
+  }
+  fs.writeFileSync(`src/search-inputs/${searchName}/nested/${name}/index.ts`, searchInput)
+}
+
 function generateSearchInput(klass: typeof Search, name: string) {
   let searchInput = `
 import { InputType, Field } from 'type-graphql'
@@ -188,7 +246,18 @@ import { ${name}DateHistogramInput } from './aggregations/date-histogram'
 import { ${name}RangeInput } from './aggregations/range'
 import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
 import { GraphQLJSONObject } from 'graphql-type-json'
+  `
 
+  eachCondition(new klass.conditionsClass(), (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      searchInput = searchInput.concat(`
+import { ${capName}Input } from './nested/${capName}'
+      `)
+    }
+  })
+
+  searchInput = searchInput.concat(`
 @InputType()
 export class ${name}ConditionsInput {
   @Field(type => ${name}ConditionsInput, { nullable: true })
@@ -197,8 +266,8 @@ export class ${name}ConditionsInput {
   @Field(type => ${name}ConditionsInput, { nullable: true })
   or!: ${name}ConditionsInput
 
-  ${generateConditionInputs(klass)}
-    `
+  ${generateConditionInputs(name, new klass.conditionsClass())}
+    `)
 
   searchInput = searchInput.concat(`
 }
@@ -241,6 +310,18 @@ class ${name}SortInput {
 }
 
 @InputType()
+class ${name}SourceFieldsInput {
+  @Field(type => [String], { nullable: true })
+  includes!: string[]
+
+  @Field(type => [String], { nullable: true })
+  excludes!: string[]
+
+  @Field(type => [String], { nullable: true })
+  onlyHighlights!: string[]
+}
+
+@InputType()
 export class ${name}Input {
   @Field(type => ${name}ConditionsInput, { nullable: true })
   filters!: ${name}ConditionsInput
@@ -269,17 +350,21 @@ export class ${name}Input {
 
   @Field(type => GraphQLJSONObject, { nullable: true })
   scriptScore!: any
+
+  @Field(type => ${name}SourceFieldsInput, { nullable: true })
+  sourceFields!: ${name}SourceFieldsInput
 }
   `)
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
-function generateSimpleKeywordsInput(klass: typeof Search, name: string) {
+function generateSimpleKeywordsInput(name: string, dirName?: string) {
+  const bestName = dirName || name
   const content = `
 import { Field, InputType } from 'type-graphql'
 
 @InputType()
-export class ${name}SimpleKeywordsInput {
+export class ${bestName}SimpleKeywordsInput {
   @Field()
   eq?: string
 
@@ -290,17 +375,22 @@ export class ${name}SimpleKeywordsInput {
   fields?: string[]
 }
   `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/simple-keywords.ts`, content)
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/simple-keywords.ts`, content)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/simple-keywords.ts`, content)
+  }
 }
 
-function generateKeywordInput(klass: typeof Search, name: string) {
+function generateKeywordInput(conditionsClassInstance: any, name: string, dirName?: string) {
+  const bestName = dirName || name
   const keywordContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordOrInput } from './keyword-or'
-import { ${name}KeywordAndInput } from './keyword-and'
+import { ${bestName}KeywordOrInput } from './keyword-or'
+import { ${bestName}KeywordAndInput } from './keyword-and'
 
 @InputType()
-export class ${name}KeywordNotInput {
+export class ${bestName}KeywordNotInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   eq?: string | string[]
 
@@ -312,7 +402,7 @@ export class ${name}KeywordNotInput {
 }
 
 @InputType()
-export class ${name}KeywordConditionInput {
+export class ${bestName}KeywordConditionInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   eq?: string | string[]
 
@@ -323,68 +413,105 @@ export class ${name}KeywordConditionInput {
   boost?: number
 
   @Field({ nullable: true })
-  and?: ${name}KeywordAndInput
+  and?: ${bestName}KeywordAndInput
+
+  @Field({ nullable: true })
+  or?: ${bestName}KeywordOrInput
+
+  @Field({ nullable: true })
+  not?: ${bestName}KeywordNotInput
+}
+  `
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/keyword.ts`, keywordContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/keyword.ts`, keywordContent)
+  }
+
+  let keywordOrContent = `
+import { Field, InputType } from 'type-graphql'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
+
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      keywordOrContent = keywordOrContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  keywordOrContent = keywordOrContent.concat(`
+@InputType()
+export class ${bestName}KeywordOrInput {
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
+
+  @Field(type => [String, [String]] as const, { nullable: true })
+  prefix?: string | string[]
+
+  @Field({ nullable: true })
+  boost?: number
 
   @Field({ nullable: true })
   or?: ${name}KeywordOrInput
 
-  @Field({ nullable: true })
-  not?: ${name}KeywordNotInput
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-  `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/keyword.ts`, keywordContent)
+  `)
 
-  const keywordOrContent = `
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/keyword-or.ts`, keywordOrContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/keyword-or.ts`, keywordOrContent)
+  }
+
+  let keywordAndContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
-
-@InputType()
-export class ${name}KeywordOrInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
-
-  @Field(type => [String, [String]] as const, { nullable: true })
-  prefix?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
-
-  @Field({ nullable: true })
-  or?: ${name}KeywordOrInput
-
-  ${generateConditionInputs(klass)}
-}
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
   `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/keyword-or.ts`, keywordOrContent)
 
-  const keywordAndContent = `
-import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      keywordAndContent = keywordAndContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
 
+  keywordAndContent = keywordAndContent.concat(`
 @InputType()
-export class ${name}KeywordAndInput {
-  ${generateConditionInputs(klass)}
+export class ${bestName}KeywordAndInput {
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-  `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/keyword-and.ts`, keywordAndContent)
+  `)
+
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/keyword-and.ts`, keywordAndContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/keyword-and.ts`, keywordAndContent)
+  }
 }
 
-function generateTextInput(klass: typeof Search, name: string) {
+function generateTextInput(conditionsClassInstance: any, name: string, dirName?: string) {
+  const bestName = dirName || name
   const textContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}TextOrInput } from './text-or'
-import { ${name}TextAndInput } from './text-and'
+import { ${bestName}TextOrInput } from './text-or'
+import { ${bestName}TextAndInput } from './text-and'
 
 @InputType()
-export class ${name}TextNotInput {
+export class ${bestName}TextNotInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   match?: string | string[]
 
@@ -396,7 +523,7 @@ export class ${name}TextNotInput {
 }
 
 @InputType()
-export class ${name}TextConditionInput {
+export class ${bestName}TextConditionInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   match?: string | string[]
 
@@ -407,27 +534,42 @@ export class ${name}TextConditionInput {
   boost?: number
 
   @Field({ nullable: true })
-  and?: ${name}TextAndInput
+  and?: ${bestName}TextAndInput
 
   @Field({ nullable: true })
-  or?: ${name}TextOrInput
+  or?: ${bestName}TextOrInput
 
   @Field({ nullable: true })
-  not?: ${name}TextNotInput
+  not?: ${bestName}TextNotInput
 }
     `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/text.ts`, textContent)
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/text.ts`, textContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/text.ts`, textContent)
+  }
 
-  const textOrContent = `
+  let textOrContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
 
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      textOrContent = textOrContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  textOrContent = textOrContent.concat(`
 @InputType()
-export class ${name}TextOrInput {
+export class ${bestName}TextOrInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   match?: string | string[]
 
@@ -437,21 +579,37 @@ export class ${name}TextOrInput {
   @Field({ nullable: true })
   boost?: number
 
-  ${generateConditionInputs(klass)}
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-  `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/text-or.ts`, textOrContent)
+  `)
 
-  const textAndContent = `
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/text-or.ts`, textOrContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/text-or.ts`, textOrContent)
+  }
+
+  let textAndContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
 
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      textAndContent = textAndContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  textAndContent = textAndContent.concat(`
 @InputType()
-export class ${name}TextAndInput {
+export class ${bestName}TextAndInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   match?: string | string[]
 
@@ -461,20 +619,26 @@ export class ${name}TextAndInput {
   @Field({ nullable: true })
   boost?: number
 
-  ${generateConditionInputs(klass)}
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-  `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/text-and.ts`, textAndContent)
+  `)
+
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/text-and.ts`, textAndContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/text-and.ts`, textAndContent)
+  }
 }
 
-function generateNumericInput(klass: typeof Search, name: string) {
+function generateNumericInput(conditionsClassInstance: any, name: string, dirName?: string) {
+  const bestName = dirName || name
   const numericContent = `
 import { Field, InputType, Float } from 'type-graphql'
-import { ${name}NumericOrInput } from './numeric-or'
-import { ${name}NumericAndInput } from './numeric-and'
+import { ${bestName}NumericOrInput } from './numeric-or'
+import { ${bestName}NumericAndInput } from './numeric-and'
 
 @InputType()
-export class ${name}NumericNotInput {
+export class ${bestName}NumericNotInput {
   @Field(type => [Float, [Float]] as const, { nullable: true })
   eq?: number | number[]
 
@@ -483,7 +647,7 @@ export class ${name}NumericNotInput {
 }
 
 @InputType()
-export class ${name}NumericConditionInput {
+export class ${bestName}NumericConditionInput {
   @Field(type => [Float, [Float]] as const, { nullable: true })
   eq?: number | number[]
 
@@ -503,62 +667,100 @@ export class ${name}NumericConditionInput {
   boost?: number
 
   @Field({ nullable: true })
-  and?: ${name}NumericAndInput
+  and?: ${bestName}NumericAndInput
 
   @Field({ nullable: true })
-  or?: ${name}NumericOrInput
+  or?: ${bestName}NumericOrInput
 
   @Field({ nullable: true })
-  not?: ${name}NumericNotInput
+  not?: ${bestName}NumericNotInput
 }
   `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric.ts`, numericContent)
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/numeric.ts`, numericContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric.ts`, numericContent)
+  }
 
-  const numericOrContent = `
+  let numericOrContent = `
 import { Field, InputType, Float } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
 
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      numericOrContent = numericOrContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  numericOrContent = numericOrContent.concat(`
 @InputType()
-export class ${name}NumericOrInput {
+export class ${bestName}NumericOrInput {
   @Field(type => [Float, [Float]] as const, { nullable: true })
   eq?: number | number[]
 
   @Field({ nullable: true })
   boost?: number
 
-  ${generateConditionInputs(klass)}
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-  `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric-or.ts`, numericOrContent)
+  `)
 
-  const numericAndContent = `
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/numeric-or.ts`, numericOrContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric-or.ts`, numericOrContent)
+  }
+
+
+  let numericAndContent = `
 import { Field, InputType, Float } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
 
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      numericAndContent = numericAndContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  numericAndContent = numericAndContent.concat(`
 @InputType()
-export class ${name}NumericAndInput {
-  ${generateConditionInputs(klass)}
+export class ${bestName}NumericAndInput {
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-    `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric-and.ts`, numericAndContent)
+    `)
+
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/numeric-and.ts`, numericAndContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/numeric-and.ts`, numericAndContent)
+  }
 }
 
-function generateDateInput(klass: typeof Search, name: string) {
+function generateDateInput(conditionsClassInstance: any, name: string, dirName?: string) {
+  const bestName = dirName || name
   const dateContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}DateOrInput } from './date-or'
-import { ${name}DateAndInput } from './date-and'
+import { ${bestName}DateOrInput } from './date-or'
+import { ${bestName}DateAndInput } from './date-and'
 
 @InputType()
-export class ${name}DateNotInput {
+export class ${bestName}DateNotInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   eq?: string | string[]
 
@@ -567,7 +769,7 @@ export class ${name}DateNotInput {
 }
 
 @InputType()
-export class ${name}DateConditionInput {
+export class ${bestName}DateConditionInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   eq?: string | string[]
 
@@ -590,52 +792,88 @@ export class ${name}DateConditionInput {
   pastFiscalYears?: number
 
   @Field({ nullable: true })
-  and?: ${name}DateAndInput
+  and?: ${bestName}DateAndInput
 
   @Field({ nullable: true })
-  or?: ${name}DateOrInput
+  or?: ${bestName}DateOrInput
 
   @Field({ nullable: true })
-  not?: ${name}DateNotInput
+  not?: ${bestName}DateNotInput
 }
   `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/date.ts`, dateContent)
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/date.ts`, dateContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/date.ts`, dateContent)
+  }
 
-  const dateOrContent = `
+  let dateOrContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
 
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      dateOrContent = dateOrContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  dateOrContent = dateOrContent.concat(`
 @InputType()
-export class ${name}DateOrInput {
+export class ${bestName}DateOrInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   eq?: string | string[]
 
   @Field({ nullable: true })
   boost?: number
 
-  ${generateConditionInputs(klass)}
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-  `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/date-or.ts`, dateOrContent)
+  `)
 
-  const dateAndContent = `
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/date-or.ts`, dateOrContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/date-or.ts`, dateOrContent)
+  }
+
+  let dateAndContent = `
 import { Field, InputType } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './keyword'
-import { ${name}TextConditionInput } from './text'
-import { ${name}NumericConditionInput } from './numeric'
-import { ${name}DateConditionInput } from './date'
-import { ${name}SimpleKeywordsInput } from './simple-keywords'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
 
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      dateAndContent = dateAndContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  dateAndContent = dateAndContent.concat(`
 @InputType()
-export class ${name}DateAndInput {
-  ${generateConditionInputs(klass)}
+export class ${bestName}DateAndInput {
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
-    `
-  fs.writeFileSync(`src/search-inputs/${name}/conditions/date-and.ts`, dateAndContent)
+  `)
+
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/date-and.ts`, dateAndContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/date-and.ts`, dateAndContent)
+  }
 }
 
 function generateDateHistogramInput(klass: typeof Search | typeof MultiSearch, name: string) {
@@ -761,15 +999,29 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
     generateDateHistogramInput(klass, name)
     generateRangeInput(klass, name)
   } else {
+    const conditionsClassInstance = new klass.conditionsClass() as any
     generateSearchInput(klass, name)
-    generateSimpleKeywordsInput(klass, name)
-    generateKeywordInput(klass, name)
-    generateTextInput(klass, name)
-    generateNumericInput(klass, name)
-    generateDateInput(klass, name)
+    generateSimpleKeywordsInput(name)
+    generateKeywordInput(conditionsClassInstance, name)
+    generateTextInput(conditionsClassInstance, name)
+    generateNumericInput(conditionsClassInstance, name)
+    generateDateInput(conditionsClassInstance, name)
     generateTermsInput(klass, name)
     generateDateHistogramInput(klass, name)
     generateRangeInput(klass, name)
+
+    ;Object.keys(conditionsClassInstance).forEach((key) => {
+      if (conditionsClassInstance[key].isConditions) {
+        const nestedConditionsClassInstance = conditionsClassInstance[key]
+        generateNestedSearchInput(nestedConditionsClassInstance, name, key)
+        const dirName = key.charAt(0).toUpperCase() + key.slice(1)
+        generateSimpleKeywordsInput(name, dirName)
+        generateKeywordInput(nestedConditionsClassInstance, name, dirName)
+        generateTextInput(nestedConditionsClassInstance, name, dirName)
+        generateNumericInput(nestedConditionsClassInstance, name, dirName)
+        generateDateInput(nestedConditionsClassInstance, name, dirName)
+      }
+    })
   }
 }
 
