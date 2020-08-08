@@ -29,17 +29,21 @@ export class OrClause<ConditionT, ConditionsT> {
     const conditions = this.conditions as any
     const query = (this.conditions as any).buildQuery()
     if (query && query.bool) {
-      const nested = query.bool[this.elasticContext].bool.should[0].bool.must[0].bool
-      if (nested.should.length > 0) {
-        should = should.concat(nested.should)
-      }
+      const baseClause = query.bool[this.elasticContext].bool.should[0].bool.must[0]
+      if (baseClause.bool) {
+        if (baseClause.bool.should.length > 0) {
+          should = should.concat(baseClause.bool.should)
+        }
 
-      if (nested.must.length > 0) {
-        must = must.concat(nested.must)
-      }
+        if (baseClause.bool.must.length > 0) {
+          must = must.concat(baseClause.bool.must)
+        }
 
-      if (nested.must_not.length > 0) {
-        must_not = must_not.concat(nested.must_not)
+        if (baseClause.bool.must_not.length > 0) {
+          must_not = must_not.concat(baseClause.bool.must_not)
+        }
+      } else if (baseClause.nested) {
+        should = should.concat(baseClause)
       }
     }
 

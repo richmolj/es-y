@@ -197,7 +197,7 @@ export class Condition<ConditionsT, ValueType> {
     if (heavy) {
       return cloneDeep(this)
     } else {
-      let instance = new (this as any).klass(this.elasticField, this.conditions)
+      let instance = new (this as any).klass(this._elasticField, this.conditions)
       instance.config = this.config
       return instance
     }
@@ -272,6 +272,7 @@ export function applyOrClause<
   const conditionsKlass = getConditionsClassConstructor(condition)
   const dupe = (condition as any).dupe()
   const dupeConditions = new conditionsKlass()
+  dupeConditions.setSearch((condition as any).conditions.search)
   const clause = new orClass(dupe, dupeConditions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(condition as any).orClauses.push(clause)
@@ -287,6 +288,7 @@ export function applyAndClause<
   const conditionsKlass = getConditionsClassConstructor(condition)
   const dupe = (condition as any).dupe()
   const dupeConditions = new conditionsKlass()
+  dupeConditions.setSearch((condition as any).conditions.search)
   const clause = new andClass(dupe, dupeConditions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(condition as any).andClauses.push(clause)
@@ -302,6 +304,7 @@ export function applyNotClause<
   const conditionsKlass = getConditionsClassConstructor(condition)
   const dupe = (condition as any).dupe()
   const dupeConditions = new conditionsKlass()
+  dupeConditions.setSearch((condition as any).conditions.search)
   const clause = new notClass(dupe, dupeConditions, condition)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(condition as any).notClauses.push(clause)

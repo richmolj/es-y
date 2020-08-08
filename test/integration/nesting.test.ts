@@ -2,7 +2,7 @@ import { expect } from "chai"
 import { ThronesSearch } from "../fixtures"
 import { setupIntegrationTest } from '../util'
 
-// Refactor, commit, deploy, add to UI, deploy
+// TODO Document: bio.match('foo').or.skills(...) NOT skills.or
 
 describe("integration", () => {
   setupIntegrationTest()
@@ -85,6 +85,212 @@ describe("integration", () => {
             search.queries.skills.description.match("baking")
             await search.execute()
             expect(search.results.map((r) => r.id)).to.deep.eq([3, 1])
+          })
+
+          describe('complex nesting', () => {
+            describe('top-level OR', () => {
+              describe('via direct assignment', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch()
+                  search.queries.keywords.eq("foo")
+                  search.queries.or.skills.keywords.eq("baking")
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3, 2, 1])
+                })
+              })
+
+              describe('via constructor', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch({
+                    queries: {
+                      keywords: {
+                        eq: 'foo'
+                      },
+                      or: {
+                        skills: {
+                          keywords: {
+                            eq: 'baking'
+                          }
+                        }
+                      }
+                    }
+                  })
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3, 2, 1])
+                })
+              })
+            })
+
+            describe('top-level AND', () => {
+              describe('via direct assignment', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch()
+                  search.queries.keywords.eq("foo")
+                  search.queries.skills.keywords.eq("baking")
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3])
+                })
+              })
+
+              describe('via constructor', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch({
+                    queries: {
+                      keywords: {
+                        eq: 'foo'
+                      },
+                      skills: {
+                        keywords: {
+                          eq: 'baking'
+                        }
+                      }
+                    }
+                  })
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3])
+                })
+              })
+            })
+
+            describe('top-level NOT', () => {
+              describe('via direct assignment', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch()
+                  search.queries.keywords.eq("foo")
+                  search.queries.not.skills.keywords.eq("knives")
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3])
+                })
+              })
+
+              describe('via constructor', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch({
+                    queries: {
+                      keywords: {
+                        eq: 'foo'
+                      },
+                      not: {
+                        skills: {
+                          keywords: {
+                            eq: 'knives'
+                          }
+                        }
+                      }
+                    }
+                  })
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3])
+                })
+              })
+            })
+
+            // TODO keywords in general cant or/and
+            // TODO OR NOT
+            describe('OR within condition', () => {
+              // DOCUMENT NOT SUPPORTED: youre within skills now
+              // describe('when nesting is before')
+              // })
+
+              describe('via direct assignment', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch()
+                  search.queries.bio.match("bar")
+                    .or.skills.keywords.eq('knives')
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([1, 2])
+                })
+              })
+
+              describe('via constructor', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch({
+                    queries: {
+                      bio: {
+                        match: 'bar',
+                        or: {
+                          skills: {
+                            keywords: {
+                              eq: 'knives'
+                            }
+                          }
+                        }
+                      }
+                    }
+                  })
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([1, 2])
+                })
+              })
+            })
+
+            describe('AND within condition', () => {
+              describe('via direct assignment', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch()
+                  search.queries.bio.match("foo")
+                    .and.skills.keywords.eq('knives')
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([1])
+                })
+              })
+
+              describe('via constructor', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch({
+                    queries: {
+                      bio: {
+                        match: 'foo',
+                        and: {
+                          skills: {
+                            keywords: {
+                              eq: 'knives'
+                            }
+                          }
+                        }
+                      }
+                    }
+                  })
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([1])
+                })
+              })
+            })
+
+            describe('OR NOT within condition', () => {
+              describe('via direct assignment', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch()
+                  search.queries.bio.match("foo")
+                    .and.skills.name.not.eq('knives')
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3])
+                })
+              })
+
+              describe('via constructor', () => {
+                it('works', async() => {
+                  const search = new ThronesSearch({
+                    queries: {
+                      bio: {
+                        match: 'foo',
+                        and: {
+                          skills: {
+                            name: {
+                              not: {
+                                eq: 'knives'
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  })
+                  await search.execute()
+                  expect(search.results.map((r) => r.id)).to.deep.eq([3])
+                })
+              })
+            })
           })
         })
 

@@ -60,18 +60,22 @@ export class AndClause<ConditionT, ConditionsT> {
       query.bool[this.elasticContext].bool.should &&
       query.bool[this.elasticContext].bool.should.length > 0
     ) {
-      const subQuery = query.bool[this.elasticContext].bool.should[0].bool.must[0].bool
+      const baseClause = query.bool[this.elasticContext].bool.should[0].bool.must[0]
 
-      if (subQuery.must.length > 0) {
-        should = should.concat({ bool: { must: subQuery.must } })
-      }
+      if (baseClause.bool) {
+        if (baseClause.bool.must.length > 0) {
+          should = should.concat({ bool: { must: baseClause.bool.must } })
+        }
 
-      if (subQuery.should.length > 0) {
-        should = should.concat(subQuery.should)
-      }
+        if (baseClause.bool.should.length > 0) {
+          should = should.concat(baseClause.bool.should)
+        }
 
-      if (subQuery.must_not.length > 0) {
-        must_not = must_not.concat(subQuery.must_not)
+        if (baseClause.bool.must_not.length > 0) {
+          must_not = must_not.concat(baseClause.bool.must_not)
+        }
+      } else if(baseClause.nested) {
+        should = should.concat({ bool: { must: baseClause } })
       }
 
       return { should, must_not }
