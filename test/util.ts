@@ -33,6 +33,23 @@ export function setupIntegrationTest() {
           age: {
             type: "integer",
           },
+          skills: {
+            type: "nested",
+            properties: {
+              name: {
+                type: "keyword"
+              },
+              description: {
+                type: "text"
+              },
+              note: {
+                type: "text"
+              },
+            }
+          },
+          'something.dotted': {
+            type: "text"
+          },
           created_at: {
             type: "date",
           },

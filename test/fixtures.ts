@@ -27,6 +27,16 @@ export class ThronesSearchConditions extends Conditions {
   age = new NumericCondition<this>("age", this)
   createdAt = new DateCondition<this>("created_at", this)
   updatedAt = new DateCondition<this>("updated_at", this)
+
+  skills = new NestedSkillConditions()
+}
+
+@ClassHook()
+class NestedSkillConditions extends Conditions {
+  static nested = "skills"
+
+  name = new KeywordCondition<this>("name", this)
+  description = new TextCondition<this>("description", this)
 }
 
 @SearchClass()
@@ -44,6 +54,7 @@ export class ThronesSearch extends Search {
 class JustifiedSearchConditions extends Conditions {
   name = new KeywordCondition<this>("name", this)
   rating = new NumericCondition<this>("rating", this)
+  bio = new TextCondition<this>("bio", this)
 }
 
 @SearchClass()

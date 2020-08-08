@@ -2,21 +2,7 @@ import { expect } from "chai"
 import { GlobalSearch, ThronesSearch , JustifiedSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
-// Expose resultMetadata at runtime with GQL so we can see scores (and transformResult API)
-//
-// regex - isMatch method?
-// Override the result index NORMALLY so no regex needed (maybe _klassIndex)
-//
-// -- GQL combo conditions -- if applicable
-//
-// Field Boosting
-// Verify Aggs
-//
-//
-// Common "keywords" filter and query in GQL - must improve gql type
-// also queries, etc
-
-describe("integration", () => {
+describe("multi-index integration", () => {
   setupIntegrationTest()
 
   afterEach(async () => {
@@ -41,6 +27,9 @@ describe("integration", () => {
           age: {
             type: "alias",
             path: "characterAge"
+          },
+          bio: {
+            type: "text"
           }
         }
       }
@@ -751,6 +740,183 @@ describe("integration", () => {
             { id: 1, title: 'Mother of Dragons', rating: 250, _type: 'thrones' },
             { id: 901, name: 'Boyd Crowder', rating: 250, _type: 'justified' },
           ])
+        })
+      })
+    })
+  })
+
+  describe('highlighting', () => {
+    beforeEach(async() => {
+      await ThronesSearch.persist({
+        id: 1,
+        bio: "this is a thrones foo bar bio"
+      }, true)
+      await JustifiedSearch.persist({
+        id: 1,
+        bio: "this is a justified foo bar bio"
+      }, true)
+    })
+
+    // TODO: tests for transforms (not doing now bc same as metadata)
+    // TODO DOCUMENT: cannot highlight individual search, must be cross when NOT splitting
+    describe('when not splitting', () => {
+      describe('via direct assignment', () => {
+        it('works', async() => {
+          const thrones = new ThronesSearch()
+          thrones.queries.keywords.eq("foo")
+          const justified = new JustifiedSearch()
+          justified.queries.keywords.eq("foo")
+          const search = new GlobalSearch()
+          search.searchInstances = [thrones, justified]
+          search.highlight("bio")
+          await search.execute()
+          expect(search.results[0]._highlights).to.deep.eq({
+            bio: ["this is a thrones <em>foo</em> bar bio"]
+          })
+          expect(search.results[1]._highlights).to.deep.eq({
+            bio: ["this is a justified <em>foo</em> bar bio"]
+          })
+        })
+
+        describe('when nested field', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist({
+              bio: 'blah',
+              skills: [
+                { description: "foo bar baz" }
+              ]
+            }, true)
+          })
+
+          it('works', async() => {
+            const thrones = new ThronesSearch()
+            thrones.queries.skills.keywords.eq("foo")
+            thrones.highlight("skills.description")
+            const search = new GlobalSearch()
+            search.searchInstances = [thrones]
+            await search.execute()
+            expect(search.results[0]).to.deep.eq({
+              _type: 'thrones',
+              bio: 'blah',
+              skills: [{
+                description: 'foo bar baz',
+                _highlights: {
+                  description: ["<em>foo</em> bar baz"]
+                }
+              }]
+            })
+          })
+        })
+      })
+
+      describe('via constructor', () => {
+        it('works', async() => {
+          const search = new GlobalSearch({
+            thrones: {
+              queries: { keywords: { eq: "foo" } }
+            },
+            justified: {
+              queries: { keywords: { eq: "foo" } }
+            },
+            highlights: [{
+              name: "bio"
+            }]
+          })
+          await search.execute()
+          expect(search.results[0]._highlights).to.deep.eq({
+            bio: ["this is a thrones <em>foo</em> bar bio"]
+          })
+          expect(search.results[1]._highlights).to.deep.eq({
+            bio: ["this is a justified <em>foo</em> bar bio"]
+          })
+        })
+      })
+    })
+
+    describe('when splitting', () => {
+      describe('via direct assignment', () => {
+        it('works', async() => {
+          const thrones = new ThronesSearch()
+          thrones.queries.keywords.eq("foo")
+          const justified = new JustifiedSearch()
+          justified.queries.keywords.eq("foo")
+          const search = new GlobalSearch()
+          search.searchInstances = [thrones, justified]
+          search.highlight("bio")
+          search.split(2)
+          await search.execute()
+          expect(search.results[0]._highlights).to.deep.eq({
+            bio: ["this is a thrones <em>foo</em> bar bio"]
+          })
+          expect(search.results[1]._highlights).to.deep.eq({
+            bio: ["this is a justified <em>foo</em> bar bio"]
+          })
+        })
+      })
+
+      describe('via constructor', () => {
+        it('works', async() => {
+          const search = new GlobalSearch({
+            thrones: {
+              queries: { keywords: { eq: "foo" } }
+            },
+            justified: {
+              queries: { keywords: { eq: "foo" } }
+            },
+            highlights: [{
+              name: "bio"
+            }],
+            split: 2
+          })
+          await search.execute()
+          expect(search.results[0]._highlights).to.deep.eq({
+            bio: ["this is a thrones <em>foo</em> bar bio"]
+          })
+          expect(search.results[1]._highlights).to.deep.eq({
+            bio: ["this is a justified <em>foo</em> bar bio"]
+          })
+        })
+      })
+
+      describe('and highlighting search-specific', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const thrones = new ThronesSearch()
+            thrones.queries.keywords.eq("foo")
+            const justified = new JustifiedSearch()
+            justified.queries.keywords.eq("foo")
+            justified.highlight("bio")
+            const search = new GlobalSearch()
+            search.searchInstances = [thrones, justified]
+            search.split(2)
+            await search.execute()
+            expect(search.results[0]._highlights).to.eq(undefined)
+            expect(search.results[1]._highlights).to.deep.eq({
+              bio: ["this is a justified <em>foo</em> bar bio"]
+            })
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new GlobalSearch({
+              split: 2,
+              thrones: {
+                queries: { keywords: { eq: "foo" } }
+              },
+              justified: {
+                queries: { keywords: { eq: "foo" } },
+                highlights: [{
+                  name: "bio"
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.results[0]._highlights).to.eq(undefined)
+            expect(search.results[1]._highlights).to.deep.eq({
+              bio: ["this is a justified <em>foo</em> bar bio"]
+            })
+          })
         })
       })
     })

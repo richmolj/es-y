@@ -8,6 +8,13 @@ import { Meta } from "./meta"
 import { Pagination, Sort } from './types'
 import { Scripting, ElasticScript } from "./scripting"
 import { applyMixins } from './util'
+import { config } from "./util/env"
+import {
+  HighlightConfig,
+  buildHighlightsFromInput,
+  attachHighlightsToResults
+} from "./util/highlighting"
+import { mergeOnlyHighlightInnerHits } from './util/source-fields'
 
 export class Search {
   static index: string
@@ -33,8 +40,10 @@ export class Search {
   boost?: number // multisearch
   resultMetadata: boolean = false
   protected _aggs?: Aggregations
+  protected _highlights?: HighlightConfig[]
   protected _scriptQuery?: ElasticScript
   protected _scriptScore?: ElasticScript
+  protected _sourceFields?: Partial<Record<'includes' | 'excludes' | 'onlyHighlights', string[]>>
 
   static async persist(payload: Record<string, any> | Record<string, any>[], refresh: boolean = false) {
     if (!Array.isArray(payload)) payload = [payload]
@@ -93,10 +102,26 @@ export class Search {
         ;(this.queries as any).isQuery = true;
       }
 
+      ;(this.filters as any).search = this;
+      ;(this.queries as any).search = this;
+
       if (input && (input.aggs || input.aggregations)) {
         this.aggs.build(input.aggs || input.aggregations)
       }
+
+      if (input && input.highlights) {
+        buildHighlightsFromInput(input, this)
+      }
+
+      if (input && input.sourceFields) {
+        this.sourceFields(input.sourceFields)
+      }
     }
+  }
+
+  sourceFields(config: Partial<Record<'excludes' | 'includes' | 'onlyHighlights', string[]>>): this {
+    this._sourceFields = config
+    return this
   }
 
   get includeMetadata() {
@@ -114,6 +139,20 @@ export class Search {
       this._aggs = new Aggregations(this)
       return this._aggs
     }
+  }
+
+  highlight(name: string, options: Record<string, any> = {}) {
+    if (!this._highlights) this._highlights = []
+    const field = options.field
+    delete options.field
+
+    this._highlights.push({
+      name,
+      field: field || this.fieldFor(name) || name,
+      options
+    })
+
+    return this
   }
 
   // TODO: dupe _conditions for different configs
@@ -153,8 +192,11 @@ export class Search {
     const searchPayload = await this.toElastic()
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
-    const builtResults = this.buildResults(response.body.hits.hits, this.includeMetadata)
+    const rawResults = response.body.hits.hits
+    mergeOnlyHighlightInnerHits(this, rawResults)
+    const builtResults = this.buildResults(rawResults, this.includeMetadata)
     const transformedResults = this.transformResults(builtResults)
+    attachHighlightsToResults(this, transformedResults, rawResults)
     this.results = this.applyMetadata(transformedResults, builtResults)
 
     if (response.body.aggregations) {
@@ -175,7 +217,8 @@ export class Search {
   }
 
   protected buildResults(rawResults: any[], metadata: boolean = false): any[] {
-    return rawResults.map(raw => {
+    let results = rawResults.map((raw) => Object.assign({}, raw))
+    return results.map(raw => {
       const result = raw._source
       if (metadata) {
         result._meta = this.buildMetadata(raw)
