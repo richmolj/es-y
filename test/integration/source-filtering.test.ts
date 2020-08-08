@@ -149,6 +149,19 @@ describe("integration", () => {
             }]
           }])
         })
+
+        describe('when there are no highlights', () => {
+          it('does not blow up', async () => {
+            const search = new ThronesSearch()
+            search.sourceFields({
+              onlyHighlights: ['skills'],
+              excludes: ['skills.description']
+            })
+            search.highlight('skills.description')
+            await search.execute()
+            expect(search.results).to.deep.eq([{ id: 1, bio: 'foo' }, {}])
+          })
+        })
       })
     })
 
