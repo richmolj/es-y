@@ -119,7 +119,10 @@ export function attachHighlightsToResults(search: Search, results: any[], rawRes
 function applyNestedHighlightToResult(search: Search, result: any, rawResult: any, field: string) {
   const split      = field.split('.')
   const nested     = split[0]//(search.filters as any)[split[0]].klass.nested
-  const innerHits  = rawResult.inner_hits[nested].hits
+  let innerHits    = rawResult.inner_hits
+  if (!innerHits) return
+  if (!innerHits[nested]) return
+  innerHits = innerHits[nested].hits
   split.shift()
   let innerFieldName = split.join('.')
   innerHits.hits.forEach((hit: any, index: number) => {
