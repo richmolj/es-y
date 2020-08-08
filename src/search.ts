@@ -86,24 +86,19 @@ export class Search {
     }
 
     if (this.klass.conditionsClass) { // else multisearch
+      this.filters = new this.klass.conditionsClass()
+      ;(this.filters as any).setSearch(this)
+      this.queries = new this.klass.conditionsClass()
+      ;(this.queries as any).isQuery = true;
+      ;(this.queries as any).setSearch(this)
+
       if (input && input.filters) {
-        this.filters = new this.klass.conditionsClass()
         ;(this.filters as any).build(input.filters)
-      } else {
-        this.filters = new this.klass.conditionsClass()
       }
 
       if (input && input.queries) {
-        this.queries = new this.klass.conditionsClass()
-        ;(this.queries as any).isQuery = true;
         ;(this.queries as any).build(input.queries)
-      } else {
-        this.queries = new this.klass.conditionsClass()
-        ;(this.queries as any).isQuery = true;
       }
-
-      ;(this.filters as any).search = this;
-      ;(this.queries as any).search = this;
 
       if (input && (input.aggs || input.aggregations)) {
         this.aggs.build(input.aggs || input.aggregations)

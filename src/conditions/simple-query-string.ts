@@ -16,6 +16,7 @@ export class SimpleQueryStringCondition<ConditionsT> extends Condition<Condition
     if (options && options.combinator) {
       this.combinator = options.combinator
     }
+    return this
   }
 
   toElastic(): any {

@@ -64,7 +64,11 @@ function buildCondition(condition: any, payload: any) {
           condition.or[k](v)
         }
       } else {
-        buildConditions(condition.or, { [k]: v })
+        if (condition.or[k].isConditions) {
+          buildConditions(condition.or[k], v)
+        } else {
+          buildConditions(condition.or, { [k]: v })
+        }
       }
     } else {
       if (operator === "boost") {
@@ -86,12 +90,22 @@ export function buildConditions(base: any, input: any) {
       if (key === "not") {
         Object.keys(input.not).forEach(conditionName => {
           const condition = base.not[conditionName]
-          buildCondition(condition, input.not[conditionName])
+          // Accomodate nested conditions
+          if (condition.isConditions) {
+            buildConditions(condition, input.not[conditionName])
+          } else {
+            buildCondition(condition, input.not[conditionName])
+          }
         })
       } else if (key === "or") {
         Object.keys(input.or).forEach(conditionName => {
           const condition = base.or[conditionName]
-          buildCondition(condition, input.or[conditionName])
+          // Accomodate nested conditions
+          if (condition.isConditions) {
+            buildConditions(condition, input.or[conditionName])
+          } else {
+            buildCondition(condition, input.or[conditionName])
+          }
         })
       } else {
         const condition = base[key]

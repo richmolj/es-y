@@ -32,11 +32,22 @@ class Conditions {
 
   keywords = new SimpleQueryStringCondition<this>("", this)
 
+  setSearch(search: Search) {
+    this.search = search
+    const _this = this as any
+    Object.keys(this).forEach((k) => {
+      if (_this[k].isConditions) { // nested conditions
+        _this[k].search = search
+      }
+    })
+  }
+
   get not(): this {
     if (this._not) {
       return this._not as this
     } else {
       this._not = new this.klass()
+      this._not.setSearch(this.search)
       return this._not as this
     }
   }
@@ -46,6 +57,7 @@ class Conditions {
       return this._or as this
     } else {
       this._or = new this.klass()
+      this._or.setSearch(this.search)
       return this._or as this
     }
   }
