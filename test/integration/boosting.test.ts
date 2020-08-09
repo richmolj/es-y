@@ -101,6 +101,16 @@ describe("integration", () => {
         })
       })
 
+      describe('simple query conditions', () => {
+        it('can boost one above the other', async() => {
+          const search = new ThronesSearch()
+          search.queries.keywords.eq('foo')
+          search.queries.or.keywords.eq('bar', { boost: 5 })
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([2, 1])
+        })
+      })
+
       describe('keyword conditions', () => {
         describe('or', () => {
           it('works', async() => {

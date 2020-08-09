@@ -3,7 +3,7 @@ import { config } from "./../../src/util/env"
 /* eslint-disable @typescript-eslint/camelcase */
 import { expect } from "chai"
 import { Search } from "../../src/index"
-import { ThronesSearch } from "../fixtures"
+import { ThronesSearch, ThronesSearchConditions } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
 const index = ThronesSearch.index
@@ -50,7 +50,7 @@ describe("integration", () => {
     expect(search.results.map(r => r.id)).to.deep.eq([1, 2, 999])
   })
 
-  describe("keywords", () => {
+  describe("simple query string", () => {
     beforeEach(async () => {
       await ThronesSearch.persist({
         id: 333,
@@ -128,6 +128,299 @@ describe("integration", () => {
           })
           await search.execute()
           expect(search.results.map(r => r.id)).to.deep.eq([777, 888])
+        })
+      })
+    })
+
+    // todo: boosting one keyword above another
+    describe('NOT', () => {
+      describe('via direct assignment', () => {
+        it('works', async () => {
+          const search = new ThronesSearch()
+          search.queries.keywords.not.eq("burn")
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([2, 999, 333])
+        })
+      })
+
+      describe('via constructor', () => {
+        it('works', async () => {
+          const search = new ThronesSearch({
+            queries: {
+              keywords: {
+                not: {
+                  eq: "burn"
+                }
+              }
+            }
+          })
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([2, 999, 333])
+        })
+      })
+    })
+
+    describe('AND', () => {
+      beforeEach(async() => {
+        await ThronesSearch.persist({
+          id: 444,
+          quote: "otherthing",
+          bio: "burn"
+        }, true)
+      })
+
+      describe('within field', () => {
+        describe('via direct assignment', () => {
+          it('works', async () => {
+            const search = new ThronesSearch()
+            search.queries.keywords.eq("burn").and.eq("otherthing")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async () => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  eq: "burn",
+                  and: {
+                    eq: "otherthing"
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444])
+          })
+        })
+      })
+
+      describe('across fields', () => {
+        describe('via direct assignment', () => {
+          it('works', async () => {
+            const search = new ThronesSearch()
+            search.queries.keywords.eq("burn").and.quote.match("otherthing")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async () => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  eq: 'burn',
+                  and: {
+                    quote: {
+                      match: 'otherthing'
+                    }
+                  }
+                }
+              }
+            })
+            search.queries.keywords.eq("burn").and.quote.match("otherthing")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444])
+          })
+        })
+      })
+    })
+
+    describe('NOT AND', () => {
+      describe('within field', () => {
+        describe('via direct assignment', () => {
+          it('works', async () => {
+            const search = new ThronesSearch()
+            search.queries.keywords.not.eq("burn").and.eq("dragon")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([333])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  not: {
+                    eq: 'burn',
+                    and: {
+                      eq: 'dragon'
+                    }
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([333])
+          })
+        })
+      })
+
+      describe('across fields', () => {
+        describe('via direct assignment', () => {
+          it('works', async () => {
+            const search = new ThronesSearch()
+            search.queries.keywords.not.eq("burn").and.quote.match("dragon")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([333])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async () => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  not: {
+                    eq: 'burn',
+                    and: {
+                      quote: {
+                        match: 'dragon'
+                      }
+                    }
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([333])
+          })
+        })
+      })
+    })
+
+    describe('OR', () => {
+      describe('within field', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.keywords.eq("burn").or.eq("winter")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([2, 1])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  eq: 'burn',
+                  or: {
+                    eq: 'winter'
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([2, 1])
+          })
+        })
+      })
+
+      describe('across fields', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.keywords.eq("burn").or.quote.match("winter")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([2, 1])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  eq: 'burn',
+                  or: {
+                    quote: {
+                      match: 'winter'
+                    }
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([2, 1])
+          })
+        })
+      })
+    })
+
+    describe('NOT OR', () => {
+      beforeEach(async() => {
+        await ThronesSearch.persist({
+          id: 444,
+          quote: 'findme',
+          bio: 'burn'
+        }, true)
+      })
+
+      describe('within field', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.keywords.not.eq("burn").or.eq("findme")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444, 2, 999, 333])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  not: {
+                    eq: 'burn',
+                  },
+                  or: {
+                    eq: 'findme'
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444, 2, 999, 333])
+          })
+        })
+      })
+
+      describe('across fields', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.keywords.not.eq("burn").or.quote.match("findme")
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444, 2, 999, 333])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              queries: {
+                keywords: {
+                  not: {
+                    eq: 'burn',
+                    or: {
+                      quote: {
+                        match: 'findme'
+                      }
+                    }
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([444, 2, 999, 333])
+          })
         })
       })
     })

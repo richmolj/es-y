@@ -459,7 +459,7 @@ export class ${bestName}KeywordOrInput {
   boost?: number
 
   @Field({ nullable: true })
-  or?: ${name}KeywordOrInput
+  or?: ${bestName}KeywordOrInput
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
