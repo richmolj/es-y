@@ -226,7 +226,7 @@ export class Condition<ConditionsT, ValueType> {
     return dupe
   }
 
-  private elasticClause(queryType: string, value: any, condition: Condition<ConditionsT, ValueType>) {
+  protected elasticClause(queryType: string, value: any, condition: any) {
     let main
     let clause
     if (condition.boost) {
