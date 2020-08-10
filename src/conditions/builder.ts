@@ -107,6 +107,8 @@ export function buildConditions(base: any, input: any) {
             buildCondition(condition, input.or[conditionName])
           }
         })
+      } else if (key === "scoreMode") {
+        base.scoreMode(input[key])
       } else {
         const condition = base[key]
         // Accomodate nested conditions

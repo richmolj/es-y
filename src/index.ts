@@ -20,6 +20,7 @@ import {
 } from "./conditions"
 import { Search } from "./search"
 import { MultiSearch } from "./multi-search"
+import { NestedConditions } from "./nested-conditions"
 import { generateGqlInputs } from "./gql-inputs"
 
 export {
@@ -27,6 +28,7 @@ export {
   MultiSearch,
   SearchClass,
   Conditions,
+  NestedConditions,
   ClassHook,
   StringEqConditionInput,
   MatchConditionInput,

@@ -28,17 +28,19 @@ export function mergeOnlyHighlightInnerHits(search: Search, rawResults: any[]) {
           if (onlyHighlights.includes(key)) {
             if (!rawResult._source[key]) rawResult._source[key] = []
 
-            const nestedSource = rawResult.inner_hits[key].hits.hits
-              .map((hit: any) => {
-                let _highlights = {} as any
-                Object.keys(hit.highlight).forEach((key) => {
-                  const split = key.split('.')
-                  split.shift()
-                  const innerField = split.join('.')
-                  _highlights[innerField] = hit.highlight[key]
-                })
-                return { _highlights, ...hit._source }
+            const innerHits = rawResult.inner_hits[key].hits.hits
+            const hitsWithHighlights = innerHits.filter((hit: any) => !!hit.highlight)
+            const nestedSource = hitsWithHighlights.map((hit: any) => {
+              let _highlights = {} as any
+              Object.keys(hit.highlight).forEach((key) => {
+                const split = key.split('.')
+                split.shift()
+                const innerField = split.join('.')
+                _highlights[innerField] = hit.highlight[key]
               })
+              const _meta = { _score: hit._score }
+              return { _meta, _highlights, ...hit._source }
+            })
 
             rawResult._source[key] = nestedSource
           }

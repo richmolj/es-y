@@ -3,6 +3,7 @@ import {
   MultiSearch,
   ClassHook,
   Conditions,
+  NestedConditions,
   SearchClass,
   KeywordCondition,
   TextCondition,
@@ -32,7 +33,7 @@ export class ThronesSearchConditions extends Conditions {
 }
 
 @ClassHook()
-class NestedSkillConditions extends Conditions {
+class NestedSkillConditions extends NestedConditions {
   static nested = "skills"
 
   name = new KeywordCondition<this>("name", this)

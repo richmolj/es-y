@@ -107,6 +107,9 @@ describe("integration", () => {
               description: 'bar foo baz',
               _highlights: {
                 description: ['bar <em>foo</em> baz']
+              },
+              _meta: {
+                _score: 1.4176356
               }
             }]
           }])
@@ -121,14 +124,8 @@ describe("integration", () => {
           })
           search.highlight('skills.description')
           await search.execute()
-          expect(search.results).to.deep.eq([{
-            skills: [{
-              description: 'bar foo baz',
-              _highlights: {
-                description: ['bar <em>foo</em> baz']
-              }
-            }]
-          }])
+          expect(Object.keys(search.results[0].skills[0]).sort())
+            .to.deep.eq(['_highlights', '_meta', 'description'])
         })
 
         it('still respects excludes', async () => {
@@ -140,14 +137,8 @@ describe("integration", () => {
           })
           search.highlight('skills.description')
           await search.execute()
-          expect(search.results).to.deep.eq([{
-            skills: [{
-              name: 'b',
-              _highlights: {
-                description: ['bar <em>foo</em> baz']
-              }
-            }]
-          }])
+          expect(Object.keys(search.results[0].skills[0]).sort())
+            .to.deep.eq(['_highlights', '_meta', 'name'])
         })
 
         describe('when there are no highlights', () => {
@@ -160,6 +151,19 @@ describe("integration", () => {
             search.highlight('skills.description')
             await search.execute()
             expect(search.results).to.deep.eq([{ id: 1, bio: 'foo' }, {}])
+          })
+        })
+
+        describe('when there are inner_hits via query, but no highlights', () => {
+          it('does not blow up', async() => {
+            const search = new ThronesSearch()
+            search.queries.skills.keywords.eq('foo')
+            search.sourceFields({
+              onlyHighlights: ['skills'],
+              excludes: ['name']
+            })
+            await search.execute()
+            expect(search.results).to.deep.eq([{ skills: [] }])
           })
         })
       })
@@ -289,6 +293,9 @@ describe("integration", () => {
                 name: 'b',
                 _highlights: {
                   description: ['bar <em>foo</em> baz']
+                },
+                _meta: {
+                  _score : 1.4176356,
                 }
               }]
             }])
@@ -318,6 +325,9 @@ describe("integration", () => {
                 name: 'b',
                 _highlights: {
                   description: ['bar <em>foo</em> baz']
+                },
+                _meta: {
+                  _score: 1.4176356
                 }
               }]
             }])
