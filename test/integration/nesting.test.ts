@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { ThronesSearch } from "../fixtures"
+import { ThronesSearch, ThronesSearchConditions } from "../fixtures"
 import { setupIntegrationTest } from '../util'
 
 // TODO Document: bio.match('foo').or.skills(...) NOT skills.or
@@ -50,8 +50,6 @@ describe("integration", () => {
       }, true)
     })
 
-    // TODO: keywords.eq('f', applyToNested: ['skills'])?
-    // TODO general: search.filters.foo.value
     describe('nested keyword functionality', () => {
       describe('basic', () => {
         describe('via direct assignment', () => {
@@ -312,6 +310,35 @@ describe("integration", () => {
         })
       })
 
+      describe('scoreMode', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.skills.scoreMode('sum')
+            search.queries.skills.keywords.eq('foo')
+            await search.execute()
+            let { nested } = search.lastQuery.body.query.bool.should[0].bool.must[0]
+            expect(nested.score_mode).to.eq('sum')
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              queries: {
+                skills: {
+                  scoreMode: 'sum',
+                  keywords: { eq: 'foo' }
+                }
+              }
+            })
+            await search.execute()
+            let { nested } = search.lastQuery.body.query.bool.should[0].bool.must[0]
+            expect(nested.score_mode).to.eq('sum')
+          })
+        })
+      })
+
       // TodoTest: Highlight nested via condition name
       // TODO: when specifying keyword fields (+others?) only description not skills.description
       // TODO: multi-level nesting
@@ -334,6 +361,16 @@ describe("integration", () => {
             note: [
               "bakers gonna be <em>baking</em>"
             ]
+          })
+        })
+
+        it('adds meta/score to nested results', async () => {
+          const search = new ThronesSearch()
+          search.queries.skills.keywords.eq('baking')
+          search.highlight('skills.description')
+          await search.execute()
+          expect(search.results[0].skills[0]._meta).to.deep.eq({
+            _score: 1.26859
           })
         })
 
@@ -396,6 +433,9 @@ describe("integration", () => {
                   description: "you findme must",
                   _highlights: {
                     description: ['you <em>findme</em> must']
+                  },
+                  _meta: {
+                    _score: 1.8092318
                   }
                 }
               }

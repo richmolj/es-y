@@ -358,10 +358,24 @@ export class ${name}Input {
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
-function generateSimpleKeywordsInput(name: string, dirName?: string) {
+function generateSimpleKeywordsInput(conditionsClassInstance: any, name: string, dirName?: string) {
   const bestName = dirName || name
   const content = `
 import { Field, InputType } from 'type-graphql'
+import { ${bestName}SimpleKeywordsOrInput } from './simple-keywords-or'
+import { ${bestName}SimpleKeywordsAndInput } from './simple-keywords-and'
+
+@InputType()
+export class ${bestName}SimpleKeywordsNotInput {
+  @Field(type => [String, [String]] as const, { nullable: true })
+  eq?: string | string[]
+
+  @Field(type => [String, [String]] as const, { nullable: true })
+  prefix?: string | string[]
+
+  @Field({ nullable: true })
+  boost?: number
+}
 
 @InputType()
 export class ${bestName}SimpleKeywordsInput {
@@ -369,16 +383,111 @@ export class ${bestName}SimpleKeywordsInput {
   eq?: string
 
   @Field({ nullable: true })
+  boost?: number
+
+  @Field({ nullable: true })
   combinator?: string
 
   @Field(type => [String], { nullable: true })
   fields?: string[]
+
+  @Field({ nullable: true })
+  not?: ${bestName}SimpleKeywordsNotInput
+
+  @Field({ nullable: true })
+  or?: ${bestName}SimpleKeywordsOrInput
+
+  @Field({ nullable: true })
+  and?: ${bestName}SimpleKeywordsAndInput
 }
   `
   if (dirName) {
     fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/simple-keywords.ts`, content)
   } else {
     fs.writeFileSync(`src/search-inputs/${name}/conditions/simple-keywords.ts`, content)
+  }
+
+  let simpleKeywordsOrContent = `
+import { Field, InputType } from 'type-graphql'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
+
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      simpleKeywordsOrContent = simpleKeywordsOrContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  simpleKeywordsOrContent = simpleKeywordsOrContent.concat(`
+@InputType()
+export class ${bestName}SimpleKeywordsOrInput {
+  @Field({ nullable: true })
+  eq?: string
+
+  @Field({ nullable: true })
+  boost?: number
+
+  @Field({ nullable: true })
+  combinator?: string
+
+  @Field(type => [String], { nullable: true })
+  fields?: string[]
+
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
+}
+  `)
+
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/simple-keywords-or.ts`, simpleKeywordsOrContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/simple-keywords-or.ts`, simpleKeywordsOrContent)
+  }
+
+  let simpleKeywordsAndContent = `
+import { Field, InputType } from 'type-graphql'
+import { ${bestName}KeywordConditionInput } from './keyword'
+import { ${bestName}TextConditionInput } from './text'
+import { ${bestName}NumericConditionInput } from './numeric'
+import { ${bestName}DateConditionInput } from './date'
+import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
+  `
+
+  eachCondition(conditionsClassInstance, (conditionName: string, type: string, condition: any) => {
+    if (condition.isConditions) {
+      const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+      simpleKeywordsAndContent = simpleKeywordsAndContent.concat(`
+import { ${capName}Input } from '../nested/${capName}'
+      `)
+    }
+  })
+
+  simpleKeywordsAndContent = simpleKeywordsAndContent.concat(`
+@InputType()
+export class ${bestName}SimpleKeywordsAndInput {
+  @Field(type => [String, [String]] as const, { nullable: true })
+  match?: string | string[]
+
+  @Field(type => [String, [String]] as const, { nullable: true })
+  matchPhrase?: string | string[]
+
+  @Field({ nullable: true })
+  boost?: number
+
+  ${generateConditionInputs(bestName, conditionsClassInstance)}
+}
+  `)
+
+  if (dirName) {
+    fs.writeFileSync(`src/search-inputs/${name}/nested/${dirName}/conditions/simple-keywords-and.ts`, simpleKeywordsAndContent)
+  } else {
+    fs.writeFileSync(`src/search-inputs/${name}/conditions/simple-keywords-and.ts`, simpleKeywordsAndContent)
   }
 }
 
@@ -1001,7 +1110,7 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
   } else {
     const conditionsClassInstance = new klass.conditionsClass() as any
     generateSearchInput(klass, name)
-    generateSimpleKeywordsInput(name)
+    generateSimpleKeywordsInput(conditionsClassInstance, name)
     generateKeywordInput(conditionsClassInstance, name)
     generateTextInput(conditionsClassInstance, name)
     generateNumericInput(conditionsClassInstance, name)
@@ -1012,10 +1121,17 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
 
     ;Object.keys(conditionsClassInstance).forEach((key) => {
       if (conditionsClassInstance[key].isConditions) {
+        const dirName = key.charAt(0).toUpperCase() + key.slice(1)
+        const dir = `src/search-inputs/${name}/nested`
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir)
+          fs.mkdirSync(`${dir}/${dirName}`)
+          fs.mkdirSync(`${dir}/${dirName}/conditions`)
+        }
+
         const nestedConditionsClassInstance = conditionsClassInstance[key]
         generateNestedSearchInput(nestedConditionsClassInstance, name, key)
-        const dirName = key.charAt(0).toUpperCase() + key.slice(1)
-        generateSimpleKeywordsInput(name, dirName)
+        generateSimpleKeywordsInput(nestedConditionsClassInstance, name, dirName)
         generateKeywordInput(nestedConditionsClassInstance, name, dirName)
         generateTextInput(nestedConditionsClassInstance, name, dirName)
         generateNumericInput(nestedConditionsClassInstance, name, dirName)

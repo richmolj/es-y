@@ -139,6 +139,7 @@ function applyNestedHighlightToResult(search: Search, result: any, rawResult: an
         if (nestedResult) {
           if (!nestedResult._highlights) nestedResult._highlights = {} as any
           nestedResult._highlights[innerFieldName] = hit.highlight[field]
+          nestedResult._meta = { _score: hit._score }
         }
       }
     }

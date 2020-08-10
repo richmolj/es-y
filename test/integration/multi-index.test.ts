@@ -802,6 +802,9 @@ describe("multi-index integration", () => {
                 description: 'foo bar baz',
                 _highlights: {
                   description: ["<em>foo</em> bar baz"]
+                },
+                _meta: {
+                  _score: 0.2876821
                 }
               }]
             })

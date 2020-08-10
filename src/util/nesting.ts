@@ -15,6 +15,7 @@ export function buildNestedQueryPayloads(conditionsClass: Conditions) {
         path: nestedCondition.klass.nested,
         query: nestedQuery.bool.filter,
         ignore_unmapped: true,
+        score_mode: nestedCondition._scoreMode
       } as any
 
       const highlight = buildHighlightRequest(search, nestedCondition.klass.nested)

@@ -2,6 +2,7 @@ import { ThronesSearch, GlobalSearch } from "./../fixtures"
 import { expect } from "chai"
 import { setupIntegrationTest } from "../util"
 
+// TODO: overall fragment size, etc not on field
 describe("integration", () => {
   describe("highlighting", () => {
     setupIntegrationTest()
@@ -64,6 +65,29 @@ describe("integration", () => {
             thing: [
               "He was the <em>older</em> brother of Benjen, Lyanna and the younger brother of Brandon Stark."
             ]
+          })
+        })
+
+        describe('when score specified', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist({
+              id: 333,
+              quote: 'blah foo blah is a foo foo foo thing'
+            }, true)
+          })
+
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.queries.keywords.eq("foo")
+            search.highlight("quote", { order: 'score', fragment_size: 10 })
+            await search.execute()
+            expect(search.results[0]._highlights).to.deep.eq({
+              quote: [
+                "is a <em>foo</em> <em>foo</em>",
+                "<em>foo</em> thing",
+                "blah <em>foo</em> blah",
+              ]
+            })
           })
         })
       })
