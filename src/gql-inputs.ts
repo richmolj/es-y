@@ -432,6 +432,9 @@ export class ${bestName}SimpleKeywordsOrInput {
   eq?: string
 
   @Field({ nullable: true })
+  or?: ${bestName}SimpleKeywordsOrInput
+
+  @Field({ nullable: true })
   boost?: number
 
   @Field({ nullable: true })
@@ -816,6 +819,9 @@ export class ${bestName}NumericOrInput {
   eq?: number | number[]
 
   @Field({ nullable: true })
+  or?: ${bestName}NumericOrInput
+
+  @Field({ nullable: true })
   boost?: number
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
@@ -939,6 +945,9 @@ import { ${capName}Input } from '../nested/${capName}'
 export class ${bestName}DateOrInput {
   @Field(type => [String, [String]] as const, { nullable: true })
   eq?: string | string[]
+
+  @Field({ nullable: true })
+  or?: ${bestName}DateOrInput
 
   @Field({ nullable: true })
   boost?: number

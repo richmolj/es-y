@@ -57,7 +57,11 @@ class TransformedThronesSearchConditions extends ThronesSearchConditions {
     ],
     toElastic(condition: any) {
       if (condition.value === 'dontmindme') condition.value = 'bar'
-      return { term: { name: { value: condition.value } } }
+      if (Array.isArray(condition.value)) {
+        return { terms: { name: condition.value } }
+      } else {
+        return { term: { name: { value: condition.value } } }
+      }
     }
   })
 }
@@ -130,6 +134,22 @@ describe("integration", () => {
           search.filters.name.eq("asdf").or.altered.eq("foo.bar.baz*bax")
           await search.execute()
           expect(search.results.map((r) => r.id)).to.deep.eq([2])
+        })
+      })
+
+      describe('when passed an array', () => {
+        beforeEach(async() => {
+          await TransformedThronesSearch.persist({
+            id: 17,
+            name: "boo=bar=baz-bax",
+          }, true)
+        })
+
+        it('processes one by one', async() => {
+          const search = new TransformedThronesSearch()
+          search.filters.altered.eq(["foo.bar.baz*bax", "boo.bar.baz*bax"])
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([2, 17])
         })
       })
     })
