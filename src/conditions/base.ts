@@ -212,17 +212,35 @@ export class Condition<ConditionsT, ValueType> {
   }
 
   private applyTransforms(): this {
-    let value = this.value
+    let value = this.value as any
+    let wasArray = false
+    if (Array.isArray(value)) {
+      wasArray = true
+    } else {
+      value = [value]
+    }
     const dupe = this.dupe(true)
     const config = this.config as Config
     const transforms = config.transforms as Function[]
-    transforms.forEach((transform: Function) => {
-      const result = transform(...[value, dupe])
 
-      if (result || result === 0) {
-        dupe.value = value = result
-      }
+    let newValues = value as any[]
+    value.forEach((v: any, valueIndex: number) => {
+      transforms.forEach((transform: Function, index: number) => {
+        const result = transform(...[v, dupe])
+
+        if (result || result === 0) {
+          if (index === transforms.length - 1) {
+            newValues[valueIndex] = result
+          }
+          v = result
+        }
+      })
     })
+    if (wasArray) {
+      dupe.value = newValues
+    } else {
+      dupe.value = newValues[0]
+    }
     return dupe
   }
 

@@ -239,11 +239,18 @@ export class Search {
       formattedPayload = JSON.stringify(payload.body)
     }
 
+    let prefix
+    if (this.klass.isMultiSearch) {
+      prefix = (this as any).searchInstances[0].klass.host
+    } else {
+      prefix = `${this.klass.host}/${this.klass.index}`
+    }
+
     this.klass.logger.info(`
       ${colorize("green", "QUERY")}
       ${colorize(
         "cyan",
-        `curl -XGET --header 'Content-Type: application/json' ${this.klass.host}/${this.klass.index}/_search -d`,
+        `curl -XGET --header 'Content-Type: application/json' ${prefix}/_search -d`,
       )} ${colorize("magenta", `'${formattedPayload}'`)}
     `)
   }

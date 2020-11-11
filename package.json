@@ -1,6 +1,6 @@
 {
   "name": "search-resource",
-  "version": "0.0.65",
+  "version": "0.0.66",
   "description": "",
   "main": "lib/src/index.js",
   "module": "lib/src/index.js",
@@ -15,8 +15,10 @@
   "license": "ISC",
   "dependencies": {
     "@elastic/elasticsearch": "7.6.0",
+    "@types/lodash.omit": "4.5.6",
     "graphql-type-json": "^0.3.1",
     "lodash.clonedeep": "4.5.0",
+    "lodash.omit": "4.5.0",
     "rimraf": "3.0.2"
   },
   "devDependencies": {

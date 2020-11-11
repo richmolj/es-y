@@ -1,3 +1,5 @@
+import omit = require('lodash/omit')
+
 // terrible code, needs betterization
 function buildCondition(condition: any, payload: any) {
   Object.keys(payload).forEach(operator => {
@@ -50,18 +52,27 @@ function buildCondition(condition: any, payload: any) {
           } else {
             condition.and[k](v)
           }
+          const newValue = omit(value, [k, 'boost'])
+          if (Object.keys(newValue).length > 0) {
+            buildCondition(condition, newValue)
+          }
         } else {
           buildConditions(condition.and, { [k]: v })
         }
       }
     } else if (operator === "or") {
-      const k = Object.keys(value)[0]
+      const keys = Object.keys(value)
+      const k = keys[0]
       const v = value[k]
       if (typeof condition.or[k] === "function") {
         if (value.boost) {
-          condition.or[k](v, { boost: value.boost })
+          condition = condition.or[k](v, { boost: value.boost })
         } else {
-          condition.or[k](v)
+          condition = condition.or[k](v)
+        }
+        const newValue = omit(value, [k, 'boost'])
+        if (Object.keys(newValue).length > 0) {
+          buildCondition(condition, newValue)
         }
       } else {
         if (condition.or[k].isConditions) {

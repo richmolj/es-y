@@ -2,7 +2,7 @@ import { config } from "./../../src/util/env"
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/camelcase */
 import { expect } from "chai"
-import { Search } from "../../src/index"
+import { MultiSearch, Search } from "../../src/index"
 import { ThronesSearch, ThronesSearchConditions } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
@@ -2728,8 +2728,8 @@ describe("integration", () => {
             expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must[0].bool.should[0].range).to.deep.eq(
               {
                 created_at: {
-                  gte: "2015-10-01T00:00:00.0",
-                  lte: "2020-09-30T23:59:59.999",
+                  gte: "2016-10-01T00:00:00.0",
+                  lte: "2021-09-30T23:59:59.999"
                 },
               },
             )
@@ -2749,8 +2749,8 @@ describe("integration", () => {
             expect(search.lastQuery.body.query.bool.filter.bool.should[0].bool.must[0].bool.should[0].range).to.deep.eq(
               {
                 created_at: {
-                  gte: "2015-10-01T00:00:00.0",
-                  lte: "2020-09-30T23:59:59.999",
+                  gte: "2016-10-01T00:00:00.0",
+                  lte: "2021-09-30T23:59:59.999"
                 },
               },
             )
@@ -3075,6 +3075,261 @@ describe("integration", () => {
           })
           await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
+        })
+      })
+    })
+
+    describe('deeply nesting', () => {
+      describe('or clause', () => {
+        describe('within condition', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist([
+              {
+                id: 799,
+                quote: "beer"
+              },
+              {
+                id: 899,
+                quote: "bottles"
+              },
+              {
+                id: 699,
+                quote: "caps"
+              }
+            ], true)
+          })
+
+          describe('by direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.keywords.eq("dragon")
+                .or.eq("winter")
+                .or.eq("beer")
+                .or.eq("bottles")
+                .or.eq("caps")
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.have
+                .members([1, 2, 799, 899, 699])
+            })
+          })
+
+          describe('by constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  keywords: {
+                    eq: "dragon",
+                    or: {
+                      eq: "winter",
+                      or: {
+                        eq: "beer",
+                        or: {
+                          eq: "bottles",
+                          or: {
+                            eq: "caps"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.have
+                .members([1, 2, 799, 899, 699])
+            })
+          })
+        })
+
+        describe('across conditions', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist([
+              {
+                id: 499,
+                name: "millie"
+              },
+              {
+                id: 599,
+                title: "kid"
+              },
+              {
+                id: 699,
+                quote: "fight"
+              },
+              {
+                id: 799,
+                bio: "truth"
+              }
+            ], true)
+          })
+
+          describe('by direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.name.eq("millie")
+                .or.title.eq("kid")
+                .or.quote.match("fight")
+                .or.bio.match("truth")
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.have
+                .members([499, 599, 699, 799])
+            })
+          })
+
+          describe('by constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  name: {
+                    eq: "millie",
+                    or: {
+                      title: {
+                        eq: "kid",
+                        or: {
+                          quote: {
+                            match: "fight",
+                            or: {
+                              bio: {
+                                match: "truth"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.have
+                .members([499, 599, 699, 799])
+            })
+          })
+        })
+      })
+
+      describe('and clause', () => {
+        describe('within condition', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist([
+              {
+                id: 499,
+                quote: "a walrus, a tiger, a lemur and a fox"
+              },
+              {
+                id: 599,
+                quote: "walrus tiger"
+              },
+              {
+                id: 699,
+                quote: "lemur fox"
+              },
+              {
+                id: 799,
+                quote: "walrus"
+              },
+              {
+                id: 899,
+                quote: "tiger"
+              }
+            ], true)
+          })
+
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.quote.match("walrus")
+                .and.match("tiger")
+                .and.match("lemur")
+                .and.match("fox")
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([499])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  quote: {
+                    match: "walrus",
+                    and: {
+                      match: "tiger",
+                      and: {
+                        match: "lemur",
+                        and: {
+                          match: "fox"
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([499])
+            })
+          })
+        })
+
+        describe('across conditions', () => {
+          beforeEach(async() => {
+            await ThronesSearch.persist([
+              {
+                id: 499,
+                name: "walrus",
+                title: "tiger",
+                quote: "lemur",
+                bio: "fox"
+              },
+              {
+                id: 599,
+                name: "walrus",
+                title: "tiger",
+                quote: "lemur",
+              }
+            ], true)
+          })
+
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.name.eq("walrus")
+                .and.title.eq("tiger")
+                .and.quote.match("lemur")
+                .and.bio.match("fox")
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([499])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  name: {
+                    eq: "walrus",
+                    and: {
+                      title: {
+                        eq: "tiger",
+                        and: {
+                          quote: {
+                            match: "lemur",
+                            and: {
+                              bio: {
+                                match: "fox"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([499])
+            })
+          })
         })
       })
     })
