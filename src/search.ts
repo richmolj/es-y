@@ -14,7 +14,7 @@ import {
   buildHighlightsFromInput,
   attachHighlightsToResults
 } from "./util/highlighting"
-import { mergeOnlyHighlightInnerHits } from './util/source-fields'
+import { mergeInnerHits } from './util/source-fields'
 
 export class Search {
   static index: string
@@ -188,7 +188,7 @@ export class Search {
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
     const rawResults = response.body.hits.hits
-    mergeOnlyHighlightInnerHits(this, rawResults)
+    mergeInnerHits(this, rawResults)
     const builtResults = this.buildResults(rawResults, this.includeMetadata)
     const transformedResults = this.transformResults(builtResults)
     attachHighlightsToResults(this, transformedResults, rawResults)

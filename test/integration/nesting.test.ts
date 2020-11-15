@@ -183,13 +183,7 @@ describe("integration", () => {
               })
             })
 
-            // TODO keywords in general cant or/and
-            // TODO OR NOT
             describe('OR within condition', () => {
-              // DOCUMENT NOT SUPPORTED: youre within skills now
-              // describe('when nesting is before')
-              // })
-
               describe('via direct assignment', () => {
                 it('works', async() => {
                   const search = new ThronesSearch()
@@ -510,6 +504,125 @@ describe("integration", () => {
                 }
               ]
             })
+          })
+        })
+      })
+    })
+
+    describe('sorting/paginating nested results', () => {
+      beforeEach(async() => {
+        await ThronesSearch.persist({
+          id: 4,
+          bio: 'paginate',
+          skills: [
+            { id: 1, name: 'one', description: 'foo' },
+            { id: 2, name: 'two' },
+            { id: 3, name: 'three', description: 'foo' },
+            { id: 4, name: 'four' },
+            { id: 5, name: 'five', description: 'foo' }
+          ]
+        }, true)
+      })
+
+      describe('sorting', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.bio.match('paginate')
+            search.queries.skills.sort = [{ att: 'id', dir: 'asc' }]
+            await search.execute()
+            expect(search.results[0].skills.map((s: any) => s.name))
+              .to.deep.eq(['one', 'two', 'three'])
+
+            search.queries.skills.sort = [{ att: 'id', dir: 'desc' }]
+            await search.execute()
+            expect(search.results[0].skills.map((s: any) => s.name))
+              .to.deep.eq(['five', 'four', 'three'])
+
+            // We grab from innerHits in this case, so ensure we don't load the
+            // full unsorted list in vanilla _source
+            expect(search.lastQuery.body._source).to.deep.eq({ excludes: ['skills'] })
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                bio: {
+                  match: 'paginate'
+                }
+              },
+              queries: {
+                skills: {
+                  sort: [{
+                    att: 'id',
+                    dir: 'desc'
+                  }]
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results[0].skills.map((s: any) => s.name))
+              .to.deep.eq(['five', 'four', 'three'])
+          })
+        })
+      })
+
+      describe('paginating', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.bio.match('paginate')
+            search.queries.skills.page = { number: 1, size: 2 }
+            await search.execute()
+            expect(search.results[0].skills.map((s: any) => s.name))
+              .to.deep.eq(['one', 'two'])
+            // We grab from innerHits in this case, so ensure we don't load the
+            // full unpaginated list in vanilla _source
+            expect(search.lastQuery.body._source).to.deep.eq({ excludes: ['skills'] })
+
+            search.queries.skills.page = { number: 2, size: 2 }
+            await search.execute()
+            expect(search.results[0].skills.map((s: any) => s.name))
+              .to.deep.eq(['three', 'four'])
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                bio: {
+                  match: 'paginate'
+                }
+              },
+              queries: {
+                skills: {
+                  page: {
+                    number: 2,
+                    size: 2
+                  }
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results[0].skills.map((s: any) => s.name))
+              .to.deep.eq(['three', 'four'])
+          })
+        })
+
+        // TODO: document onlyHighlights is an unpaginated, unsorted thing
+        // Elastic cannot return only documents with highlights
+        // In fact, you would never want this, makes no sense - you'd have to
+        // add a keyword clause and a non-keyword clause...in which case
+        // you want to get those non-highlights back!
+        //
+        // onlyHighlights is more for when you're listing many documents,
+        // some of those docs are returned bc inner hit matches, some not
+        // and you only care about the nested data when there is a match
+        describe('when combined with onlyHighlight', () => {
+          xit('throws error, letting developer know this is not possibe', async() => {
           })
         })
       })

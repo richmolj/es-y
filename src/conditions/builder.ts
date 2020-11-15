@@ -120,6 +120,10 @@ export function buildConditions(base: any, input: any) {
         })
       } else if (key === "scoreMode") {
         base.scoreMode(input[key])
+      } else if (key === "sort") {
+        base.sort = input[key]
+      } else if (key === "page") {
+        base.page = input[key]
       } else {
         const condition = base[key]
         // Accomodate nested conditions
