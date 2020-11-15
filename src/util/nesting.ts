@@ -10,23 +10,50 @@ export function buildNestedQueryPayloads(conditionsClass: Conditions) {
 
   nestedConditions.forEach((nestedCondition: any) => {
     const nestedQuery = nestedCondition.buildQuery()
-    if (Object.keys(nestedQuery).length > 0) {
+    const hasPagination = !!nestedCondition.page
+    const hasSort = nestedCondition.sort.length > 0
+    const hasNestedQuery = Object.keys(nestedQuery).length > 0
+    if (hasPagination || hasSort || hasNestedQuery) {
+      let inner_hits = {} as any
       const nested = {
         path: nestedCondition.klass.nested,
-        query: nestedQuery.bool.filter,
         ignore_unmapped: true,
-        score_mode: nestedCondition._scoreMode
+        score_mode: nestedCondition._scoreMode,
       } as any
+
+      if (hasNestedQuery) {
+        nested.query = nestedQuery.bool.filter
+      } else {
+        nested.query = { match_all: {} }
+      }
+
+      if (hasPagination) {
+        if (nestedCondition.page.size) {
+          inner_hits.size = nestedCondition.page.size
+        }
+        if (nestedCondition.page.number) {
+          inner_hits.from = (nestedCondition.page.number - 1) * nestedCondition.page.size
+        }
+      }
+
+      if (hasSort) {
+        inner_hits.sort = nestedCondition.sort.map((s: any) => {
+          return { [`${nestedCondition.klass.nested}.${s.att}`]: s.dir }
+        })
+      }
 
       const highlight = buildHighlightRequest(search, nestedCondition.klass.nested)
       if (highlight) {
-        nested.inner_hits = { highlight }
+        inner_hits.highlight = highlight
       }
 
       const sourceFieldsPayload = sourceFieldsRequestPayload(search, true)
       if (sourceFieldsPayload) {
-        if (!nested.inner_hits) nested.inner_hits = {}
-        nested.inner_hits._source = sourceFieldsPayload
+        inner_hits._source = sourceFieldsPayload
+      }
+
+      if (Object.keys(inner_hits).length > 0) {
+        nested.inner_hits = inner_hits
       }
 
       payloads.push(nested)

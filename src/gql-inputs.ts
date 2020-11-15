@@ -212,12 +212,37 @@ import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
 import { GraphQLJSONObject } from 'graphql-type-json'
 
 @InputType()
+class ${name}PaginationInput {
+  @Field({ nullable: true })
+  size!: number
+
+  @Field({ nullable: true })
+  number!: number
+}
+
+@InputType()
+class ${name}SortInput {
+  @Field()
+  att!: string
+
+  // todo: enum
+  @Field()
+  dir!: string
+}
+
+@InputType()
 export class ${name}Input {
   @Field(type => ${name}Input, { nullable: true })
   not!: ${name}Input
 
   @Field(type => ${name}Input, { nullable: true })
   or!: ${name}Input
+
+  @Field(type => ${name}PaginationInput, { nullable: true })
+  page!: ${name}PaginationInput
+
+  @Field(type => [${name}SortInput], { nullable: true })
+  sort!: ${name}SortInput[]
 
   ${generateConditionInputs(name, conditionsClassInstance)}
 }
