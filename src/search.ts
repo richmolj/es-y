@@ -47,16 +47,13 @@ export class Search {
 
   static async persist(payload: Record<string, any> | Record<string, any>[], refresh: boolean = false) {
     if (!Array.isArray(payload)) payload = [payload]
-    const promises = payload.map((body: Record<string, any>) => {
-      return this.client.index({
-        index: this.index,
-        body
-      })
+
+    let body = [] as any[]
+    payload.forEach((p: any) => {
+      body.push({ index: { _index: this.index } })
+      body.push(p)
     })
-    await Promise.all(promises)
-    if (refresh) {
-      await this.refresh()
-    }
+    await this.client.bulk({ body, refresh: refresh.toString() as any })
   }
 
   static async refresh() {
