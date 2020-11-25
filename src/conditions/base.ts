@@ -36,6 +36,7 @@ export class Condition<ConditionsT, ValueType> {
   static currentClass: typeof Condition = Condition
   static type: string
   boost?: null | number
+  elasticOptions: any
 
   constructor(elasticField: string, conditions: ConditionsT, config?: Config) {
     this._elasticField = elasticField
@@ -247,25 +248,21 @@ export class Condition<ConditionsT, ValueType> {
   protected elasticClause(queryType: string, value: any, condition: any) {
     let main
     let clause
-    if (condition.boost) {
-      if (['numeric', 'date'].includes(condition.klass.type) && typeof value == "object") {
-        clause = {
-          [condition.elasticField]: { ...value, ...{ boost: condition.boost } }
-        }
-      } else {
-        let boostKey = 'value'
-        if (condition.klass.type === 'text') {
-          boostKey = 'query'
-        }
-        clause = {
-          [condition.elasticField]: {
-            [boostKey]: value,
-            boost: condition.boost
-          }
-        }
+    if (['numeric', 'date'].includes(condition.klass.type) && typeof value == "object") {
+      clause = {
+        [condition.elasticField]: { ...value, ...condition.elasticOptions }
       }
     } else {
-      clause = { [condition.elasticField]: value }
+      let queryKey = 'value'
+      if (condition.klass.type === 'text') {
+        queryKey = 'query'
+      }
+      clause = {
+        [condition.elasticField]: {
+          [queryKey]: value,
+          ...condition.elasticOptions
+        }
+      }
     }
 
     return { [queryType!]: clause }
@@ -368,8 +365,8 @@ export class RangeCondition<ConditionsT, ValueType> extends Condition<Conditions
       this.value = { [type]: input } as RangeConditionValue<ValueType>
     }
 
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
   }
 }

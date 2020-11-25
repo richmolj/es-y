@@ -5,8 +5,8 @@ export class PrefixCondition<ConditionsT, ValueType> extends Condition<Condition
   prefix(input: ValueType | ValueType[], options?: ClauseOptions): this {
     this.queryType = "prefix"
     this._setSimpleValue(input)
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }

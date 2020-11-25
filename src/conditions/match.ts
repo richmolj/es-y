@@ -4,11 +4,11 @@ import { ClauseOptions } from '../types'
 export class MatchCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "match"
 
-  match(input: string | string[], options?: ClauseOptions): this {
+  match(input: string | string[], options?: any): this {
     this.queryType = "match"
     this._setSimpleValue(input)
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }

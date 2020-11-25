@@ -1158,6 +1158,46 @@ describe("integration", () => {
           })
         })
 
+        describe('with options', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              let search = new ThronesSearch()
+              search.filters.quote.match("foo betray alive", { minimum_should_match: 3 })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.deep.eq([])
+              search = new ThronesSearch()
+              search.filters.quote.match("foo betray alive", { minimum_should_match: 2 })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.deep.eq([1])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              let search = new ThronesSearch({
+                filters: {
+                  quote: {
+                    match: "foo betray alive",
+                    minimum_should_match: 3
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.deep.eq([])
+              search = new ThronesSearch({
+                filters: {
+                  quote: {
+                    match: "foo betray alive",
+                    minimum_should_match: 2
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.deep.eq([1])
+            })
+          })
+        })
+
         describe("NOT", () => {
           describe("when direct assignment", () => {
             it("works", async () => {

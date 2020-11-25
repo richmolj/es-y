@@ -7,8 +7,8 @@ export class MatchPhraseCondition<ConditionsT> extends Condition<ConditionsT, st
   matchPhrase(input: string | string[], options?: ClauseOptions): this {
     this.queryType = "match_phrase"
     this._setSimpleValue(input)
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }

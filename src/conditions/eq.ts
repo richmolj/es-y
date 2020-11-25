@@ -5,8 +5,8 @@ export class EqCondition<ConditionsT, ValueType> extends Condition<ConditionsT, 
   eq(input: ValueType | ValueType[], options?: ClauseOptions): this {
     this.queryType = "term"
     this._setSimpleValue(input)
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }

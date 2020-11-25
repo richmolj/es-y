@@ -62,34 +62,37 @@ export class SimpleQueryStringCondition<ConditionsT> extends Condition<Condition
 
   eq(input: string | string[], options?: SimpleQueryClauseOptions<ConditionsT>): this {
     this.value = input
-    if (options && options.fields) {
-      this.fields = options.fields
+    if (options) {
+      this.elasticOptions = options
     }
-    if (options && options.combinator) {
-      this.combinator = options.combinator
-    }
-    if (options && options.boost) {
-      this.boost = options.boost
-    }
+    // if (options && options.fields) {
+    //   this.fields = options.fields
+    // }
+    // if (options && options.combinator) {
+    //   this.combinator = options.combinator
+    // }
+    // if (options && options.boost) {
+    //   this.boost = options.boost
+    // }
     return this
   }
 
+  // TODO: combine this to base
   protected elasticClause(queryType: string, value: any, condition: any) {
     const payload = {
-      query: this.value
+      query: this.value,
+      ...this.elasticOptions
     } as any
 
-    if (this.boost) {
-      payload.boost = this.boost
+    // legacy compat
+    if (payload.combinator) {
+      payload.default_operator = payload.combinator
+      delete payload.combinator
     }
 
-    if (this.combinator) {
-      payload.default_operator = this.combinator
-    }
-
-    if (this.fields) {
-      let fields = this.fields
-      fields = fields.map((field) => {
+    if (payload.fields) {
+      let fields = payload.fields
+      fields = fields.map((field: string) => {
         const [name, boost] = field.split('^')
         const condition = (this as any).conditions[name];
         if (condition) {
