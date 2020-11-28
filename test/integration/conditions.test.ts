@@ -1162,38 +1162,105 @@ describe("integration", () => {
           describe('via direct assignment', () => {
             it('works', async() => {
               let search = new ThronesSearch()
-              search.filters.quote.match("foo betray alive", { minimum_should_match: 3 })
+              search.filters.quote.match("foo betray alive", { minimumShouldMatch: 3 })
               await search.execute()
               expect(search.results.map(r => r.id)).to.deep.eq([])
               search = new ThronesSearch()
-              search.filters.quote.match("foo betray alive", { minimum_should_match: 2 })
+              search.filters.quote.match("foo betray alive", { minimumShouldMatch: 2 })
               await search.execute()
               expect(search.results.map(r => r.id)).to.deep.eq([1])
             })
           })
 
           describe('via constructor', () => {
-            it('works', async() => {
-              let search = new ThronesSearch({
-                filters: {
-                  quote: {
-                    match: "foo betray alive",
-                    minimum_should_match: 3
+            describe('heavy', () => {
+              it('works', async() => {
+                let search = new ThronesSearch({
+                  filters: {
+                    quote: {
+                      match: {
+                        query: "foo betray alive",
+                        minimumShouldMatch: 3
+                      }
+                    }
                   }
-                }
-              })
-              await search.execute()
-              expect(search.results.map(r => r.id)).to.deep.eq([])
-              search = new ThronesSearch({
-                filters: {
-                  quote: {
-                    match: "foo betray alive",
-                    minimum_should_match: 2
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.deep.eq([])
+                search = new ThronesSearch({
+                  filters: {
+                    quote: {
+                      match: "foo betray alive",
+                      minimumShouldMatch: 2
+                    }
                   }
-                }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.deep.eq([1])
               })
-              await search.execute()
-              expect(search.results.map(r => r.id)).to.deep.eq([1])
+
+              describe('with combinator', () => {
+                it('works', async() => {
+                  let search = new ThronesSearch({
+                    filters: {
+                      quote: {
+                        match: {
+                          query: "foo betray alive",
+                          minimumShouldMatch: 2,
+                          or: {
+                            bio: {
+                              match: 'vows'
+                            }
+                          }
+                        }
+                      }
+                    }
+                  })
+                })
+              })
+            })
+
+            describe('light', () => {
+              it('works', async() => {
+                let search = new ThronesSearch({
+                  filters: {
+                    quote: {
+                      match: "foo betray alive",
+                      minimumShouldMatch: 3
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.deep.eq([])
+                search = new ThronesSearch({
+                  filters: {
+                    quote: {
+                      match: "foo betray alive",
+                      minimumShouldMatch: 2
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.deep.eq([1])
+              })
+
+              describe('with combinator', () => {
+                it('works', async() => {
+                  let search = new ThronesSearch({
+                    filters: {
+                      quote: {
+                        match: "foo betray alive",
+                        minimumShouldMatch: 2,
+                        or: {
+                          bio: {
+                            match: 'vows'
+                          }
+                        }
+                      }
+                    }
+                  })
+                })
+              })
             })
           })
         })

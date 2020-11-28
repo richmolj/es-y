@@ -36,8 +36,18 @@ function buildCondition(condition: any, payload: any) {
     if (COMBINATORS.includes(action)) {
       buildConditions(condition[action], value)
     } else {
-      const options = omit(payload, ACTIONS)
-      condition = condition[action](value, options)
+      // Support 'heavy' structure
+      // match: { query: "foo bar baz", minimumShouldMatch: 2 }
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        const { query } = value
+        const options = omit(value, ACTIONS.concat('query'))
+        condition = condition[action](query, options)
+      } else {
+        // Support 'light' structure
+        // match: "foo bar baz", minimumShouldMatch: 2
+        const options = omit(payload, ACTIONS)
+        condition = condition[action](value, options)
+      }
     }
   })
 }

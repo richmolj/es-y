@@ -8,7 +8,7 @@ import { MultiSearch } from "./multi-search"
 function eachCondition(conditionsClassInstance: any, callback: Function) {
   const instance = conditionsClassInstance
   Object.keys(instance).forEach(k => {
-    if (k === "_or" || k === "_not" || k === "isQuery" || k === "isConditions") {
+    if (k === "_or" || k === "_not" || k === "isQuery" || k === "isConditions" || k == 'sort') {
       return
     }
     const value = (instance as any)[k]
@@ -90,11 +90,11 @@ import { ${searchName}Input } from '../${searchName}'
   searchInput = searchInput.concat(`
 @InputType()
 export class ${name}AggregationsInput {
-  @Field(type => [String, [String]], { nullable: true })
-  sum!: string | string[]
+  @Field(type => [String], { nullable: true })
+  sum!: string[]
 
-  @Field(type => [String, [String]], { nullable: true })
-  avg!: string | string[]
+  @Field(type => [String], { nullable: true })
+  avg!: string[]
 
   @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
@@ -299,11 +299,11 @@ export class ${name}ConditionsInput {
 
 @InputType()
 export class ${name}AggregationsInput {
-  @Field(type => [String, [String]], { nullable: true })
-  sum!: string | string[]
+  @Field(type => [String], { nullable: true })
+  sum!: string[]
 
-  @Field(type => [String, [String]], { nullable: true })
-  avg!: string | string[]
+  @Field(type => [String], { nullable: true })
+  avg!: string[]
 
   @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
@@ -385,6 +385,52 @@ export class ${name}Input {
 
 function generateSimpleKeywordsInput(conditionsClassInstance: any, name: string, dirName?: string) {
   const bestName = dirName || name
+
+  const simpleKeywordsOptions = `
+  @Field({ nullable: true })
+  boost?: number
+
+  @Field(type => [String], { nullable: true })
+  fields?: string[]
+
+  @Field(type => Boolean, { nullable: true })
+  allFields?: boolean
+
+  @Field(type => String, { nullable: true })
+  analyzer?: string
+
+  @Field(type => Boolean, { nullable: true })
+  autoGenerateSynonymsPhraseQuery?: boolean
+
+  @Field(type => String, { nullable: true })
+  flags?: string
+
+  @Field(type => Number, { nullable: true })
+  fuzzyMaxExpansions?: number
+
+  @Field(type => Number, { nullable: true })
+  fuzzyPrefixLength?: number
+
+  @Field(type => Boolean, { nullable: true })
+  fuzzyTranspositions?: boolean
+
+  @Field(type => Boolean, { nullable: true })
+  lenient?: boolean
+
+  @Field(type => String, { nullable: true })
+  minimumShouldMatch?: string
+
+  @Field(type => String, { nullable: true })
+  quoteFieldSuffix?: string
+
+  // alias
+  @Field(type => String, { nullable: true })
+  combinator?: string
+
+  @Field(type => String, { nullable: true })
+  defaultOperator?: string
+  `
+
   const content = `
 import { Field, InputType } from 'type-graphql'
 import { ${bestName}SimpleKeywordsOrInput } from './simple-keywords-or'
@@ -392,29 +438,15 @@ import { ${bestName}SimpleKeywordsAndInput } from './simple-keywords-and'
 
 @InputType()
 export class ${bestName}SimpleKeywordsNotInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
-
-  @Field(type => [String, [String]] as const, { nullable: true })
-  prefix?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  eq?: string[]
+  ${simpleKeywordsOptions}
 }
 
 @InputType()
 export class ${bestName}SimpleKeywordsInput {
   @Field()
   eq?: string
-
-  @Field({ nullable: true })
-  boost?: number
-
-  @Field({ nullable: true })
-  combinator?: string
-
-  @Field(type => [String], { nullable: true })
-  fields?: string[]
 
   @Field({ nullable: true })
   not?: ${bestName}SimpleKeywordsNotInput
@@ -424,6 +456,7 @@ export class ${bestName}SimpleKeywordsInput {
 
   @Field({ nullable: true })
   and?: ${bestName}SimpleKeywordsAndInput
+  ${simpleKeywordsOptions}
 }
   `
   if (dirName) {
@@ -458,15 +491,7 @@ export class ${bestName}SimpleKeywordsOrInput {
 
   @Field({ nullable: true })
   or?: ${bestName}SimpleKeywordsOrInput
-
-  @Field({ nullable: true })
-  boost?: number
-
-  @Field({ nullable: true })
-  combinator?: string
-
-  @Field(type => [String], { nullable: true })
-  fields?: string[]
+  ${simpleKeywordsOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -499,14 +524,9 @@ import { ${capName}Input } from '../nested/${capName}'
   simpleKeywordsAndContent = simpleKeywordsAndContent.concat(`
 @InputType()
 export class ${bestName}SimpleKeywordsAndInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  match?: string | string[]
-
-  @Field(type => [String, [String]] as const, { nullable: true })
-  matchPhrase?: string | string[]
-
   @Field({ nullable: true })
-  boost?: number
+  eq?: string
+  ${simpleKeywordsOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -521,6 +541,18 @@ export class ${bestName}SimpleKeywordsAndInput {
 
 function generateKeywordInput(conditionsClassInstance: any, name: string, dirName?: string) {
   const bestName = dirName || name
+
+  const keywordOptions = `
+  @Field({ nullable: true })
+  boost?: number
+
+  @Field(type => Boolean, { nullable: true })
+  caseInsensitive?: boolean
+
+  @Field(type => String, { nullable: true })
+  rewrite?: string
+  `
+
   const keywordContent = `
 import { Field, InputType } from 'type-graphql'
 import { ${bestName}KeywordOrInput } from './keyword-or'
@@ -528,26 +560,21 @@ import { ${bestName}KeywordAndInput } from './keyword-and'
 
 @InputType()
 export class ${bestName}KeywordNotInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
+  @Field(type => [String], { nullable: true })
+  eq?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  prefix?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  prefix?: string[]
+  ${keywordOptions}
 }
 
 @InputType()
 export class ${bestName}KeywordConditionInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
+  @Field(type => [String], { nullable: true })
+  eq?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  prefix?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  prefix?: string[]
 
   @Field({ nullable: true })
   and?: ${bestName}KeywordAndInput
@@ -557,6 +584,7 @@ export class ${bestName}KeywordConditionInput {
 
   @Field({ nullable: true })
   not?: ${bestName}KeywordNotInput
+  ${keywordOptions}
 }
   `
   if (dirName) {
@@ -586,17 +614,15 @@ import { ${capName}Input } from '../nested/${capName}'
   keywordOrContent = keywordOrContent.concat(`
 @InputType()
 export class ${bestName}KeywordOrInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
+  @Field(type => [String], { nullable: true })
+  eq?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  prefix?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  prefix?: string[]
 
   @Field({ nullable: true })
   or?: ${bestName}KeywordOrInput
+  ${keywordOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -642,33 +668,70 @@ export class ${bestName}KeywordAndInput {
 
 function generateTextInput(conditionsClassInstance: any, name: string, dirName?: string) {
   const bestName = dirName || name
+
+  const textOptions = `
+  @Field(type => String, { nullable: true })
+  analyzer?: string
+
+  @Field(type => Boolean, { nullable: true })
+  autoGenerateSynonymsPhraseQuery?: boolean
+
+  @Field(type => String, { nullable: true })
+  fuzziness?: string
+
+  @Field(type => Float, { nullable: true })
+  maxExpansions?: number
+
+  @Field(type => Float, { nullable: true })
+  prefixLength?: number
+
+  @Field(type => Boolean, { nullable: true })
+  fuzzyTranspositions?: boolean
+
+  @Field(type => String, { nullable: true })
+  fuzzyRewrite?: string
+
+  @Field(type => Boolean, { nullable: true })
+  lenient?: boolean
+
+  @Field(type => String, { nullable: true })
+  operator?: string
+
+  @Field(type => String, { nullable: true })
+  zeroTermsQuery?: string
+
+  @Field(type => String, { nullable: true })
+  minimumShouldMatch?: string
+
+  @Field({ nullable: true })
+  boost?: number
+
+  @Field({ nullable: true })
+  slop?: number
+  `
+
   const textContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}TextOrInput } from './text-or'
 import { ${bestName}TextAndInput } from './text-and'
 
 @InputType()
 export class ${bestName}TextNotInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  match?: string | string[]
+  @Field(type => [String], { nullable: true })
+  match?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  matchPhrase?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  matchPhrase?: string[]
+  ${textOptions}
 }
 
 @InputType()
 export class ${bestName}TextConditionInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  match?: string | string[]
+  @Field(type => [String], { nullable: true })
+  match?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  matchPhrase?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  matchPhrase?: string[]
 
   @Field({ nullable: true })
   and?: ${bestName}TextAndInput
@@ -678,6 +741,7 @@ export class ${bestName}TextConditionInput {
 
   @Field({ nullable: true })
   not?: ${bestName}TextNotInput
+  ${textOptions}
 }
     `
   if (dirName) {
@@ -707,14 +771,12 @@ import { ${capName}Input } from '../nested/${capName}'
   textOrContent = textOrContent.concat(`
 @InputType()
 export class ${bestName}TextOrInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  match?: string | string[]
+  @Field(type => [String], { nullable: true })
+  match?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  matchPhrase?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  matchPhrase?: string[]
+  ${textOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -747,14 +809,12 @@ import { ${capName}Input } from '../nested/${capName}'
   textAndContent = textAndContent.concat(`
 @InputType()
 export class ${bestName}TextAndInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  match?: string | string[]
+  @Field(type => [String], { nullable: true })
+  match?: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  matchPhrase?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String], { nullable: true })
+  matchPhrase?: string[]
+  ${textOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -769,6 +829,15 @@ export class ${bestName}TextAndInput {
 
 function generateNumericInput(conditionsClassInstance: any, name: string, dirName?: string) {
   const bestName = dirName || name
+
+  const numericOptions = `
+  @Field({ nullable: true })
+  boost?: number
+
+  @Field({ nullable: true })
+  relation?: string
+  `
+
   const numericContent = `
 import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}NumericOrInput } from './numeric-or'
@@ -776,17 +845,15 @@ import { ${bestName}NumericAndInput } from './numeric-and'
 
 @InputType()
 export class ${bestName}NumericNotInput {
-  @Field(type => [Float, [Float]] as const, { nullable: true })
-  eq?: number | number[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [Float], { nullable: true })
+  eq?: number[]
+  ${numericOptions}
 }
 
 @InputType()
 export class ${bestName}NumericConditionInput {
-  @Field(type => [Float, [Float]] as const, { nullable: true })
-  eq?: number | number[]
+  @Field(type => [Float], { nullable: true })
+  eq?: number[]
 
   @Field({ nullable: true })
   gt?: number
@@ -801,9 +868,6 @@ export class ${bestName}NumericConditionInput {
   lte?: number
 
   @Field({ nullable: true })
-  boost?: number
-
-  @Field({ nullable: true })
   and?: ${bestName}NumericAndInput
 
   @Field({ nullable: true })
@@ -811,6 +875,7 @@ export class ${bestName}NumericConditionInput {
 
   @Field({ nullable: true })
   not?: ${bestName}NumericNotInput
+  ${numericOptions}
 }
   `
   if (dirName) {
@@ -840,14 +905,12 @@ import { ${capName}Input } from '../nested/${capName}'
   numericOrContent = numericOrContent.concat(`
 @InputType()
 export class ${bestName}NumericOrInput {
-  @Field(type => [Float, [Float]] as const, { nullable: true })
-  eq?: number | number[]
+  @Field(type => [Float] as const, { nullable: true })
+  eq?: number[]
 
   @Field({ nullable: true })
   or?: ${bestName}NumericOrInput
-
-  @Field({ nullable: true })
-  boost?: number
+  ${numericOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -894,6 +957,21 @@ export class ${bestName}NumericAndInput {
 
 function generateDateInput(conditionsClassInstance: any, name: string, dirName?: string) {
   const bestName = dirName || name
+
+  const dateOptions = `
+  @Field({ nullable: true })
+  boost?: number
+
+  @Field({ nullable: true })
+  format?: string
+
+  @Field({ nullable: true })
+  relation?: string
+
+  @Field({ nullable: true })
+  timeZone?: string
+  `
+
   const dateContent = `
 import { Field, InputType } from 'type-graphql'
 import { ${bestName}DateOrInput } from './date-or'
@@ -901,17 +979,15 @@ import { ${bestName}DateAndInput } from './date-and'
 
 @InputType()
 export class ${bestName}DateNotInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
-
-  @Field({ nullable: true })
-  boost?: number
+  @Field(type => [String] as const, { nullable: true })
+  eq?: string[]
+  ${dateOptions}
 }
 
 @InputType()
 export class ${bestName}DateConditionInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
+  @Field(type => [String], { nullable: true })
+  eq?: string[]
 
   @Field({ nullable: true })
   gt?: string
@@ -926,9 +1002,6 @@ export class ${bestName}DateConditionInput {
   lte?: string
 
   @Field({ nullable: true })
-  boost?: number
-
-  @Field({ nullable: true })
   pastFiscalYears?: number
 
   @Field({ nullable: true })
@@ -939,6 +1012,7 @@ export class ${bestName}DateConditionInput {
 
   @Field({ nullable: true })
   not?: ${bestName}DateNotInput
+  ${dateOptions}
 }
   `
   if (dirName) {
@@ -968,14 +1042,12 @@ import { ${capName}Input } from '../nested/${capName}'
   dateOrContent = dateOrContent.concat(`
 @InputType()
 export class ${bestName}DateOrInput {
-  @Field(type => [String, [String]] as const, { nullable: true })
-  eq?: string | string[]
+  @Field(type => [String] as const, { nullable: true })
+  eq?: string[]
 
   @Field({ nullable: true })
   or?: ${bestName}DateOrInput
-
-  @Field({ nullable: true })
-  boost?: number
+  ${dateOptions}
 
   ${generateConditionInputs(bestName, conditionsClassInstance)}
 }
@@ -1029,11 +1101,11 @@ export class ${name}DateHistogramInput {
   @Field()
   name!: string
 
-  @Field(type => [String, [String]], { nullable: true })
-  sum!: string | string[]
+  @Field(type => [String], { nullable: true })
+  sum!: string[]
 
-  @Field(type => [String, [String]] as const, { nullable: true })
-  avg!: string | string[]
+  @Field(type => [String], { nullable: true })
+  avg!: string[]
 
   @Field()
   interval!: string
@@ -1074,11 +1146,11 @@ export class ${name}RangeInput {
   @Field()
   name!: string
 
-  @Field(type => [String, [String]], { nullable: true })
-  sum!: string | string[]
+  @Field(type => [String], { nullable: true })
+  sum!: string[]
 
-  @Field(type => [String, [String]], { nullable: true })
-  avg!: string | string[]
+  @Field(type => [String], { nullable: true })
+  avg!: string[]
 
   @Field({ nullable: true })
   min_doc_count!: number
@@ -1113,11 +1185,11 @@ export class ${name}TermsInput {
   @Field({ nullable: true })
   size!: number
 
-  @Field(type => [String, [String]], { nullable: true })
-  sum!: string | string[]
+  @Field(type => [String], { nullable: true })
+  sum!: string[]
 
-  @Field(type => [String, [String]], { nullable: true })
-  avg!: string | string[]
+  @Field(type => [String], { nullable: true })
+  avg!: string[]
 
   @Field({ nullable: true })
   ensureQuality!: boolean
