@@ -1,14 +1,20 @@
 import { Condition } from "./base"
-import { ClauseOptions } from '../types'
+
+export interface MatchPhraseOptions {
+  slop?: number
+  analyzer?: string
+  zeroTermsQuery?: 'none' | 'all'
+  boost?: number
+}
 
 export class MatchPhraseCondition<ConditionsT> extends Condition<ConditionsT, string> {
   static type = "match_phrase"
 
-  matchPhrase(input: string | string[], options?: ClauseOptions): this {
+  matchPhrase(input: string | string[], options?: MatchPhraseOptions): this {
     this.queryType = "match_phrase"
     this._setSimpleValue(input)
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }

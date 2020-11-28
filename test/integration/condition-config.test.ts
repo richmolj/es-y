@@ -40,7 +40,7 @@ class TransformedThronesSearchConditions extends ThronesSearchConditions {
   boostAlteredQuote = new TextCondition<this>("quote", this, {
     transforms: [
       (value: any, condition: any) => {
-        condition.boost = 5
+        condition.elasticOptions = { boost: 5 }
         return value.replace('boo-urns', 'burn')
       }
     ]

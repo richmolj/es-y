@@ -1,16 +1,34 @@
 import { ClassHook } from "../decorators"
 import { Condition } from "../conditions"
-import { SimpleQueryClauseOptions } from '../types'
 import { NotClause } from "./not-clause"
 import { AndClause } from "./and-clause"
 import { OrClause } from "./or-clause"
+import { snakeifyObject } from '../util'
 import { applyNotClause, applyOrClause, applyAndClause } from "./base"
+
+interface SimpleQueryStringOptions {
+  fields?: string[]
+  boost?: number
+  allFields?: boolean
+  analyzer?: string
+  autoGenerateSynonymsPhraseQuery?: boolean
+  flags?: string
+  fuzzyMaxExpansions?: number
+  fuzzyPrefixLength?: number
+  fuzzyTranspositions?: boolean
+  lenient?: boolean
+  minimumShouldMatch?: string | number
+  quoteFieldSuffix?: string
+  // alias
+  combinator?: 'and' | 'or',
+  defaultOperator?: 'AND' | 'OR',
+}
 
 class SimpleQueryStringNotClause<ConditionT extends SimpleQueryStringCondition<ConditionsT>, ConditionsT> extends NotClause<
   ConditionT,
   ConditionsT
 > {
-  eq(value: string | string[], options?: SimpleQueryClauseOptions<ConditionsT>): ConditionT {
+  eq(value: string | string[], options?: SimpleQueryStringOptions): ConditionT {
     this.value = this.condition.eq(value, options)
     return this.originalCondition
   }
@@ -20,7 +38,7 @@ class SimpleQueryStringAndClause<ConditionT extends SimpleQueryStringCondition<C
   ConditionT,
   ConditionsT
 > {
-  eq(value: string | string[], options?: SimpleQueryClauseOptions<ConditionsT>): ConditionT {
+  eq(value: string | string[], options?: SimpleQueryStringOptions): ConditionT {
     this.value = this.condition.eq(value, options)
     return this.value as ConditionT
   }
@@ -30,7 +48,7 @@ class SimpleQueryStringOrClause<ConditionT extends SimpleQueryStringCondition<Co
   ConditionT,
   ConditionsT
 > {
-  eq(value: string | string[], options?: SimpleQueryClauseOptions<ConditionsT>): ConditionT {
+  eq(value: string | string[], options?: SimpleQueryStringOptions): ConditionT {
     this.value = this.condition.eq(value, options)
     return this.value as ConditionT
   }
@@ -60,36 +78,31 @@ export class SimpleQueryStringCondition<ConditionsT> extends Condition<Condition
     return applyOrClause(this, SimpleQueryStringOrClause) as unknown as ConditionsT & SimpleQueryStringCondition<ConditionsT>
   }
 
-  eq(input: string | string[], options?: SimpleQueryClauseOptions<ConditionsT>): this {
+  eq(input: string | string[], options?: SimpleQueryStringOptions): this {
     this.value = input
-    if (options && options.fields) {
-      this.fields = options.fields
-    }
-    if (options && options.combinator) {
-      this.combinator = options.combinator
-    }
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }
 
+  // TODO: combine this to base
   protected elasticClause(queryType: string, value: any, condition: any) {
+    const elasticOptions = snakeifyObject(this.elasticOptions)
     const payload = {
-      query: this.value
+      query: this.value,
+      ...elasticOptions
     } as any
 
-    if (this.boost) {
-      payload.boost = this.boost
+    // legacy compat
+    if (payload.combinator) {
+      payload.default_operator = payload.combinator
+      delete payload.combinator
     }
 
-    if (this.combinator) {
-      payload.default_operator = this.combinator
-    }
-
-    if (this.fields) {
-      let fields = this.fields
-      fields = fields.map((field) => {
+    if (payload.fields) {
+      let fields = payload.fields
+      fields = fields.map((field: string) => {
         const [name, boost] = field.split('^')
         const condition = (this as any).conditions[name];
         if (condition) {

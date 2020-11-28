@@ -1,41 +1,40 @@
 import { applyMixins } from "../util"
 import { Condition, NotClause, AndClause, OrClause, EqCondition, NumericRangeCondition } from "../conditions"
 import { ClassHook } from "../decorators"
-import { RangeCondition, applyOrClause, applyAndClause, applyNotClause } from "./base"
-import { ClauseOptions } from '../types'
+import { RangeOptions, RangeCondition, applyOrClause, applyAndClause, applyNotClause } from "./base"
 
 class NumericOrClause<ConditionT extends NumericCondition<ConditionsT>, ConditionsT> extends OrClause<
   ConditionT,
   ConditionsT
 > {
-  eq(value: number | number[], options?: ClauseOptions) {
+  eq(value: number | number[], options?: RangeOptions) {
     this.value = this.condition.eq(value, options)
     return this.value
   }
 
-  gt(value: number, options?: ClauseOptions) {
+  gt(value: number, options?: RangeOptions) {
     this.value = this.condition.gt(value, options)
     return this.value
   }
 
-  gte(value: number, options?: ClauseOptions) {
+  gte(value: number, options?: RangeOptions) {
     this.value = this.condition.gte(value, options)
     return this.value
   }
 
-  lt(value: number, options?: ClauseOptions) {
+  lt(value: number, options?: RangeOptions) {
     this.value = this.condition.lt(value, options)
     return this.value
   }
 
-  lte(value: number, options?: ClauseOptions) {
+  lte(value: number, options?: RangeOptions) {
     this.value = this.condition.lte(value, options)
     return this.value
   }
 }
 
 class NumericNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  eq(value: number | number[], options?: ClauseOptions) {
+  eq(value: number | number[], options?: RangeOptions) {
     this.value = (this.condition as any).eq(value, options)
     return this.originalCondition
   }

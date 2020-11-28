@@ -1,95 +1,52 @@
 import omit = require('lodash/omit')
+import pick = require('lodash/pick')
 
-// terrible code, needs betterization
+// Order matters! Process not then and/or LAST
+const OPERATORS = [
+  'eq',
+  'prefix',
+  'match',
+  'matchPhrase',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'pastFiscalYears',
+]
+
+const COMBINATORS = [
+  'not',
+  'and',
+  'or'
+]
+
+const ACTIONS = OPERATORS.concat(COMBINATORS)
+
+const TOP_LEVEL_KEYS = [
+  'page',
+  'sort',
+  'scoreMode' // nested conditions
+]
+
 function buildCondition(condition: any, payload: any) {
-  Object.keys(payload).forEach(operator => {
-    const value = payload[operator]
-    if (operator === "not") {
-      const keys = Object.keys(value)
-      const subOperator = Object.keys(value)[0]
-      let res: any
+  ACTIONS.forEach(action => {
+    if (!payload[action]) return
 
-      if (value.boost) {
-        res = condition.not[subOperator](value[subOperator], { boost: value.boost })
-      } else {
-        res = condition.not[subOperator](value[subOperator])
-      }
-
-      if (keys.length > 1) {
-        const k2 = keys[1] // and
-        const v2 = value[k2]
-        if (k2 === "and") {
-          const k3 = Object.keys(v2)[0]
-          const v3 = v2[k3]
-          if (typeof res.and[k3] === "function") {
-            if (v2.boost) {
-              res.and[k3](v3, { boost: v2.boost })
-            } else {
-              res.and[k3](v3)
-            }
-          } else {
-            buildConditions(res.and, { [k3]: v3 })
-          }
-        } else {
-          buildConditions(res[k2], v2)
-        }
-      }
-    } else if (operator === "and") {
-      const k = Object.keys(value)[0]
-      const v = value[k]
-      if (k === "not") {
-        const subk = Object.keys(v)[0]
-        const subv = v[subk]
-        if (v.boost) {
-          condition.and.not[subk](subv, { boost: v.boost })
-        } else {
-          condition.and.not[subk](subv)
-        }
-      } else {
-        if (typeof condition.and[k] === "function") {
-          if (v.boost) {
-            condition.and[k](v, { boost: value.boost })
-          } else {
-            condition.and[k](v)
-          }
-          const newValue = omit(value, [k, 'boost'])
-          if (Object.keys(newValue).length > 0) {
-            buildCondition(condition, newValue)
-          }
-        } else {
-          buildConditions(condition.and, { [k]: v })
-        }
-      }
-    } else if (operator === "or") {
-      const keys = Object.keys(value)
-      const k = keys[0]
-      const v = value[k]
-      if (typeof condition.or[k] === "function") {
-        if (value.boost) {
-          condition = condition.or[k](v, { boost: value.boost })
-        } else {
-          condition = condition.or[k](v)
-        }
-        const newValue = omit(value, [k, 'boost'])
-        if (Object.keys(newValue).length > 0) {
-          buildCondition(condition, newValue)
-        }
-      } else {
-        if (condition.or[k].isConditions) {
-          buildConditions(condition.or[k], v)
-        } else {
-          buildConditions(condition.or, { [k]: v })
-        }
-      }
+    const value = payload[action]
+    if (COMBINATORS.includes(action)) {
+      buildConditions(condition[action], value)
     } else {
-      if (operator === "boost") {
-        condition.boost = value
-      } else if(operator === "fields") {
-        condition.fields = value
-      } else if(operator === "combinator") {
-        condition.combinator = value
+      // Support 'heavy' structure
+      // match: { query: "foo bar baz", minimumShouldMatch: 2 }
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        const { query } = value
+        const options = omit(value, ACTIONS.concat('query'))
+        condition = condition[action](query, options)
       } else {
-        condition[operator](value)
+        // Support 'light' structure
+        // match: "foo bar baz", minimumShouldMatch: 2
+        const options = omit(payload, ACTIONS)
+        condition = condition[action](value, options)
       }
     }
   })
@@ -97,33 +54,20 @@ function buildCondition(condition: any, payload: any) {
 
 export function buildConditions(base: any, input: any) {
   if (input) {
-    Object.keys(input).forEach(key => {
-      if (key === "not") {
-        Object.keys(input.not).forEach(conditionName => {
-          const condition = base.not[conditionName]
-          // Accomodate nested conditions
-          if (condition.isConditions) {
-            buildConditions(condition, input.not[conditionName])
-          } else {
-            buildCondition(condition, input.not[conditionName])
-          }
-        })
-      } else if (key === "or") {
-        Object.keys(input.or).forEach(conditionName => {
-          const condition = base.or[conditionName]
-          // Accomodate nested conditions
-          if (condition.isConditions) {
-            buildConditions(condition, input.or[conditionName])
-          } else {
-            buildCondition(condition, input.or[conditionName])
-          }
-        })
-      } else if (key === "scoreMode") {
-        base.scoreMode(input[key])
-      } else if (key === "sort") {
-        base.sort = input[key]
-      } else if (key === "page") {
-        base.page = input[key]
+    TOP_LEVEL_KEYS.forEach((topLevel) => {
+      if (input[topLevel]) {
+        if (typeof base[topLevel] === 'function') {
+          base[topLevel](input[topLevel])
+        } else {
+          base[topLevel] = input[topLevel]
+        }
+      }
+    })
+
+    Object.keys(omit(input, TOP_LEVEL_KEYS)).some(key => {
+      if (ACTIONS.includes(key)) {
+        buildCondition(base, input)
+        return true // rest is handled recursively
       } else {
         const condition = base[key]
         // Accomodate nested conditions

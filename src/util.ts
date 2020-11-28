@@ -15,3 +15,19 @@ export async function asyncForEach(array: any[], callback: Function) {
     await callback(array[index], index, array);
   }
 }
+
+export function camelToSnake(str: string): string {
+  return str.replace(/[\w]([A-Z])/g, (m) => {
+      return `${m[0]}_${m[1]}`
+  }).toLowerCase()
+}
+
+export function snakeifyObject(obj: null | undefined | Record<string, any>) {
+  if (obj) {
+    const newObj = {} as any
+    Object.keys(obj).forEach((key) => {
+      newObj[camelToSnake(key)] = obj[key]
+    })
+    return newObj
+  }
+}

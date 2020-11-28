@@ -3,7 +3,7 @@ import { AndClause } from "./and-clause"
 import { NotClause } from "./not-clause"
 import { ClassHook } from "../decorators"
 import { Constructor } from "../util/util-types"
-import { ClauseOptions } from '../types'
+import { snakeifyObject } from "../util"
 import { Search } from ".."
 import cloneDeep = require('lodash/cloneDeep')
 
@@ -36,6 +36,7 @@ export class Condition<ConditionsT, ValueType> {
   static currentClass: typeof Condition = Condition
   static type: string
   boost?: null | number
+  elasticOptions: any
 
   constructor(elasticField: string, conditions: ConditionsT, config?: Config) {
     this._elasticField = elasticField
@@ -247,25 +248,23 @@ export class Condition<ConditionsT, ValueType> {
   protected elasticClause(queryType: string, value: any, condition: any) {
     let main
     let clause
-    if (condition.boost) {
-      if (['numeric', 'date'].includes(condition.klass.type) && typeof value == "object") {
-        clause = {
-          [condition.elasticField]: { ...value, ...{ boost: condition.boost } }
-        }
-      } else {
-        let boostKey = 'value'
-        if (condition.klass.type === 'text') {
-          boostKey = 'query'
-        }
-        clause = {
-          [condition.elasticField]: {
-            [boostKey]: value,
-            boost: condition.boost
-          }
-        }
+    const elasticOptions = snakeifyObject(condition.elasticOptions)
+
+    if (['numeric', 'date'].includes(condition.klass.type) && typeof value == "object") {
+      clause = {
+        [condition.elasticField]: { ...value, ...elasticOptions }
       }
     } else {
-      clause = { [condition.elasticField]: value }
+      let queryKey = 'value'
+      if (condition.klass.type === 'text') {
+        queryKey = 'query'
+      }
+      clause = {
+        [condition.elasticField]: {
+          [queryKey]: value,
+          ...elasticOptions
+        }
+      }
     }
 
     return { [queryType!]: clause }
@@ -336,28 +335,33 @@ function isPrimitiveValue<ValueType>(x: ValueType | RangeConditionValue<ValueTyp
   return typeof x === "number" || typeof x === "string"
 }
 
+export interface RangeOptions {
+  boost?: number
+  relation?: string
+}
+
 export class RangeCondition<ConditionsT, ValueType> extends Condition<ConditionsT, ValueType> {
-  gt(input: ValueType, options?: ClauseOptions): this {
+  gt(input: ValueType, options?: RangeOptions): this {
     this._setValue(input, "gt", options)
     return this
   }
 
-  gte(input: ValueType, options?: ClauseOptions): this {
+  gte(input: ValueType, options?: RangeOptions): this {
     this._setValue(input, "gte", options)
     return this
   }
 
-  lt(input: ValueType, options?: ClauseOptions): this {
+  lt(input: ValueType, options?: RangeOptions): this {
     this._setValue(input, "lt", options)
     return this
   }
 
-  lte(input: ValueType, options?: ClauseOptions): this {
+  lte(input: ValueType, options?: RangeOptions): this {
     this._setValue(input, "lte", options)
     return this
   }
 
-  protected _setValue(input: ValueType, type: ComparatorOperator, options?: ClauseOptions) {
+  protected _setValue(input: ValueType, type: ComparatorOperator, options?: RangeOptions) {
     if (this.value) {
       if (isPrimitiveValue(this.value)) {
         throw new Error("Attempted to overwrite a previously set condition with a range condition")
@@ -368,8 +372,8 @@ export class RangeCondition<ConditionsT, ValueType> extends Condition<Conditions
       this.value = { [type]: input } as RangeConditionValue<ValueType>
     }
 
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
   }
 }

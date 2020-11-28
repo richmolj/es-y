@@ -1,12 +1,11 @@
-import { ClauseOptions } from './../types'
 import { Condition } from "./base"
 
 export class EqCondition<ConditionsT, ValueType> extends Condition<ConditionsT, ValueType> {
-  eq(input: ValueType | ValueType[], options?: ClauseOptions): this {
+  eq(input: ValueType | ValueType[], options?: any): this {
     this.queryType = "term"
     this._setSimpleValue(input)
-    if (options && options.boost) {
-      this.boost = options.boost
+    if (options) {
+      this.elasticOptions = options
     }
     return this
   }

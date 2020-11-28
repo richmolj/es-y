@@ -1,5 +1,6 @@
-import { ClauseOptions } from './../types';
 import { ClassHook } from "../decorators"
+import { MatchOptions } from './match'
+import { MatchPhraseOptions } from './match-phrase'
 import { Condition, NotClause, AndClause, OrClause, MatchCondition, MatchPhraseCondition } from "."
 import { applyMixins } from "../util"
 import { applyOrClause, applyAndClause, applyNotClause } from "./base"
@@ -8,24 +9,24 @@ class TextOrClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> e
   ConditionT,
   ConditionsT
 > {
-  match(value: string | string[], options?: ClauseOptions) {
+  match(value: string | string[], options?: MatchOptions) {
     this.value = this.condition.match(value, options)
     return this.value
   }
 
-  matchPhrase(value: string | string[], options?: ClauseOptions) {
+  matchPhrase(value: string | string[], options?: MatchPhraseOptions) {
     this.value = this.condition.matchPhrase(value, options)
     return this.value
   }
 }
 
 class TextNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
-  match(value: string | string[], options?: ClauseOptions) {
+  match(value: string | string[], options?: MatchOptions) {
     this.value = (this.condition as any).match(value, options)
     return this.originalCondition
   }
 
-  matchPhrase(value: string | string[], options?: ClauseOptions) {
+  matchPhrase(value: string | string[], options?: MatchPhraseOptions) {
     this.value = (this.condition as any).matchPhrase(value, options)
     return this.originalCondition
   }
@@ -35,12 +36,12 @@ class TextAndClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> 
   ConditionT,
   ConditionsT
 > {
-  match(value: string | string[], options?: ClauseOptions) {
+  match(value: string | string[], options?: MatchOptions) {
     this.value = this.condition.match(value, options)
     return this.value
   }
 
-  matchPhrase(value: string | string[], options?: ClauseOptions) {
+  matchPhrase(value: string | string[], options?: MatchPhraseOptions) {
     this.value = this.condition.matchPhrase(value, options)
     return this.value
   }
