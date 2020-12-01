@@ -39,10 +39,148 @@ describe("integration", () => {
     })
 
     // Min, max, any other graphiti/standard es things
-    //
     // AGGS LOGGER
-    //
     // check typings
+
+    // TODO allow blank filter so no payload conditional parsing
+    describe('filter', () => {
+      describe('basic count', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.filter('oldies', {
+              content: { age: { gt: 10 } }
+            })
+            await search.execute()
+            expect(search.aggResults.oldies).to.deep.eq({ count: 2 })
+          })
+
+          describe('when filter is empty', () => {
+            it('still works', async() => {
+              const search = new ThronesSearch()
+              search.aggs.filter('oldies', {})
+              await search.execute()
+              expect(search.aggResults.oldies).to.deep.eq({ count: 3 })
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                filter: [{
+                  name: 'oldies',
+                  content: { age: { gt: 1 } },
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.oldies).to.deep.eq({ count: 3 })
+          })
+
+          describe('when filter is empty', () => {
+            it('still works', async() => {
+              const search = new ThronesSearch()
+              search.aggs.filter('oldies', {})
+              await search.execute()
+              expect(search.aggResults.oldies).to.deep.eq({ count: 3 })
+            })
+          })
+        })
+      })
+
+      describe('with calculation', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.filter('oldies', {
+              content: { age: { gt: 10 } },
+            }).avg('age').sum('age')
+            await search.execute()
+            expect(search.aggResults.oldies).to.deep.eq({
+              count: 2, avg_age: 25, sum_age: 50
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('still works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                filter: [{
+                  name: 'oldies',
+                  content: { age: { gt: 10  }},
+                  avg: 'age',
+                  sum: 'age'
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.oldies).to.deep.eq({
+              count: 2, avg_age: 25, sum_age: 50
+            })
+          })
+        })
+      })
+
+      describe('with children', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.filter('oldies', {
+              content: { age: { gt: 10 } },
+            })
+              .avg('age')
+              .child()
+              .terms('title')
+            await search.execute()
+            expect(search.aggResults.oldies).to.deep.eq({
+              count: 2,
+              avg_age: 25,
+              title: [{
+                key: 'A',
+                count: 1
+              },{
+                key: 'B',
+                count: 1
+              }]
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('still works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                filter: [{
+                  name: 'oldies',
+                  content: { age: { gt: 10 } },
+                  avg: 'age',
+                  children: [{
+                    terms: [{
+                      name: 'title'
+                    }]
+                  }]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults.oldies).to.deep.eq({
+              count: 2,
+              avg_age: 25,
+              title: [{
+                key: 'A',
+                count: 1
+              },{
+                key: 'B',
+                count: 1
+              }]
+            })
+          })
+        })
+      })
+    })
 
     describe("terms", () => {
       describe("simple count", () => {

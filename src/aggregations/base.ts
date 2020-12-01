@@ -1,8 +1,10 @@
 import { DateHistogramAggregation, DateHistogramOptions } from './date-histogram';
 import { TermsAggregation, TermsOptions } from "./terms"
 import { RangeAggregation, RangeOptions } from "./range"
+import { FilterAggregation, FilterOptions } from "./filter"
 import { Calculation } from "./calculation"
 import { Search } from "../search"
+import { asyncForEach } from '../util'
 
 interface ToElasticOptions {
   overrideSize?: boolean
@@ -12,6 +14,7 @@ export class Aggregations {
   private termAggs: TermsAggregation[]
   private dateHistogramAggs: DateHistogramAggregation[]
   private rangeAggs: RangeAggregation[]
+  private filterAggs: FilterAggregation[]
   private calculations: Calculation[]
   private search: Search
 
@@ -20,6 +23,7 @@ export class Aggregations {
     this.termAggs = []
     this.dateHistogramAggs = []
     this.rangeAggs = []
+    this.filterAggs = []
     this.calculations = []
   }
 
@@ -37,7 +41,8 @@ export class Aggregations {
     return [
       ...this.termAggs,
       ...this.dateHistogramAggs,
-      ...this.rangeAggs
+      ...this.rangeAggs,
+      ...this.filterAggs,
     ]
   }
 
@@ -56,6 +61,12 @@ export class Aggregations {
   range(name: string, options: RangeOptions): RangeAggregation {
     const agg = new RangeAggregation(this.search, name, options)
     this.rangeAggs.push(agg)
+    return agg
+  }
+
+  filter(name: string, options:  FilterOptions): FilterAggregation {
+    const agg = new FilterAggregation(this.search, name, options)
+    this.filterAggs.push(agg)
     return agg
   }
 
@@ -107,6 +118,13 @@ export class Aggregations {
       input.ranges.forEach((range: any) => {
         const { name, ...options } = range
         const clause = this.range(name, options)
+      })
+    }
+
+    if (input.filter) {
+      input.filter.forEach((filter: any) => {
+        const { name, ...options } = filter
+        this.filter(name, options)
       })
     }
 

@@ -8,6 +8,7 @@ export interface BucketOptions {
   avg?: string | string[]
   sum?: string | string[]
   children?: any[] // todo
+  searchInput?: any
 }
 
 export interface BucketToElasticOptions {

@@ -269,6 +269,7 @@ import { ${name}DateConditionInput } from './conditions/date'
 import { ${name}TermsInput } from './aggregations/terms'
 import { ${name}DateHistogramInput } from './aggregations/date-histogram'
 import { ${name}RangeInput } from './aggregations/range'
+import { ${name}AggFilterInput } from './aggregations/filter'
 import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
 import { GraphQLJSONObject } from 'graphql-type-json'
   `
@@ -313,6 +314,9 @@ export class ${name}AggregationsInput {
 
   @Field(type => [${name}RangeInput], { nullable: true })
   ranges!: ${name}RangeInput[]
+
+  @Field(type => [${name}AggFilterInput], { nullable: true })
+  filter!: ${name}AggFilterInput[]
 }
 
 @InputType()
@@ -1124,6 +1128,32 @@ export class ${name}DateHistogramInput {
   fs.writeFileSync(`src/search-inputs/${name}/aggregations/date-histogram.ts`, dateHistogramContent)
 }
 
+function generateAggFilterInput(klass: typeof Search | typeof MultiSearch, name: string) {
+  const aggFilterContent = `
+    import { ${name}AggregationsInput, ${name}ConditionsInput } from '../index'
+    import { Field, InputType, Float } from 'type-graphql'
+
+    @InputType()
+    export class ${name}AggFilterInput {
+      @Field()
+      name!: string
+
+      @Field(type => ${name}ConditionsInput)
+      content!: ${name}ConditionsInput
+
+      @Field(type => [String], { nullable: true })
+      sum!: string[]
+
+      @Field(type => [String], { nullable: true })
+      avg!: string[]
+
+      @Field(type => [${name}AggregationsInput], { nullable: true })
+      children!: ${name}AggregationsInput[]
+    }
+  `
+  fs.writeFileSync(`src/search-inputs/${name}/aggregations/filter.ts`, aggFilterContent)
+}
+
 function generateRangeInput(klass: typeof Search | typeof MultiSearch, name: string) {
   const rangeContent = `
 import { ${name}AggregationsInput } from '../index'
@@ -1224,6 +1254,7 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
     generateTermsInput(klass, name)
     generateDateHistogramInput(klass, name)
     generateRangeInput(klass, name)
+    generateAggFilterInput(klass, name)
 
     ;Object.keys(conditionsClassInstance).forEach((key) => {
       if (conditionsClassInstance[key].isConditions) {
