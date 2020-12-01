@@ -70,7 +70,7 @@ function generateConditionInputs(name: string, conditionsClassInstance: any): st
 
 function generateMultiSearchInput(klass: typeof MultiSearch, name: string) {
   let searchInput = `
-import { InputType, Field } from 'type-graphql'
+import { InputType, Field, Float } from 'type-graphql'
 import { ${name}TermsInput } from './aggregations/terms'
 import { ${name}DateHistogramInput } from './aggregations/date-histogram'
 import { ${name}RangeInput } from './aggregations/range'
@@ -203,7 +203,7 @@ export class ${name}Input {
 function generateNestedSearchInput(conditionsClassInstance: any, searchName: string, conditionName: string) {
   const name = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
   let searchInput = `
-import { InputType, Field } from 'type-graphql'
+import { InputType, Field, Float } from 'type-graphql'
 import { ${name}KeywordConditionInput } from './conditions/keyword'
 import { ${name}TextConditionInput } from './conditions/text'
 import { ${name}NumericConditionInput } from './conditions/numeric'
@@ -261,7 +261,7 @@ export class ${name}Input {
 
 function generateSearchInput(klass: typeof Search, name: string) {
   let searchInput = `
-import { InputType, Field } from 'type-graphql'
+import { InputType, Field, Float } from 'type-graphql'
 import { ${name}KeywordConditionInput } from './conditions/keyword'
 import { ${name}TextConditionInput } from './conditions/text'
 import { ${name}NumericConditionInput } from './conditions/numeric'
@@ -432,7 +432,7 @@ function generateSimpleKeywordsInput(conditionsClassInstance: any, name: string,
   `
 
   const content = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}SimpleKeywordsOrInput } from './simple-keywords-or'
 import { ${bestName}SimpleKeywordsAndInput } from './simple-keywords-and'
 
@@ -466,7 +466,7 @@ export class ${bestName}SimpleKeywordsInput {
   }
 
   let simpleKeywordsOrContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -504,7 +504,7 @@ export class ${bestName}SimpleKeywordsOrInput {
   }
 
   let simpleKeywordsAndContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -554,7 +554,7 @@ function generateKeywordInput(conditionsClassInstance: any, name: string, dirNam
   `
 
   const keywordContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordOrInput } from './keyword-or'
 import { ${bestName}KeywordAndInput } from './keyword-and'
 
@@ -594,7 +594,7 @@ export class ${bestName}KeywordConditionInput {
   }
 
   let keywordOrContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -635,7 +635,7 @@ export class ${bestName}KeywordOrInput {
   }
 
   let keywordAndContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -751,7 +751,7 @@ export class ${bestName}TextConditionInput {
   }
 
   let textOrContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -789,7 +789,7 @@ export class ${bestName}TextOrInput {
   }
 
   let textAndContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -973,7 +973,7 @@ function generateDateInput(conditionsClassInstance: any, name: string, dirName?:
   `
 
   const dateContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}DateOrInput } from './date-or'
 import { ${bestName}DateAndInput } from './date-and'
 
@@ -1022,7 +1022,7 @@ export class ${bestName}DateConditionInput {
   }
 
   let dateOrContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -1060,7 +1060,7 @@ export class ${bestName}DateOrInput {
   }
 
   let dateAndContent = `
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 import { ${bestName}KeywordConditionInput } from './keyword'
 import { ${bestName}TextConditionInput } from './text'
 import { ${bestName}NumericConditionInput } from './numeric'
@@ -1094,7 +1094,7 @@ export class ${bestName}DateAndInput {
 function generateDateHistogramInput(klass: typeof Search | typeof MultiSearch, name: string) {
   const dateHistogramContent = `
 import { ${name}AggregationsInput } from '../index'
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 
 @InputType()
 export class ${name}DateHistogramInput {
@@ -1127,7 +1127,7 @@ export class ${name}DateHistogramInput {
 function generateRangeInput(klass: typeof Search | typeof MultiSearch, name: string) {
   const rangeContent = `
 import { ${name}AggregationsInput } from '../index'
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 
 @InputType()
 class ${name}ToFrom {
@@ -1169,7 +1169,7 @@ export class ${name}RangeInput {
 function generateTermsInput(klass: typeof Search | typeof MultiSearch, name: string) {
   const termsContent = `
 import { ${name}AggregationsInput } from '../index'
-import { Field, InputType } from 'type-graphql'
+import { Field, InputType, Float } from 'type-graphql'
 
 @InputType()
 export class ${name}TermsInput {
