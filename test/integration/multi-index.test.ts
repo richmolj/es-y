@@ -423,6 +423,36 @@ describe("multi-index integration", () => {
           expect(search.results.map((r) => r.id)).to.deep.eq([902, 901, 2, 1])
         })
       })
+
+      // TODO documentation: only applies when splitting
+      describe('within a search', () => {
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new GlobalSearch({
+              thrones: {
+                sort: [{ att: 'id', dir: 'desc' }]
+              },
+              justified: {},
+              split: 2
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([ 2, 1, 901, 902 ])
+          })
+        })
+
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const thrones = new ThronesSearch()
+            thrones.sort = [{ att: "id", dir: "desc" }]
+            const justified = new JustifiedSearch()
+            const search = new GlobalSearch()
+            search.searchInstances = [thrones, justified]
+            search.split(2)
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([ 2, 1, 901, 902 ])
+          })
+        })
+      })
     })
 
     describe('pagination', () => {
@@ -675,8 +705,8 @@ describe("multi-index integration", () => {
 
         describe('multiple', () => {
           class SubGlobalSearch extends GlobalSearch {
-            transformResults(results: any) {
-              super.transformResults(results)
+            async transformResults(results: any) {
+              await super.transformResults(results)
               return [{ new: `results ${results.length}` }]
             }
           }
