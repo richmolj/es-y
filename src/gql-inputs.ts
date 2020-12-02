@@ -1213,6 +1213,12 @@ export class ${name}TermsInput {
   min_doc_count!: number
 
   @Field({ nullable: true })
+  include!: string
+
+  @Field({ nullable: true })
+  exclude!: string
+
+  @Field({ nullable: true })
   size!: number
 
   @Field(type => [String], { nullable: true })

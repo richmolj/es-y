@@ -5,6 +5,8 @@ import { Search } from '../search'
 export interface TermsOptions extends BucketOptions {
   size?: number
   min_doc_count?: number
+  include?: string
+  exclude?: string
 }
 
 interface ToElasticOptions extends BucketToElasticOptions {
@@ -16,6 +18,8 @@ export class TermsAggregation extends BucketAggregation {
   sortAtt?: string
   sortDir?: string
   min_doc_count?: number
+  include?: string
+  exclude?: string
   requiresQualityAssurance = false
   protected _sourceFields: string[]
 
@@ -27,6 +31,8 @@ export class TermsAggregation extends BucketAggregation {
     super(search, name, options)
     this.size = options.size || 5
     this.min_doc_count = options.min_doc_count
+    this.include = options.include
+    this.exclude = options.exclude
     this._sourceFields = []
   }
 
@@ -54,6 +60,14 @@ export class TermsAggregation extends BucketAggregation {
       field: this.field,
       size: this.size,
     } as any
+
+    if (this.include) {
+      payload.terms.include = this.include
+    }
+
+    if (this.exclude) {
+      payload.terms.exclude = this.exclude
+    }
 
     if (options?.overrideSize) {
       payload.terms.size = payload.terms.size * 3

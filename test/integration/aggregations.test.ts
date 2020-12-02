@@ -204,6 +204,37 @@ describe("integration", () => {
             ])
           })
 
+          it('works with include', async() => {
+            await ThronesSearch.persist([{
+              title: 'beerbottle'
+            },{
+              title: 'beercap'
+            }], true)
+            const search = new ThronesSearch()
+            search.aggs.terms("title", { include: 'beer.*' })
+            await search.execute()
+            expect(search.aggResults.title).to.deep.eq([
+              { key: "beerbottle", count: 1 },
+              { key: "beercap", count: 1 },
+            ])
+          })
+
+          it('works with exclude', async() => {
+            await ThronesSearch.persist([{
+              title: 'beerbottle'
+            },{
+              title: 'beercap'
+            }], true)
+            const search = new ThronesSearch()
+            search.aggs.terms("title", { exclude: 'beerc.*' })
+            await search.execute()
+            expect(search.aggResults.title).to.deep.eq([
+              { key: "A", count: 2 },
+              { key: "B", count: 1 },
+              { key: "beerbottle", count: 1 },
+            ])
+          })
+
           describe('when alias/camelized field', () => {
             it("works", async () => {
               const search = new ThronesSearch()
