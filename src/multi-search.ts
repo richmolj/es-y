@@ -121,7 +121,7 @@ export class MultiSearch extends Search {
         results = results.concat(group)
       })
 
-      this.results = this.transformResults(results)
+      this.results = await this.transformResults(results)
       this.aggResults = {}
       this.searchInstances.forEach((search) => {
         const type = this.typeFor(search)
@@ -200,16 +200,16 @@ export class MultiSearch extends Search {
     })
   }
 
-  protected transformResults(rawResults: Record<string, any>[]): any[] {
+  protected async transformResults(rawResults: Record<string, any>[]): Promise<any[]> {
     // When splitting, we've already done per-search transformation and ordering
     if (this.isSplitting) {
-      const transformed = super.transformResults(rawResults)
+      const transformed = await super.transformResults(rawResults)
       return this.applyMetadata(transformed, rawResults)
     }
 
     let results = [] as any[]
     const classSearches = (this.constructor as any).searches;
-    this.searchInstances.forEach((search: any) => {
+    await asyncForEach(this.searchInstances, (async (search: any) => {
       const relevantHits = rawResults
         .filter((r: any) => {
           return r._index.match(new RegExp(search.klass.index))
@@ -218,7 +218,7 @@ export class MultiSearch extends Search {
           return Object.assign({}, r)
         })
       const builtResults = search.buildResults(relevantHits, this.klass.resultMetadata)
-      const transformed = search.transformResults(builtResults)
+      const transformed = await search.transformResults(builtResults)
       this.applyMetadata(transformed, builtResults)
       attachHighlightsToResults(this, transformed, relevantHits)
 
@@ -234,14 +234,14 @@ export class MultiSearch extends Search {
       })
 
       results = results.concat(transformed)
-    })
+    }))
 
     results = results.sort((a, b) => (a._order > b._order) ? 1 : -1)
     results.forEach((r: any) => {
       delete r._order
     })
 
-    const transformed = super.transformResults(results)
+    const transformed = await super.transformResults(results)
     return this.applyMetadata(transformed, results)
     return attachHighlightsToResults(this, transformed, results)
   }
