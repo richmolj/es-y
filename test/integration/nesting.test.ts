@@ -69,11 +69,19 @@ describe("integration", () => {
           })
 
           it('can query alongside filters', async () => {
+            // NB: id 1 not returned because need 'foo' AND 'baking'
+            await ThronesSearch.persist({
+              id: 4567,
+              bio: 'foo',
+              skills: [{
+                description: 'baking baking baking baking baking'
+              }]
+            }, true)
             const search = new ThronesSearch()
             search.filters.bio.match("foo")
             search.queries.skills.keywords.eq("baking")
             await search.execute()
-            expect(search.results.map((r) => r.id)).to.deep.eq([3, 1])
+            expect(search.results.map((r) => r.id)).to.deep.eq([4567, 3])
           })
 
           it('can fully query underlying fields', async () => {
@@ -311,7 +319,8 @@ describe("integration", () => {
             search.queries.skills.scoreMode('sum')
             search.queries.skills.keywords.eq('foo')
             await search.execute()
-            let { nested } = search.lastQuery.body.query.bool.should[0].bool.must[0]
+            console.log(JSON.stringify(search.lastQuery, null, 2))
+            let { nested } = search.lastQuery.body.query.bool.must[0].bool.should[0].bool.must[0]
             expect(nested.score_mode).to.eq('sum')
           })
         })
@@ -327,7 +336,7 @@ describe("integration", () => {
               }
             })
             await search.execute()
-            let { nested } = search.lastQuery.body.query.bool.should[0].bool.must[0]
+            let { nested } = search.lastQuery.body.query.bool.must[0].bool.should[0].bool.must[0]
             expect(nested.score_mode).to.eq('sum')
           })
         })

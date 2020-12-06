@@ -5,6 +5,7 @@ import { FilterAggregation, FilterOptions } from "./filter"
 import { Calculation } from "./calculation"
 import { Search } from "../search"
 import { asyncForEach } from '../util'
+import { BucketAggregation } from './bucket';
 
 interface ToElasticOptions {
   overrideSize?: boolean
@@ -93,13 +94,13 @@ export class Aggregations {
     return this.bucketAggs.length + this.calculations.length > 0
   }
 
-  toElastic(options?: ToElasticOptions) {
+  async toElastic(options?: ToElasticOptions) {
     let payload = {}
-    this.bucketAggs.forEach(ba => {
-      payload = { ...payload, ...ba.toElastic(options) }
+    await asyncForEach(this.bucketAggs, async (ba: BucketAggregation) => {
+      payload = { ...payload, ...(await ba.toElastic(options)) }
     })
 
-    this.calculations.forEach(c => {
+    this.calculations.forEach((c: Calculation) => {
       payload = { ...payload, ...c.toElastic() }
     })
 

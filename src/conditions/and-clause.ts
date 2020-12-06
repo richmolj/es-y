@@ -24,12 +24,12 @@ export class AndClause<ConditionT, ConditionsT> {
     return (this.conditions as any).elasticContext
   }
 
-  protected toElastic() {
+  protected async toElastic() {
     let must = [] as any[]
     let must_not = [] as any[]
     let should = [] as any[]
     if (this.value) {
-      const es = (this.condition as any).toElastic()
+      const es = await (this.condition as any).toElastic()
 
       if (es.bool.should.length > 1) {
         // or .and.match("a").or.match("b")
@@ -51,7 +51,7 @@ export class AndClause<ConditionT, ConditionsT> {
       }
     }
     const conditions = this.conditions as any
-    const query = (this.conditions as any).buildQuery()
+    const query = await (this.conditions as any).buildQuery()
     if (
       query &&
       query.bool &&

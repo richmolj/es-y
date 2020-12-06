@@ -9,8 +9,8 @@ export async function buildRequest(search: Search) {
   const searchPayload = { index: search.klass.index, body: {} } as any
   searchPayload.body.query = { bool: { must: [], should: [], must_not: [], filter: {}} }
 
-  const filters = (search.filters as any).buildQuery()
-  const queries = (search.queries as any).buildQuery()
+  const promises = [(search.filters as any).buildQuery(), (search.queries as any).buildQuery()]
+  const [filters, queries] = await Promise.all(promises)
   const numFilters = Object.keys(filters).length
   const numQueries = Object.keys(queries).length
 
@@ -21,8 +21,11 @@ export async function buildRequest(search: Search) {
   }
 
   if (numQueries > 0) {
-    searchPayload.body.query.bool.must = queries.bool.query.bool.must
-    searchPayload.body.query.bool.should = queries.bool.query.bool.should
+    const must = queries.bool.query.bool.must || []
+    searchPayload.body.query.bool.must = [{
+      bool: { should: must.concat(queries.bool.query.bool.should || []) }
+    }]
+    // searchPayload.body.query.bool.should = queries.bool.query.bool.should
     searchPayload.body.query.bool.must_not = queries.bool.query.bool.must_not
   } else {
     delete searchPayload.body.query.bool.must

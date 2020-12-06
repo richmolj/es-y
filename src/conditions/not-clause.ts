@@ -16,13 +16,13 @@ export class NotClause<ConditionT, ConditionsT> {
     return (this.conditions as any).elasticContext
   }
 
-  protected toElastic() {
+  protected async toElastic() {
     let should = [] as any[]
     if (this.value) {
-      should = (this.condition as any).toElastic().bool.should
+      should = (await (this.condition as any).toElastic()).bool.should
     }
     const conditions = this.conditions as any
-    const query = (this.conditions as any).buildQuery()
+    const query = await (this.conditions as any).buildQuery()
     if (query && query.bool) {
       if (should.length > 0) {
         query.bool[this.elasticContext].bool.must[0].bool.should = query.bool[this.elasticContext].bool.must[0].bool.should.concat(should)

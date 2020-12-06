@@ -3695,11 +3695,15 @@ describe("integration", () => {
 
     describe('when combined with filters', () => {
       beforeEach(async () => {
-        await ThronesSearch.persist({
+        await ThronesSearch.persist([{
           id: 444,
           bio: "dragon dragon dragon dragon dragon",
           age: 77
-        }, true)
+        },{
+          id: 555,
+          bio: "dontfindme - no d r a g o n",
+          age: 77
+        }], true)
       })
 
       it('works', async() => {
