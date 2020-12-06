@@ -16,18 +16,18 @@ export class OrClause<ConditionT, ConditionsT> {
     return (this.conditions as any).elasticContext
   }
 
-  protected toElastic() {
+  protected async toElastic() {
     let should = [] as any[]
     let must = [] as any[]
     let must_not = [] as any[]
     if (this.value) {
-      let esPayload = (this.condition as any).toElastic().bool
+      let esPayload = (await (this.condition as any).toElastic()).bool
       must = must.concat(esPayload.must)
       should = should.concat(esPayload.should)
       must_not = must_not.concat(esPayload.must_not)
     }
     const conditions = this.conditions as any
-    const query = (this.conditions as any).buildQuery()
+    const query = await (this.conditions as any).buildQuery()
     if (query && query.bool) {
       const baseClause = query.bool[this.elasticContext].bool.should[0].bool.must[0]
       if (baseClause.bool) {

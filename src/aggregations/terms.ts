@@ -54,8 +54,8 @@ export class TermsAggregation extends BucketAggregation {
   }
 
   // todo dont allow size > 10 or so
-  toElastic(options?: ToElasticOptions) {
-    let payload = super.toElastic(options)
+  async toElastic(options?: ToElasticOptions) {
+    let payload = await super.toElastic(options)
     payload.terms = {
       field: this.field,
       size: this.size,

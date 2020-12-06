@@ -19,6 +19,7 @@ import { Search } from "../search"
 import { buildHighlightRequest } from "../util/highlighting"
 import { sourceFieldsRequestPayload } from "../util/source-fields"
 import { buildNestedQueryPayloads } from "../util/nesting"
+import { asyncForEach } from "../util"
 
 @ClassHook()
 class Conditions {
@@ -77,17 +78,17 @@ class Conditions {
       .map(k => _this[k])
   }
 
-  protected buildQuery() {
+  protected async buildQuery() {
     let must = [] as any[]
     let must_not = [] as any[]
     let should = [] as any[]
 
     if (this._not) {
-      must_not = this._not.buildQuery().bool.filter.bool.should
+      must_not = (await this._not.buildQuery()).bool.filter.bool.should
     }
 
     if (this._or) {
-      should = this._or.buildQuery().bool.filter.bool.should
+      should = (await this._or.buildQuery()).bool.filter.bool.should
     }
 
     const _this = this as any
@@ -95,12 +96,12 @@ class Conditions {
       .filter(k => _this[k].hasClause && _this[k].hasClause())
       .map(k => _this[k])
 
-    presentConditions.forEach(c => {
-      const clause = c.toElastic()
+    await asyncForEach(presentConditions, async (c: any) => {
+      const clause = await c.toElastic()
       must = must.concat(clause)
     })
 
-    const nestedPayloads = buildNestedQueryPayloads(this)
+    const nestedPayloads = await buildNestedQueryPayloads(this)
     nestedPayloads.forEach((nested) => {
       must = must.concat({ nested })
     })

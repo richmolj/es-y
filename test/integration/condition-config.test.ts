@@ -46,6 +46,14 @@ class TransformedThronesSearchConditions extends ThronesSearchConditions {
     ]
   })
 
+  expander = new KeywordCondition<this>("name", this, {
+    transforms: [
+      (value: any, condition: any) => {
+        return ["one", "two", "three"]
+      },
+    ]
+  })
+
   altered = new KeywordCondition<this>("name", this, {
     transforms: [
       (value: any, condition: any) => {
@@ -55,13 +63,10 @@ class TransformedThronesSearchConditions extends ThronesSearchConditions {
         return value.replace(/\+/g, '=').replace(/\*/g, '-')
       },
     ],
+    // NB: dangerous override. If document, document value array
     toElastic(condition: any) {
-      if (condition.value === 'dontmindme') condition.value = 'bar'
-      if (Array.isArray(condition.value)) {
-        return { terms: { name: condition.value } }
-      } else {
-        return { term: { name: { value: condition.value } } }
-      }
+      if (condition.value[0] === 'dontmindme') condition.value = ['bar']
+      return { terms: { name: condition.value } }
     }
   })
 }
@@ -152,6 +157,38 @@ describe("integration", () => {
           expect(search.results.map((r) => r.id)).to.deep.eq([2, 17])
         })
       })
+
+      describe('when expanding', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([{
+            name: "one"
+          },{
+            name: "two"
+          },{
+            name: "three"
+          },{
+            name: "four"
+          }], true)
+        })
+
+        describe('when passed array, expanding to larger array', () => {
+          it('works', async() => {
+            const search = new TransformedThronesSearch()
+            search.filters.expander.eq(["one"])
+            await search.execute()
+            expect(search.results.map((r) => r.name)).to.deep.eq(["one", "two", "three"])
+          })
+        })
+
+        describe('when single value, expanding to array', () => {
+          it('works', async() => {
+            const search = new TransformedThronesSearch()
+            search.filters.expander.eq("one")
+            await search.execute()
+            expect(search.results.map((r) => r.name)).to.deep.eq(["one", "two", "three"])
+          })
+        })
+      })
     })
 
     describe('transforming conditions', () => {
@@ -189,8 +226,8 @@ describe("integration", () => {
         const search = new TransformedThronesSearch()
         let condition = search.filters.titleOrName as any
         search.filters.titleOrName.eq("foo")
-        const original = condition.toElastic()
-        const another = condition.toElastic()
+        const original = await condition.toElastic()
+        const another = await condition.toElastic()
         expect(original).to.deep.eq(another)
       })
 

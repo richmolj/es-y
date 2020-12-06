@@ -23,7 +23,7 @@ export class RangeAggregation extends BucketAggregation {
     return 'range'
   }
 
-  toElastic(options?: BucketToElasticOptions) {
+  async toElastic(options?: BucketToElasticOptions) {
     let payloadOptions = {
       field: this.field,
       ranges: this.ranges,
@@ -32,7 +32,7 @@ export class RangeAggregation extends BucketAggregation {
     let payload = {
       [this.name]: {
         range: { ...payloadOptions },
-        ...super.toElastic()
+        ...(await super.toElastic())
       }
     }
 

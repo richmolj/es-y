@@ -2,6 +2,7 @@ import { Search } from '../search'
 import { Aggregations } from './index'
 import { Calculation } from "./calculation"
 import { DateHistogramOptions } from './date-histogram'
+import { asyncForEach } from '../util'
 
 export interface BucketOptions {
   field?: string
@@ -72,12 +73,12 @@ export class BucketAggregation {
     throw('You must implement getter #type in a subclass')
   }
 
-  toElastic(options?: BucketToElasticOptions) {
+  async toElastic(options?: BucketToElasticOptions) {
     let payload = {} as any
     if (this.children.length > 0) {
       payload.aggs = {}
-      this.children.forEach(c => {
-        payload.aggs = { ...payload.aggs, ...c.toElastic() }
+      await asyncForEach(this.children, async (c: any) => {
+        payload.aggs = { ...payload.aggs, ...(await c.toElastic()) }
       })
     }
 

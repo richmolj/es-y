@@ -3,7 +3,7 @@ import { AndClause } from "./and-clause"
 import { NotClause } from "./not-clause"
 import { ClassHook } from "../decorators"
 import { Constructor } from "../util/util-types"
-import { snakeifyObject } from "../util"
+import { snakeifyObject, asyncForEach } from "../util"
 import { Search } from ".."
 import cloneDeep = require('lodash/cloneDeep')
 
@@ -60,7 +60,7 @@ export class Condition<ConditionsT, ValueType> {
     return !!this.value || (this as any).value === 0 || this.notClauses.length > 0
   }
 
-  protected toElastic() {
+  protected async toElastic() {
     let must = [] as any
     let should = [] as any
     let must_not = [] as any
@@ -78,7 +78,7 @@ export class Condition<ConditionsT, ValueType> {
 
     if (condition.value || (condition.value as any) === 0) {
       if (this.config && this.config.transforms) {
-        condition = this.applyTransforms() // NB condition is now duped
+        condition = await this.applyTransforms() // NB condition is now duped
       }
 
       let values = condition.value as any[]
@@ -94,15 +94,15 @@ export class Condition<ConditionsT, ValueType> {
     }
 
     if (condition.config && condition.config.toElastic) {
-      main = condition.config.toElastic(condition)
+      main = await condition.config.toElastic(condition)
     }
 
     if (condition.andClauses.length > 0) {
       if (main) {
         must.push(main)
       }
-      condition.andClauses.forEach((c: any) => {
-        const esPayload = c.toElastic()
+      await asyncForEach(condition.andClauses, async (c: any) => {
+        const esPayload = await c.toElastic()
 
         // foo and (this)
         // foo and (this and that)
@@ -146,8 +146,8 @@ export class Condition<ConditionsT, ValueType> {
     }
 
     if (condition.orClauses.length > 0) {
-      condition.orClauses.forEach((c: any) => {
-        const esPayload = c.toElastic()
+      await asyncForEach(condition.orClauses, async (c: any) => {
+        const esPayload = await c.toElastic()
         // Push to "should", because "or"
 
         if (esPayload && esPayload.must && esPayload.must.length > 0) {
@@ -168,8 +168,8 @@ export class Condition<ConditionsT, ValueType> {
     }
 
     if (condition.notClauses.length > 0) {
-      condition.notClauses.forEach((c: any) => {
-        const esPayload = c.toElastic()
+      await asyncForEach(condition.notClauses, async (c: any) => {
+        const esPayload = await c.toElastic()
         if (esPayload && esPayload.should.length > 0) {
           // Push to "should", so we can accomodate "this OR NOT that" / "not this OR that"
           if (condition.orClauses.length > 0) {
@@ -212,12 +212,9 @@ export class Condition<ConditionsT, ValueType> {
     this.value = val
   }
 
-  private applyTransforms(): this {
+  private async applyTransforms(): Promise<this> {
     let value = this.value as any
-    let wasArray = false
-    if (Array.isArray(value)) {
-      wasArray = true
-    } else {
+    if (!Array.isArray(value)) {
       value = [value]
     }
     const dupe = this.dupe(true)
@@ -225,9 +222,9 @@ export class Condition<ConditionsT, ValueType> {
     const transforms = config.transforms as Function[]
 
     let newValues = value as any[]
-    value.forEach((v: any, valueIndex: number) => {
-      transforms.forEach((transform: Function, index: number) => {
-        const result = transform(...[v, dupe])
+    await asyncForEach(value, async (v: any, valueIndex: number) => {
+      await asyncForEach(transforms, async (transform: Function, index: number) => {
+        const result = await transform(...[v, dupe])
 
         if (result || result === 0) {
           if (index === transforms.length - 1) {
@@ -237,11 +234,8 @@ export class Condition<ConditionsT, ValueType> {
         }
       })
     })
-    if (wasArray) {
-      dupe.value = newValues
-    } else {
-      dupe.value = newValues[0]
-    }
+    newValues = [].concat(...newValues)
+    dupe.value = newValues
     return dupe
   }
 

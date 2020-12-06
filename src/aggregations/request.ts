@@ -2,7 +2,7 @@ import { Search } from "../search"
 
 export async function buildAggRequest(search: Search, payload: any) {
   if ((search as any)._aggs && (search as any)._aggs.requiresQualityAssurance) {
-    payload.body.aggs = (search as any)._aggs.toElastic({ overrideSize: true })
+    payload.body.aggs = await (search as any)._aggs.toElastic({ overrideSize: true })
     const response = await (search as any)._execute(payload)
 
     Object.keys(response.body.aggregations).forEach(aggName => {
@@ -26,6 +26,6 @@ export async function buildAggRequest(search: Search, payload: any) {
 
   // Assign aggs if we didn't already have a requiresQualityAssurance query
   if ((search as any)._aggs && !payload.body.aggs) {
-    payload.body.aggs = (search as any)._aggs.toElastic()
+    payload.body.aggs = await (search as any)._aggs.toElastic()
   }
 }

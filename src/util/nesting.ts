@@ -2,14 +2,15 @@ import { Conditions, Condition } from '../conditions'
 import { buildHighlightRequest } from './highlighting'
 import { sourceFieldsRequestPayload } from './source-fields'
 import { Search } from '../search'
+import { asyncForEach } from '../util'
 
-export function buildNestedQueryPayloads(conditionsClass: Conditions) {
+export async function buildNestedQueryPayloads(conditionsClass: Conditions) {
   const search           = (conditionsClass as any).search as Search
   const nestedConditions = (conditionsClass as any).nestedConditions()
   const payloads         = [] as any[]
 
-  nestedConditions.forEach((nestedCondition: any) => {
-    const nestedQuery = nestedCondition.buildQuery()
+  await asyncForEach(nestedConditions, async (nestedCondition: any) => {
+    const nestedQuery = await nestedCondition.buildQuery()
     const hasPagination = !!nestedCondition.page
     const hasSort = nestedCondition.sort.length > 0
     const hasNestedQuery = Object.keys(nestedQuery).length > 0

@@ -21,7 +21,7 @@ export class DateHistogramAggregation extends BucketAggregation {
   }
 
   // bgc1922_TODO interval becomes calendar_interval in new ES version
-  toElastic(options?: BucketToElasticOptions) {
+  async toElastic(options?: BucketToElasticOptions) {
     let payloadOptions = {
       field: this.field,
       interval: this.interval
@@ -34,7 +34,7 @@ export class DateHistogramAggregation extends BucketAggregation {
     let payload = {
       [this.name]: {
         date_histogram: { ...payloadOptions },
-        ...super.toElastic(options)
+        ...(await super.toElastic(options))
       }
     }
 
