@@ -2918,19 +2918,6 @@ describe("integration", () => {
         })
 
         it('works when NOT key comes first', async() => {
-          await ThronesSearch.persist({
-            id: 97,
-            age: 97,
-            name: 'Ned Stark',
-            title: 'Warden of the North'
-          }, true)
-          await ThronesSearch.persist({
-            id: 98,
-            age: 98,
-            name: 'Ned Stark',
-            title: 'Warden of the North'
-          }, true)
-
           const search = new ThronesSearch({
             filters: {
               not: {
@@ -2939,9 +2926,6 @@ describe("integration", () => {
                   and: {
                     age: {
                       eq: 35,
-                      or: {
-                        eq: 97
-                      }
                     },
                   },
                 },
@@ -2950,7 +2934,7 @@ describe("integration", () => {
             },
           })
           await search.execute()
-          expect(search.results.map(r => r.id)).to.have.members([543, 555, 98])
+          expect(search.results.map(r => r.id)).to.have.members([543, 555])
         })
       })
     })
@@ -3212,6 +3196,43 @@ describe("integration", () => {
               not: {
                 bio: {
                   match: "dontfindme",
+                },
+              },
+            },
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.have.members([11, 111, 345])
+        })
+
+        it('works with NOT/OR keys first in payload', async() => {
+          const search = new ThronesSearch({
+            filters: {
+              or: {
+                name: {
+                  eq: "Rando name",
+                },
+              },
+              not: {
+                bio: {
+                  match: "dontfindme",
+                },
+              },
+              name: {
+                eq: "Ned Stark",
+                and: {
+                  title: {
+                    eq: "Other Ned",
+                    or: {
+                      age: {
+                        eq: 10,
+                        and: {
+                          rating: {
+                            eq: 77,
+                          },
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
