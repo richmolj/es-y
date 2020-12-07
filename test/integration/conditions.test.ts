@@ -2918,6 +2918,19 @@ describe("integration", () => {
         })
 
         it('works when NOT key comes first', async() => {
+          await ThronesSearch.persist({
+            id: 97,
+            age: 97,
+            name: 'Ned Stark',
+            title: 'Warden of the North'
+          }, true)
+          await ThronesSearch.persist({
+            id: 98,
+            age: 98,
+            name: 'Ned Stark',
+            title: 'Warden of the North'
+          }, true)
+
           const search = new ThronesSearch({
             filters: {
               not: {
@@ -2926,6 +2939,9 @@ describe("integration", () => {
                   and: {
                     age: {
                       eq: 35,
+                      or: {
+                        eq: 97
+                      }
                     },
                   },
                 },
@@ -2934,7 +2950,7 @@ describe("integration", () => {
             },
           })
           await search.execute()
-          expect(search.results.map(r => r.id)).to.have.members([543, 555])
+          expect(search.results.map(r => r.id)).to.have.members([543, 555, 98])
         })
       })
     })

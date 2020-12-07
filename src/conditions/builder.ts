@@ -76,7 +76,7 @@ export function buildConditions(base: any, input: any) {
     keys.some(key => {
       if (ACTIONS.includes(key)) {
         buildCondition(base, input)
-        return true // rest is handled recursively
+        // return true // rest is handled recursively
       } else {
         const condition = base[key]
         // Accomodate nested conditions
