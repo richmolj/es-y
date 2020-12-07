@@ -2916,6 +2916,26 @@ describe("integration", () => {
           await search.execute()
           expect(search.results.map(r => r.id)).to.have.members([543, 555])
         })
+
+        it('works when NOT key comes first', async() => {
+          const search = new ThronesSearch({
+            filters: {
+              not: {
+                title: {
+                  eq: "Warden of the North",
+                  and: {
+                    age: {
+                      eq: 35,
+                    },
+                  },
+                },
+              },
+              name: { eq: "Ned Stark" },
+            },
+          })
+          await search.execute()
+          expect(search.results.map(r => r.id)).to.have.members([543, 555])
+        })
       })
     })
 

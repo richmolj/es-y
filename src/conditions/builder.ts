@@ -64,7 +64,16 @@ export function buildConditions(base: any, input: any) {
       }
     })
 
-    Object.keys(omit(input, TOP_LEVEL_KEYS)).some(key => {
+    let keys = Object.keys(omit(input, TOP_LEVEL_KEYS)) as string[]
+    keys = keys.sort((a: string, b: string) => {
+      if (COMBINATORS.includes(a)) {
+        return 1
+      } else {
+        return -1
+      }
+    })
+
+    keys.some(key => {
       if (ACTIONS.includes(key)) {
         buildCondition(base, input)
         return true // rest is handled recursively
