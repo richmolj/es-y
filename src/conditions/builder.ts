@@ -14,6 +14,7 @@ const OPERATORS = [
   'pastFiscalYears',
 ]
 
+// NOT before and/or
 const COMBINATORS = [
   'not',
   'and',
@@ -64,7 +65,13 @@ export function buildConditions(base: any, input: any) {
       }
     })
 
-    Object.keys(omit(input, TOP_LEVEL_KEYS)).some(key => {
+    let keys = Object.keys(omit(input, TOP_LEVEL_KEYS)) as string[]
+    // Combinators go last
+    keys = keys.sort((a: string, b: string) => {
+      return COMBINATORS.includes(a) ? 1 : -1
+    })
+
+    keys.some(key => {
       if (ACTIONS.includes(key)) {
         buildCondition(base, input)
         return true // rest is handled recursively
