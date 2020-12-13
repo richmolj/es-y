@@ -1,5 +1,5 @@
-import omit = require('lodash/omit')
-import pick = require('lodash/pick')
+import omit = require('lodash.omit')
+import pick = require('lodash.pick')
 
 // Order matters! Process not then and/or LAST
 const OPERATORS = [
