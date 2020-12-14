@@ -5,7 +5,7 @@ import { ClassHook } from "../decorators"
 import { Constructor } from "../util/util-types"
 import { snakeifyObject, asyncForEach } from "../util"
 import { Search } from ".."
-import cloneDeep = require('lodash.cloneDeep')
+import cloneDeep = require('lodash.clonedeep')
 
 interface ConditionToElastic {
   (value: any): any // todo

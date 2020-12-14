@@ -319,7 +319,6 @@ describe("integration", () => {
             search.queries.skills.scoreMode('sum')
             search.queries.skills.keywords.eq('foo')
             await search.execute()
-            console.log(JSON.stringify(search.lastQuery, null, 2))
             let { nested } = search.lastQuery.body.query.bool.must[0].bool.should[0].bool.must[0]
             expect(nested.score_mode).to.eq('sum')
           })
