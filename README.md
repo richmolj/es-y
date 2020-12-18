@@ -12,7 +12,11 @@ Start by defining a `Search` class. Each `Search` has `Conditions`, which can be
 import {
   ClassHook,
   Conditions,
-  Search
+  Search,
+  KeywordCondition,
+  TextCondition,
+  NumericCondition,
+  DateCondition
 } from "search-resource"
 
 // Left side (e.g. goldAmount) is what we refer to in code
