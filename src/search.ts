@@ -204,6 +204,10 @@ export class Search {
   private async _execute(searchPayload: any) {
     this._logQuery(searchPayload)
     const response = await this.client.search(searchPayload)
+    const { _shards } = response.body
+    if (_shards && _shards.failures && _shards.failures.length > 0) {
+      throw(`Error from Elastic! ${JSON.stringify(response.body)}`)
+    }
     this.lastQuery = searchPayload
     return response
   }
