@@ -42,8 +42,4 @@ describe("utility", () => {
       })
     })
   })
-
-  describe("logger", () => {
-    // TODO? necessary?
-  })
 })

@@ -1550,7 +1550,6 @@ describe("integration", () => {
             }, true)
           })
 
-          // TODO: has problems with additional levels of nesting
           describe("across same field", () => {
             describe("by direct assignment", () => {
               it("works", async () => {
@@ -2486,9 +2485,7 @@ describe("integration", () => {
       })
     })
 
-    // TODO: past fiscal years
     // TODO date math
-    // TODO write the rest of these
     describe("date type", () => {
       describe("eq", () => {
         describe("by direct assignment", () => {
