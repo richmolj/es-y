@@ -23,7 +23,7 @@ import { asyncForEach } from "../util"
 
 @ClassHook()
 class Conditions {
-  isConditions = true
+  protected isConditions = true
   protected klass!: typeof Conditions
   static currentClass: typeof Conditions = Conditions
   protected _not!: Conditions
@@ -33,7 +33,7 @@ class Conditions {
 
   keywords = new SimpleQueryStringCondition<this>("", this)
 
-  setSearch(search: Search) {
+  protected setSearch(search: Search) {
     this.search = search
     const _this = this as any
     Object.keys(this).forEach((k) => {

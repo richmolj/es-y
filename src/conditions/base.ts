@@ -20,8 +20,6 @@ interface Config {
   transforms?: TransformFunction[]
 }
 
-// TODO: Ideally, this class would have the .or function
-// But it can't because types?
 @ClassHook()
 export class Condition<ConditionsT, ValueType> {
   protected _elasticField: string
@@ -33,10 +31,10 @@ export class Condition<ConditionsT, ValueType> {
   protected notClauses: NotClause<this, ConditionsT>[]
   protected klass!: typeof Condition
   protected config?: Config
+  protected elasticOptions: any
   static currentClass: typeof Condition = Condition
   static type: string
-  boost?: null | number
-  elasticOptions: any
+  protected boost?: null | number
 
   constructor(elasticField: string, conditions: ConditionsT, config?: Config) {
     this._elasticField = elasticField

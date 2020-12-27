@@ -27,7 +27,6 @@ describe("integration", () => {
       await ThronesSearch.refresh()
     })
 
-    // TODO: GQL boosting
     describe('field boosting', async() => {
       beforeEach(async () => {
         await ThronesSearch.persist({

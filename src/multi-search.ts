@@ -135,8 +135,7 @@ export class MultiSearch extends Search {
 
   async toElastic() {
     let subQueries = [] as any[]
-    // TODO: promise.all
-    await asyncForEach(this.searchInstances, async (search: Search) => {
+    const promises = this.searchInstances.map(async (search: Search) => {
       const payload = await search.toElastic()
 
       let terms = { _index: [search.klass.index] } as any
@@ -146,7 +145,6 @@ export class MultiSearch extends Search {
           boost: search.boost,
         }
       }
-
 
       subQueries.push({
         bool: {
@@ -159,6 +157,7 @@ export class MultiSearch extends Search {
         }
       })
     })
+    await Promise.all(promises)
 
     // bgc1922_TODO track_total_hits
     const payload = {
