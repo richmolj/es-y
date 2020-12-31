@@ -10,11 +10,6 @@ export class NestedAggregation extends BucketAggregation {
           path: this.field
         },
         ...(await super.toElastic(options))
-          // sum_foo: {
-            // sum: {
-              // field: 'skills.id' // todo skills.name
-            // }
-          // }
       }
     }
   }

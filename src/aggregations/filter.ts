@@ -20,7 +20,6 @@ export class FilterAggregation extends BucketAggregation {
     if (Object.keys(searchInput).length > 0) {
       let search = new this.search.klass({ filters: this.searchInput })
       const filters = search.filters as any
-      // Todo pass isAggFilter - remove nested bit
       filter = await filters.buildQuery({ isFilterAggregation: true })
     }
     return {
