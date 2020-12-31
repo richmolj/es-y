@@ -21,6 +21,10 @@ import { sourceFieldsRequestPayload } from "../util/source-fields"
 import { buildNestedQueryPayloads } from "../util/nesting"
 import { asyncForEach } from "../util"
 
+interface BuildQueryOptions {
+  isFilterAggregation?: boolean
+}
+
 @ClassHook()
 class Conditions {
   protected isConditions = true
@@ -78,7 +82,7 @@ class Conditions {
       .map(k => _this[k])
   }
 
-  protected async buildQuery() {
+  protected async buildQuery(options: BuildQueryOptions = {}) {
     let must = [] as any[]
     let must_not = [] as any[]
     let should = [] as any[]
@@ -101,9 +105,13 @@ class Conditions {
       must = must.concat(clause)
     })
 
-    const nestedPayloads = await buildNestedQueryPayloads(this)
+    const nestedPayloads = await buildNestedQueryPayloads(this, options.isFilterAggregation)
     nestedPayloads.forEach((nested) => {
-      must = must.concat({ nested })
+      if (options.isFilterAggregation) {
+        must = must.concat({ bool: nested.query.bool })
+      } else {
+        must = must.concat({ nested })
+      }
     })
 
     if (must.length > 0) {

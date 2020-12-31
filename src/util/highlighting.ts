@@ -95,7 +95,7 @@ function getAllHighlightConfigs(search: Search | MultiSearch) {
 export function attachHighlightsToResults(search: Search, results: any[], rawResults: any[]) {
   const _search = search as any
   const highlightConfigs = getAllHighlightConfigs(search)
-  if (highlightConfigs.length > 0) {
+  if (highlightConfigs.length > 0 && rawResults.length === results.length) {
     results.forEach((r, index) => {
       const rawResult = rawResults[index]
       let highlights = {} as any

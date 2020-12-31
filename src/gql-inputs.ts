@@ -59,8 +59,8 @@ function generateConditionInputs(name: string, conditionsClassInstance: any): st
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       inputs = inputs.concat(`
-  @Field(type => ${capName}Input, { nullable: true })
-  ${conditionName}!: ${capName}Input
+  @Field(type => ${name}${capName}Input, { nullable: true })
+  ${conditionName}!: ${name}${capName}Input
       `)
     }
   })
@@ -95,6 +95,9 @@ export class ${name}AggregationsInput {
 
   @Field(type => [String], { nullable: true })
   avg!: string[]
+
+  @Field(type => [String], { nullable: true })
+  valueCount!: string[]
 
   @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
@@ -200,19 +203,18 @@ export class ${name}Input {
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
-function generateNestedSearchInput(conditionsClassInstance: any, searchName: string, conditionName: string) {
-  const name = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
+function generateNestedSearchInput(conditionsClassInstance: any, searchName: string, conditionName: string, inputName: string) {
   let searchInput = `
 import { InputType, Field, Float } from 'type-graphql'
-import { ${name}KeywordConditionInput } from './conditions/keyword'
-import { ${name}TextConditionInput } from './conditions/text'
-import { ${name}NumericConditionInput } from './conditions/numeric'
-import { ${name}DateConditionInput } from './conditions/date'
-import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
+import { ${inputName}KeywordConditionInput } from './conditions/keyword'
+import { ${inputName}TextConditionInput } from './conditions/text'
+import { ${inputName}NumericConditionInput } from './conditions/numeric'
+import { ${inputName}DateConditionInput } from './conditions/date'
+import { ${inputName}SimpleKeywordsInput } from './conditions/simple-keywords'
 import { GraphQLJSONObject } from 'graphql-type-json'
 
 @InputType()
-class ${name}PaginationInput {
+class ${inputName}PaginationInput {
   @Field({ nullable: true })
   size!: number
 
@@ -221,7 +223,7 @@ class ${name}PaginationInput {
 }
 
 @InputType()
-class ${name}SortInput {
+class ${inputName}SortInput {
   @Field()
   att!: string
 
@@ -231,32 +233,32 @@ class ${name}SortInput {
 }
 
 @InputType()
-export class ${name}Input {
-  @Field(type => ${name}Input, { nullable: true })
-  not!: ${name}Input
+export class ${inputName}Input {
+  @Field(type => ${inputName}Input, { nullable: true })
+  not!: ${inputName}Input
 
-  @Field(type => ${name}Input, { nullable: true })
-  or!: ${name}Input
+  @Field(type => ${inputName}Input, { nullable: true })
+  or!: ${inputName}Input
 
-  @Field(type => ${name}PaginationInput, { nullable: true })
-  page!: ${name}PaginationInput
+  @Field(type => ${inputName}PaginationInput, { nullable: true })
+  page!: ${inputName}PaginationInput
 
-  @Field(type => [${name}SortInput], { nullable: true })
-  sort!: ${name}SortInput[]
+  @Field(type => [${inputName}SortInput], { nullable: true })
+  sort!: ${inputName}SortInput[]
 
-  ${generateConditionInputs(name, conditionsClassInstance)}
+  ${generateConditionInputs(inputName, conditionsClassInstance)}
 }
   `
   if (!fs.existsSync(`src/search-inputs/${searchName}/nested`)) {
     fs.mkdirSync(`src/search-inputs/${searchName}/nested`)
   }
-  if (!fs.existsSync(`src/search-inputs/${searchName}/nested/${name}`)) {
-    fs.mkdirSync(`src/search-inputs/${searchName}/nested/${name}`)
+  if (!fs.existsSync(`src/search-inputs/${searchName}/nested/${conditionName}`)) {
+    fs.mkdirSync(`src/search-inputs/${searchName}/nested/${conditionName}`)
   }
-  if (!fs.existsSync(`src/search-inputs/${searchName}/nested/${name}/conditions`)) {
-    fs.mkdirSync(`src/search-inputs/${searchName}/nested/${name}/conditions`)
+  if (!fs.existsSync(`src/search-inputs/${searchName}/nested/${conditionName}/conditions`)) {
+    fs.mkdirSync(`src/search-inputs/${searchName}/nested/${conditionName}/conditions`)
   }
-  fs.writeFileSync(`src/search-inputs/${searchName}/nested/${name}/index.ts`, searchInput)
+  fs.writeFileSync(`src/search-inputs/${searchName}/nested/${conditionName}/index.ts`, searchInput)
 }
 
 function generateSearchInput(klass: typeof Search, name: string) {
@@ -270,6 +272,7 @@ import { ${name}TermsInput } from './aggregations/terms'
 import { ${name}DateHistogramInput } from './aggregations/date-histogram'
 import { ${name}RangeInput } from './aggregations/range'
 import { ${name}AggFilterInput } from './aggregations/filter'
+import { ${name}NestedAggInput } from './aggregations/nested'
 import { ${name}SimpleKeywordsInput } from './conditions/simple-keywords'
 import { GraphQLJSONObject } from 'graphql-type-json'
   `
@@ -278,7 +281,7 @@ import { GraphQLJSONObject } from 'graphql-type-json'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       searchInput = searchInput.concat(`
-import { ${capName}Input } from './nested/${capName}'
+import { ${name}${capName}Input } from './nested/${capName}'
       `)
     }
   })
@@ -306,6 +309,9 @@ export class ${name}AggregationsInput {
   @Field(type => [String], { nullable: true })
   avg!: string[]
 
+  @Field(type => [String], { nullable: true })
+  valueCount!: string[]
+
   @Field(type => [${name}TermsInput], { nullable: true })
   terms!: ${name}TermsInput[]
 
@@ -317,6 +323,9 @@ export class ${name}AggregationsInput {
 
   @Field(type => [${name}AggFilterInput], { nullable: true })
   filter!: ${name}AggFilterInput[]
+
+  @Field(type => [${name}NestedAggInput], { nullable: true })
+  nested!: ${name}NestedAggInput[]
 }
 
 @InputType()
@@ -387,8 +396,8 @@ export class ${name}Input {
   fs.writeFileSync(`src/search-inputs/${name}/index.ts`, searchInput)
 }
 
-function generateSimpleKeywordsInput(conditionsClassInstance: any, name: string, dirName?: string) {
-  const bestName = dirName || name
+function generateSimpleKeywordsInput(conditionsClassInstance: any, name: string, inputName?: string, dirName?: string) {
+  const bestName = inputName || name
 
   const simpleKeywordsOptions = `
   @Field({ nullable: true })
@@ -482,7 +491,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       simpleKeywordsOrContent = simpleKeywordsOrContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -520,7 +529,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       simpleKeywordsAndContent = simpleKeywordsAndContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -543,8 +552,8 @@ export class ${bestName}SimpleKeywordsAndInput {
   }
 }
 
-function generateKeywordInput(conditionsClassInstance: any, name: string, dirName?: string) {
-  const bestName = dirName || name
+function generateKeywordInput(conditionsClassInstance: any, name: string, inputName?: string, dirName?: string) {
+  const bestName = inputName || name
 
   const keywordOptions = `
   @Field({ nullable: true })
@@ -610,7 +619,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       keywordOrContent = keywordOrContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -651,7 +660,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       keywordAndContent = keywordAndContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -670,8 +679,8 @@ export class ${bestName}KeywordAndInput {
   }
 }
 
-function generateTextInput(conditionsClassInstance: any, name: string, dirName?: string) {
-  const bestName = dirName || name
+function generateTextInput(conditionsClassInstance: any, name: string, inputName?: string, dirName?: string) {
+  const bestName = inputName || name
 
   const textOptions = `
   @Field(type => String, { nullable: true })
@@ -767,7 +776,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       textOrContent = textOrContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -805,7 +814,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       textAndContent = textAndContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -831,8 +840,8 @@ export class ${bestName}TextAndInput {
   }
 }
 
-function generateNumericInput(conditionsClassInstance: any, name: string, dirName?: string) {
-  const bestName = dirName || name
+function generateNumericInput(conditionsClassInstance: any, name: string, inputName?: string, dirName?: string) {
+  const bestName = inputName || name
 
   const numericOptions = `
   @Field({ nullable: true })
@@ -901,7 +910,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       numericOrContent = numericOrContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -940,7 +949,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       numericAndContent = numericAndContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -959,8 +968,8 @@ export class ${bestName}NumericAndInput {
   }
 }
 
-function generateDateInput(conditionsClassInstance: any, name: string, dirName?: string) {
-  const bestName = dirName || name
+function generateDateInput(conditionsClassInstance: any, name: string, inputName?: string, dirName?: string) {
+  const bestName = inputName || name
 
   const dateOptions = `
   @Field({ nullable: true })
@@ -1038,7 +1047,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       dateOrContent = dateOrContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -1076,7 +1085,7 @@ import { ${bestName}SimpleKeywordsInput } from './simple-keywords'
     if (condition.isConditions) {
       const capName = conditionName.charAt(0).toUpperCase() + conditionName.slice(1)
       dateAndContent = dateAndContent.concat(`
-import { ${capName}Input } from '../nested/${capName}'
+import { ${bestName}${capName}Input } from '../nested/${capName}'
       `)
     }
   })
@@ -1111,6 +1120,9 @@ export class ${name}DateHistogramInput {
   @Field(type => [String], { nullable: true })
   avg!: string[]
 
+  @Field(type => [String], { nullable: true })
+  valueCount!: string[]
+
   @Field()
   interval!: string
 
@@ -1126,6 +1138,32 @@ export class ${name}DateHistogramInput {
 `
 
   fs.writeFileSync(`src/search-inputs/${name}/aggregations/date-histogram.ts`, dateHistogramContent)
+}
+
+function generateNestedAggInput(klass: typeof Search | typeof MultiSearch, name: string) {
+  const nestedAggContent = `
+    import { ${name}AggregationsInput } from '../index'
+    import { Field, InputType, Float } from 'type-graphql'
+
+    @InputType()
+    export class ${name}NestedAggInput {
+      @Field()
+      name!: string
+
+      @Field(type => [String], { nullable: true })
+      sum!: string[]
+
+      @Field(type => [String], { nullable: true })
+      avg!: string[]
+
+      @Field(type => [String], { nullable: true })
+      valueCount!: string[]
+
+      @Field(type => [${name}AggregationsInput], { nullable: true })
+      children!: ${name}AggregationsInput[]
+    }
+  `
+  fs.writeFileSync(`src/search-inputs/${name}/aggregations/nested.ts`, nestedAggContent)
 }
 
 function generateAggFilterInput(klass: typeof Search | typeof MultiSearch, name: string) {
@@ -1146,6 +1184,9 @@ function generateAggFilterInput(klass: typeof Search | typeof MultiSearch, name:
 
       @Field(type => [String], { nullable: true })
       avg!: string[]
+
+      @Field(type => [String], { nullable: true })
+      valueCount!: string[]
 
       @Field(type => [${name}AggregationsInput], { nullable: true })
       children!: ${name}AggregationsInput[]
@@ -1181,6 +1222,9 @@ export class ${name}RangeInput {
 
   @Field(type => [String], { nullable: true })
   avg!: string[]
+
+  @Field(type => [String], { nullable: true })
+  valueCount!: string[]
 
   @Field({ nullable: true })
   min_doc_count!: number
@@ -1227,6 +1271,9 @@ export class ${name}TermsInput {
   @Field(type => [String], { nullable: true })
   avg!: string[]
 
+  @Field(type => [String], { nullable: true })
+  valueCount!: string[]
+
   @Field({ nullable: true })
   ensureQuality!: boolean
 
@@ -1261,24 +1308,27 @@ function generateGqlInput(klass: typeof Search | typeof MultiSearch, name: strin
     generateDateHistogramInput(klass, name)
     generateRangeInput(klass, name)
     generateAggFilterInput(klass, name)
+    generateNestedAggInput(klass, name)
 
     ;Object.keys(conditionsClassInstance).forEach((key) => {
       if (conditionsClassInstance[key].isConditions) {
-        const dirName = key.charAt(0).toUpperCase() + key.slice(1)
+        let conditionName = key.charAt(0).toUpperCase() + key.slice(1)
+        let inputName = `${name}${conditionName}`
+
         const dir = `src/search-inputs/${name}/nested`
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir)
-          fs.mkdirSync(`${dir}/${dirName}`)
-          fs.mkdirSync(`${dir}/${dirName}/conditions`)
+          fs.mkdirSync(`${dir}/${conditionName}`)
+          fs.mkdirSync(`${dir}/${conditionName}/conditions`)
         }
 
         const nestedConditionsClassInstance = conditionsClassInstance[key]
-        generateNestedSearchInput(nestedConditionsClassInstance, name, key)
-        generateSimpleKeywordsInput(nestedConditionsClassInstance, name, dirName)
-        generateKeywordInput(nestedConditionsClassInstance, name, dirName)
-        generateTextInput(nestedConditionsClassInstance, name, dirName)
-        generateNumericInput(nestedConditionsClassInstance, name, dirName)
-        generateDateInput(nestedConditionsClassInstance, name, dirName)
+        generateNestedSearchInput(nestedConditionsClassInstance, name, conditionName, inputName)
+        generateSimpleKeywordsInput(nestedConditionsClassInstance, name, inputName, conditionName)
+        generateKeywordInput(nestedConditionsClassInstance, name, inputName, conditionName)
+        generateTextInput(nestedConditionsClassInstance, name, inputName, conditionName)
+        generateNumericInput(nestedConditionsClassInstance, name, inputName, conditionName)
+        generateDateInput(nestedConditionsClassInstance, name, inputName, conditionName)
       }
     })
   }

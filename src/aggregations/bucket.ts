@@ -8,6 +8,7 @@ export interface BucketOptions {
   field?: string
   avg?: string | string[]
   sum?: string | string[]
+  valueCount?: string | string[]
   children?: any[] // todo
   searchInput?: any
 }
@@ -38,6 +39,10 @@ export class BucketAggregation {
       this.sum(options.sum)
     }
 
+    if (options.valueCount) {
+      this.valueCount(options.valueCount)
+    }
+
     if (options.children) {
       options.children.forEach((child) => {
         this.child().build(child)
@@ -49,6 +54,15 @@ export class BucketAggregation {
     if (!Array.isArray(fields)) fields = [fields]
     fields.forEach((field) => {
       const calc = new Calculation("sum", field)
+      this.calculations.push(calc)
+    })
+    return this
+  }
+
+  valueCount(fields: string | string[]) {
+    if (!Array.isArray(fields)) fields = [fields]
+    fields.forEach((field) => {
+      const calc = new Calculation("value_count", field)
       this.calculations.push(calc)
     })
     return this

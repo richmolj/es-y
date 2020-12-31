@@ -17,7 +17,11 @@ describe("integration", () => {
         age: 10,
         title: "A",
         rating: 100,
-        created_at: '2020-01-01'
+        created_at: '2020-01-01',
+        skills: [
+          { name: 'jumping', level: 1 },
+          { name: 'jacking', level: 2 },
+        ]
       })
       await ThronesSearch.persist({
         id: 2,
@@ -25,7 +29,11 @@ describe("integration", () => {
         name: "A Person 2",
         title: "A",
         rating: 200,
-        created_at: '2020-06-01'
+        created_at: '2020-06-01',
+        skills: [
+          { name: 'jumping' },
+          { name: 'diving' }
+        ]
       })
       await ThronesSearch.persist({
         id: 3,
@@ -33,7 +41,10 @@ describe("integration", () => {
         name: "B Person",
         title: "B",
         rating: 100,
-        created_at: '2020-06-15'
+        created_at: '2020-06-15',
+        skills: [
+          { description: 'noname' },
+        ]
       })
       await ThronesSearch.refresh()
     })
@@ -176,6 +187,207 @@ describe("integration", () => {
                 key: 'B',
                 count: 1
               }]
+            })
+          })
+        })
+      })
+    })
+
+    describe('nested', () => {
+      describe('basic count', () => {
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.nested('skills')
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: { count: 5 }
+            })
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                nested: [{
+                  name: 'skillz',
+                  field: 'skills'
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skillz: { count: 5 }
+            })
+          })
+        })
+      })
+
+      describe('with calculations', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.nested('skills').sum('skills.level')
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: { count: 5, 'sum_skills.level': 3 }
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                nested: [{
+                  name: 'skills',
+                  sum: 'skills.level'
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: { count: 5, 'sum_skills.level': 3 }
+            })
+          })
+        })
+      })
+
+      describe('with children', () => {
+        describe('by direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.nested('skills')
+              .child()
+              .terms('skills.name')
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: {
+                count: 5,
+                'skills.name': [
+                  {
+                    key: 'jumping',
+                    count: 2
+                  },
+                  {
+                    key: 'diving',
+                    count: 1
+                  },
+                  {
+                    key: 'jacking',
+                    count: 1
+                  }
+                ]
+              }
+            })
+          })
+        })
+
+        describe('by constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                nested: [{
+                  name: 'skills',
+                  children: [{
+                    terms: [{
+                      name: 'skills.name'
+                    }]
+                  }]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: {
+                count: 5,
+                'skills.name': [
+                  {
+                    key: 'jumping',
+                    count: 2
+                  },
+                  {
+                    key: 'diving',
+                    count: 1
+                  },
+                  {
+                    key: 'jacking',
+                    count: 1
+                  }
+                ]
+              }
+            })
+          })
+        })
+      })
+
+      describe('with child filter on nested docs', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([
+            {
+              skills: [{ name: 'A', description: 'nested' }]
+            },
+            {
+              skills: [{ name: 'B', description: 'nested' }]
+            },
+            {
+              skills: [{ name: 'C', description: 'nested' }]
+            },
+            {
+              skills: [{ name: 'D', description: 'nested' }]
+            },
+            {
+              skills: [{ name: 'E', description: 'other' }]
+            }
+          ], true)
+        })
+
+        // If queried as normal via 'nested', count will be incorrect
+        // So, remove the 'nested' but keep the query
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.nested('skills')
+              .child()
+              .filter('nestings', {
+                content: { skills: { keywords: { eq: 'nested '} } }
+              })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: {
+                count: 10,
+                nestings: {
+                  count: 4
+                }
+              }
+            })
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                nested: [{
+                  name: 'skills',
+                  children: [{
+                    filter: [{
+                      name: 'nestings',
+                      content: { skills: { keywords: { eq: 'nested '} } }
+                    }]
+                  }]
+                }]
+              }
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              skills: {
+                count: 10,
+                nestings: {
+                  count: 4
+                }
+              }
             })
           })
         })
@@ -791,6 +1003,42 @@ describe("integration", () => {
             })
             await search.execute()
             expect(Math.round(search.aggResults.avg_rating * 100) / 100).to.eq(133.33)
+          })
+        })
+      })
+
+      // Count should be 5, as asdf does not have a rating
+      describe('valueCount', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([
+            { rating: 5 },
+            { rating: 6 },
+            { name: 'asdf' },
+          ], true)
+        })
+
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.aggs.valueCount('rating')
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              value_count_rating: 5
+            })
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              aggs: {
+                valueCount: 'rating'
+              }
+            })
+            await search.execute()
+            expect(search.aggResults).to.deep.eq({
+              value_count_rating: 5
+            })
           })
         })
       })

@@ -579,9 +579,9 @@ describe("multi-index integration", () => {
                 return { new: 'thrones results' }
               })
             }
-            ;(JustifiedSearch.prototype as any).transformResults = (results: any) => {
+            ;(JustifiedSearch.prototype as any).transformResults = (results: any, rawResults: any) => {
               return results.map((r: any) => {
-                return { new: 'justified results' }
+                return { new: 'justified results', rawIndex: rawResults[0]._index }
               })
             }
           })
@@ -591,7 +591,7 @@ describe("multi-index integration", () => {
             ;(JustifiedSearch.prototype as any).transformResults = originalJustified
           })
 
-          it('works', async() => {
+          it('works, and has access to raw ES results', async() => {
             const search = new GlobalSearch({
               thrones: {},
               justified: {}
@@ -599,6 +599,7 @@ describe("multi-index integration", () => {
             await search.execute()
             expect(search.results[0].new).to.eq('thrones results')
             expect(search.results[2].new).to.eq('justified results')
+            expect(search.results[2].rawIndex).to.eq('justified')
           })
 
           describe('when resultMetadata is requested', () => {

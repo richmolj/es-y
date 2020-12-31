@@ -217,7 +217,7 @@ export class MultiSearch extends Search {
           return Object.assign({}, r)
         })
       const builtResults = search.buildResults(relevantHits, this.klass.resultMetadata)
-      const transformed = await search.transformResults(builtResults)
+      const transformed = await search.transformResults(builtResults, relevantHits)
       this.applyMetadata(transformed, builtResults)
       attachHighlightsToResults(this, transformed, relevantHits)
 
