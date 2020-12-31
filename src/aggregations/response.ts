@@ -46,6 +46,25 @@ function parseBucketAgg(search: Search, aggName: string, buckets: any[]) {
   return entries
 }
 
+function parseAggNode(search: Search, payload: any) {
+  const result = {} as any
+  Object.keys(payload).forEach((key) => {
+    if (key.match(/^calc_/)) {
+      const calcName = key.split("calc_")[1]
+      result[calcName] = payload[key].value
+    } else if (key === 'doc_count') {
+      result.count = payload[key]
+    } else {
+      if (payload[key].buckets) {
+        result[key] = parseBucketAgg(search, key, payload[key].buckets)
+      } else {
+        result[key] = parseAggNode(search, payload[key])
+      }
+    }
+  })
+  return result
+}
+
 export function buildAggResults(search: Search, payload: any) {
   const aggResults = {} as any
   Object.keys(payload).forEach(aggName => {
@@ -57,22 +76,7 @@ export function buildAggResults(search: Search, payload: any) {
       if (aggResult.buckets) {
         aggResults[aggName] = parseBucketAgg(search, aggName, aggResult.buckets)
       } else {
-        aggResults[aggName] = { } as any
-
-        Object.keys(aggResult).forEach((key) => {
-          if (key.match(/^calc_/)) {
-            const calcName = key.split("calc_")[1]
-            aggResults[aggName][calcName] = aggResult[key].value
-          } else if (key === 'doc_count') {
-            aggResults[aggName].count = aggResult[key]
-          } else {
-            if (aggResult[key].buckets) {
-              aggResults[aggName][key] = parseBucketAgg(search, key, aggResult[key].buckets)
-            } else {
-              // todo when we add further aggs
-            }
-          }
-        })
+        aggResults[aggName] = parseAggNode(search, aggResult)
       }
     }
   })

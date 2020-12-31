@@ -176,5 +176,79 @@ describe("integration", () => {
         })
       })
     })
+
+    describe('when results are transformed', () => {
+      let original: any
+      beforeEach(async() => {
+        original = (ThronesSearch.prototype as any).transformResults
+        ;(ThronesSearch.prototype as any).transformResults = (results: any[]) => {
+          return results.map((r) => {
+            return { foo: 'bar' }
+          })
+        }
+
+        await ThronesSearch.persist({
+          bio: 'findme'
+        }, true)
+      })
+
+      afterEach(() => {
+        ;(ThronesSearch.prototype as any).transformResults = original
+      })
+
+      it('still works', async() => {
+        const search = new ThronesSearch()
+        search.highlight('bio')
+        search.queries.bio.match('findme')
+        await search.execute()
+        expect(search.results).to.deep.eq([{
+          foo: 'bar',
+          _highlights: {
+            bio: ["<em>findme</em>"]
+          }
+        }])
+      })
+
+      // TODO: cant work bc based on index
+      describe('and a the transformed results are missing entries', () => {
+        let original: any
+        beforeEach(async() => {
+          original = (ThronesSearch.prototype as any).transformResults
+          ;(ThronesSearch.prototype as any).transformResults = (results: any[], rawResults: any[]) => {
+            return [
+              { foo: 'bar' },
+              { foo: 'manuallyadded', _highlights: rawResults[2].highlight },
+            ]
+          }
+
+          await ThronesSearch.persist([
+            { bio: 'findme 3' },
+            { bio: 'findme' },
+          ], true)
+        })
+
+        afterEach(() => {
+          ;(ThronesSearch.prototype as any).transformResults = original
+        })
+
+        it('cannot work straight up, but does not blow up and allows for manually attaching', async () => {
+          const search = new ThronesSearch()
+          search.highlight('bio')
+          search.queries.bio.match('findme')
+          await search.execute()
+          expect(search.results).to.deep.eq([
+            { foo: 'bar' },
+            {
+              foo: 'manuallyadded',
+              _highlights: {
+                bio: [
+                  "<em>findme</em> 3"
+                ]
+              }
+            }
+          ])
+        })
+      })
+    })
   })
 })

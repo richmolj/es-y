@@ -4,7 +4,7 @@ import { sourceFieldsRequestPayload } from './source-fields'
 import { Search } from '../search'
 import { asyncForEach } from '../util'
 
-export async function buildNestedQueryPayloads(conditionsClass: Conditions) {
+export async function buildNestedQueryPayloads(conditionsClass: Conditions, isFilterAggregation: boolean = false) {
   const search           = (conditionsClass as any).search as Search
   const nestedConditions = (conditionsClass as any).nestedConditions()
   const payloads         = [] as any[]

@@ -2,10 +2,11 @@ import { DateHistogramAggregation, DateHistogramOptions } from './date-histogram
 import { TermsAggregation, TermsOptions } from "./terms"
 import { RangeAggregation, RangeOptions } from "./range"
 import { FilterAggregation, FilterOptions } from "./filter"
+import { NestedAggregation } from "./nested"
 import { Calculation } from "./calculation"
 import { Search } from "../search"
 import { asyncForEach } from '../util'
-import { BucketAggregation } from './bucket';
+import { BucketAggregation, BucketOptions } from './bucket';
 
 interface ToElasticOptions {
   overrideSize?: boolean
@@ -16,6 +17,7 @@ export class Aggregations {
   private dateHistogramAggs: DateHistogramAggregation[]
   private rangeAggs: RangeAggregation[]
   private filterAggs: FilterAggregation[]
+  private nestedAggs: NestedAggregation[]
   private calculations: Calculation[]
   private search: Search
 
@@ -25,6 +27,7 @@ export class Aggregations {
     this.dateHistogramAggs = []
     this.rangeAggs = []
     this.filterAggs = []
+    this.nestedAggs = []
     this.calculations = []
   }
 
@@ -44,6 +47,7 @@ export class Aggregations {
       ...this.dateHistogramAggs,
       ...this.rangeAggs,
       ...this.filterAggs,
+      ...this.nestedAggs,
     ]
   }
 
@@ -71,11 +75,26 @@ export class Aggregations {
     return agg
   }
 
+  nested(name: string, options: BucketOptions = {}): NestedAggregation {
+    const agg = new NestedAggregation(this.search, name, options)
+    this.nestedAggs.push(agg)
+    return agg
+  }
+
   // Todo mixin between this and Bucket
   sum(fields: string | string[]) {
     if (!Array.isArray(fields)) fields = [fields]
     fields.forEach((field) => {
       const calc = new Calculation("sum", field)
+      this.calculations.push(calc)
+    })
+    return this
+  }
+
+  valueCount(fields: string | string[]) {
+    if (!Array.isArray(fields)) fields = [fields]
+    fields.forEach((field) => {
+      const calc = new Calculation("value_count", field)
       this.calculations.push(calc)
     })
     return this
@@ -129,6 +148,13 @@ export class Aggregations {
       })
     }
 
+    if (input.nested) {
+      input.nested.forEach((nested: any) => {
+        const { name, ...options } = nested
+        this.nested(name, options)
+      })
+    }
+
     if (input.terms) {
       input.terms.forEach((term: any) => {
         const { name, ensureQuality, sourceFields, order, sum, avg, ...options } = term
@@ -163,6 +189,10 @@ export class Aggregations {
 
     if (input.avg) {
       this.avg(input.avg)
+    }
+
+    if (input.valueCount) {
+      this.valueCount(input.valueCount)
     }
 
     return this

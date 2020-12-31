@@ -164,7 +164,10 @@ export class Search {
     }
   }
 
-  protected async transformResults(results: Record<string, any>[]): Promise<any[]> {
+  protected async transformResults(
+    results: Record<string, any>[],
+    rawResults?: Record<string, any>[]
+  ): Promise<any[]> {
     return results.map(result => {
       const transformed = this.transformResult(result)
       return transformed
@@ -187,7 +190,7 @@ export class Search {
     const rawResults = response.body.hits.hits
     mergeInnerHits(this, rawResults)
     const builtResults = this.buildResults(rawResults, this.includeMetadata)
-    const transformedResults = await this.transformResults(builtResults)
+    const transformedResults = await this.transformResults(builtResults, rawResults)
     attachHighlightsToResults(this, transformedResults, rawResults)
     this.results = this.applyMetadata(transformedResults, builtResults)
 
