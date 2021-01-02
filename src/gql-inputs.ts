@@ -126,6 +126,9 @@ class ${name}SortInput {
   // todo: enum
   @Field()
   dir!: string
+
+  @Field({ nullable: true })
+  unmappedType!: string
 }
 
 @InputType()
@@ -230,6 +233,9 @@ class ${inputName}SortInput {
   // todo: enum
   @Field()
   dir!: string
+
+  @Field({ nullable: true })
+  unmappedType!: string
 }
 
 @InputType()
@@ -345,6 +351,9 @@ class ${name}SortInput {
   // todo: enum
   @Field()
   dir!: string
+
+  @Field({ nullable: true })
+  unmappedType!: string
 }
 
 @InputType()
