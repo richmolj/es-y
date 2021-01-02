@@ -6,4 +6,5 @@ export interface Pagination {
 export interface Sort {
   att: string
   dir: 'desc' | 'asc'
+  unmappedType?: string
 }

@@ -69,7 +69,11 @@ export function assignSortAndPage(search: Search, payload: any) {
   payload.body.size = search.page.size
   payload.body.from = search.page.size * (search.page.number - 1)
   payload.body.sort = search.sort.map((s) => {
-    return { [s.att]: s.dir}
+    let sortPayload = { [s.att]: { order: s.dir } } as any
+    if (s.unmappedType) {
+      sortPayload[s.att].unmapped_type = s.unmappedType
+    }
+    return sortPayload
   })
   return payload
 }

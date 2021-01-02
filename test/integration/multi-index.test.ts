@@ -410,6 +410,20 @@ describe("multi-index integration", () => {
           await search.execute()
           expect(search.results.map((r) => r.id)).to.deep.eq([ 902, 901, 2, 1 ])
         })
+
+        // In this case, thrones is correctly sorted
+        // Justified ignores the sort
+        describe('when an unmapped attribute', () => {
+          it('can pass unmappedType', async() => {
+            const search = new GlobalSearch({
+              thrones: {},
+              justified: {},
+              sort: [{ att: "title", dir: "desc", unmappedType: 'keyword' }]
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([ 2, 1, 901, 902 ])
+          })
+        })
       })
 
       describe('via direct assignment', () => {
