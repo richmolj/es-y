@@ -1,7 +1,15 @@
 import { applyMixins } from "../util"
-import { Condition, NotClause, AndClause, OrClause, EqCondition, NumericRangeCondition } from "../conditions"
 import { ClassHook } from "../decorators"
 import { RangeOptions, RangeCondition, applyOrClause, applyAndClause, applyNotClause } from "./base"
+import {
+  Condition,
+  NotClause,
+  AndClause,
+  OrClause,
+  EqCondition,
+  NumericRangeCondition,
+  ExistsCondition,
+} from "../conditions"
 
 class NumericOrClause<ConditionT extends NumericCondition<ConditionsT>, ConditionsT> extends OrClause<
   ConditionT,
@@ -38,6 +46,11 @@ class NumericNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, Co
     this.value = (this.condition as any).eq(value, options)
     return this.originalCondition
   }
+
+  exists(bool: boolean = true) {
+    this.value = (this.condition as any).exists(bool)
+    return this.originalCondition
+  }
 }
 
 class NumericAndClause<ConditionT extends NumericCondition<ConditionsT>, ConditionsT> extends AndClause<
@@ -64,8 +77,9 @@ export class NumericCondition<ConditionsT> extends Condition<ConditionsT, number
 export interface NumericCondition<ConditionsT>
   extends Condition<ConditionsT, number>,
     EqCondition<ConditionsT, number>,
+    ExistsCondition<ConditionsT, number>,
     NumericRangeCondition<ConditionsT> {}
-applyMixins(NumericCondition, [Condition, EqCondition, RangeCondition])
+applyMixins(NumericCondition, [Condition, EqCondition, ExistsCondition, RangeCondition])
 
 interface JustNumeric {
   eq?: number | number[]
@@ -73,6 +87,7 @@ interface JustNumeric {
   gte?: number
   lt?: number
   lte?: number
+  exists?: boolean
 }
 
 interface ConditionInput<ConditionsT> {
@@ -85,6 +100,7 @@ export interface NumericConditionInput<ConditionsT> {
   gte?: number
   lt?: number
   lte?: number
+  exists?: boolean
   not?: JustNumeric
   or?: JustNumeric | ConditionInput<ConditionsT>
 }

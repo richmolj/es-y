@@ -1,9 +1,17 @@
 import { ClassHook } from "../decorators"
 import { MatchOptions } from './match'
 import { MatchPhraseOptions } from './match-phrase'
-import { Condition, NotClause, AndClause, OrClause, MatchCondition, MatchPhraseCondition } from "."
 import { applyMixins } from "../util"
 import { applyOrClause, applyAndClause, applyNotClause } from "./base"
+import {
+  Condition,
+  NotClause,
+  AndClause,
+  OrClause,
+  MatchCondition,
+  MatchPhraseCondition,
+  ExistsCondition,
+} from "."
 
 class TextOrClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> extends OrClause<
   ConditionT,
@@ -30,6 +38,11 @@ class TextNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, Condi
     this.value = (this.condition as any).matchPhrase(value, options)
     return this.originalCondition
   }
+
+  exists(bool: boolean = true): ConditionT {
+    this.value = (this.condition as any).exists(bool)
+    return this.originalCondition
+  }
 }
 
 class TextAndClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> extends AndClause<
@@ -43,6 +56,11 @@ class TextAndClause<ConditionT extends TextCondition<ConditionsT>, ConditionsT> 
 
   matchPhrase(value: string | string[], options?: MatchPhraseOptions) {
     this.value = this.condition.matchPhrase(value, options)
+    return this.value
+  }
+
+  exists(bool: boolean = true) {
+    this.value = (this.condition as any).exists(bool)
     return this.value
   }
 }
@@ -65,6 +83,7 @@ export class TextCondition<ConditionsT> extends Condition<ConditionsT, string> {
 }
 export interface TextCondition<ConditionsT>
   extends Condition<ConditionsT, string>,
+    ExistsCondition<ConditionsT, string>,
     MatchCondition<ConditionsT>,
     MatchPhraseCondition<ConditionsT> {}
-applyMixins(TextCondition, [MatchCondition, MatchPhraseCondition])
+applyMixins(TextCondition, [ExistsCondition, MatchCondition, MatchPhraseCondition])

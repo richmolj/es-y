@@ -1133,6 +1133,276 @@ describe("integration", () => {
           })
         })
       })
+
+      describe('exists', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([
+            { id: 701, bio: 'dragon' },
+            { id: 702, name: 'foo' },
+          ], true)
+        })
+
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.name.exists()
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 999, 702])
+          })
+
+          it('works when passes false', async() => {
+            const search = new ThronesSearch()
+            search.filters.name.exists(false)
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([701])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                name: {
+                  exists: true
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 999, 702])
+          })
+
+          it('works when passed false', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                name: {
+                  exists: false
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([701])
+          })
+        })
+
+        describe('NOT', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.name.not.exists()
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([701])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  name: {
+                    not: {
+                      exists: true
+                    }
+                  }
+                }
+              })
+              search.filters.name.not.exists()
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([701])
+            })
+          })
+
+          // Only across fields makes sense
+          describe('AND NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.match('dragon').and.name.not.exists()
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      match: 'dragon',
+                      and: {
+                        name: {
+                          not: {
+                            exists: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+          })
+
+          describe('NOT AND', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.not.exists().and.bio.match('dragon')
+                try {
+                  await search.execute()
+                } catch(e) {
+                  console.log(JSON.stringify(e))
+                }
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      not: {
+                        exists: true,
+                        and: {
+                          bio: {
+                            match: 'dragon'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+          })
+
+          describe('OR NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.match('vows').or.name.not.exists()
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      match: 'vows',
+                      or: {
+                        name: {
+                          not: {
+                            exists: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+          })
+
+          describe('NOT OR', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.not.exists().or.bio.match('vows')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      not: {
+                        exists: true,
+                        or: {
+                          bio: {
+                            match: 'vows'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+          })
+        })
+
+        describe('OR clause', () => {
+          describe('within field', () => {
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.exists(false).or.eq('Ned Stark')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      exists: false,
+                      or: {
+                        eq: 'Ned Stark'
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.name.exists(false).or.eq('Ned Stark')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    name: {
+                      exists: false,
+                      or: {
+                        eq: 'Ned Stark'
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 701])
+              })
+            })
+          })
+        })
+      })
     })
 
     describe("text type", () => {
@@ -1991,6 +2261,279 @@ describe("integration", () => {
           })
         })
       })
+
+      describe('exists', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([
+            { id: 701, name: 'foo' },
+            { id: 702, bio: 'billions' },
+          ], true)
+        })
+
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.bio.exists()
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 702])
+          })
+
+          it('works when passes false', async() => {
+            const search = new ThronesSearch()
+            search.filters.bio.exists(false)
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                bio: {
+                  exists: true
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 702])
+          })
+
+          it('works when passed false', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                bio: {
+                  exists: false
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+          })
+        })
+
+        describe('NOT', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.bio.not.exists()
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  bio: {
+                    not: {
+                      exists: true
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+            })
+          })
+
+          // Only across fields makes sense
+          describe('AND NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.exists(true).and.quote.not.match('burn')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 702])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      exists: true,
+                      and: {
+                        quote: {
+                          not: {
+                            match: 'burn'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 702])
+              })
+            })
+          })
+
+          describe('NOT AND', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.not.exists().and.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      not: {
+                        exists: true,
+                        and: {
+                          name: {
+                            eq: 'foo'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                search.filters.bio.not.exists().and.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+          })
+
+          describe('OR NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.exists(false).or.name.eq('Ned Stark')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 999, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      exists: false,
+                      or: {
+                        name: {
+                          eq: 'Ned Stark'
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([2, 999, 701])
+              })
+            })
+          })
+
+          describe('NOT OR', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.not.exists().or.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      not: {
+                        exists: true,
+                        or: {
+                          name: {
+                            eq: 'foo'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+          })
+        })
+
+        describe('OR clause', () => {
+          describe('within field', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 703,
+                bio: 'findme'
+              }, true)
+            })
+
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.exists().or.match('findme')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 702, 703])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      exists: true,
+                      or: {
+                        match: 'findme'
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 702, 703])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.bio.exists(false).or.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    bio: {
+                      exists: false,
+                      or: {
+                        name: {
+                          eq: 'foo'
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+          })
+        })
+      })
     })
 
     describe("numeric type", () => {
@@ -2483,6 +3026,276 @@ describe("integration", () => {
           })
         })
       })
+
+      describe('exists', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([
+            { id: 701, name: 'foo' },
+            { id: 702, age: 1 },
+          ], true)
+        })
+
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.age.exists()
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 702])
+          })
+
+          it('works when passes false', async() => {
+            const search = new ThronesSearch()
+            search.filters.age.exists(false)
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                age: {
+                  exists: true
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([1, 2, 702])
+          })
+
+          it('works when passed false', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                age: {
+                  exists: false
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+          })
+        })
+
+        describe('NOT', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.age.not.exists()
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  age: {
+                    not: {
+                      exists: true
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+            })
+          })
+
+          // Only across fields makes sense
+          describe('AND NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.age.exists(false).and.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    age: {
+                      exists: false,
+                      and: {
+                        name: {
+                          eq: 'foo'
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+          })
+
+          describe('NOT AND', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.age.not.exists().and.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    age: {
+                      not: {
+                        exists: true,
+                        and: {
+                          name: {
+                            eq: 'foo'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([701])
+              })
+            })
+          })
+
+          describe('OR NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.age.exists(false).or.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    age: {
+                      exists: false,
+                      or: {
+                        name: {
+                          eq: 'foo'
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+          })
+
+          describe('NOT OR', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.age.not.exists().or.name.eq('foo')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    age: {
+                      not: {
+                        exists: true,
+                        or: {
+                          name: {
+                            eq: 'foo'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701])
+              })
+            })
+          })
+        })
+
+        describe('OR clause', () => {
+          describe('within field', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 703,
+                age: 2
+              }, true)
+            })
+
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.age.exists(false).or.eq(2)
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701, 703])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    age: {
+                      exists: false,
+                      or: {
+                        eq: 2
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701, 703])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.age.exists(false).or.quote.match('burn')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 999, 701])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    age: {
+                      exists: false,
+                      or: {
+                        quote: {
+                          match: 'burn'
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 999, 701])
+              })
+            })
+          })
+        })
+      })
     })
 
     // TODO date math
@@ -2858,6 +3671,287 @@ describe("integration", () => {
                 },
               },
             )
+          })
+        })
+      })
+
+      describe('exists', () => {
+        beforeEach(async() => {
+          await ThronesSearch.persist([
+            { id: 701, name: 'foo' },
+            { id: 702, created_at: '2020-10-10' },
+          ], true)
+        })
+
+        describe('via direct assignment', () => {
+          it('works', async() => {
+            const search = new ThronesSearch()
+            search.filters.createdAt.exists()
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([1, 2, 702])
+          })
+
+          it('works when passes false', async() => {
+            const search = new ThronesSearch()
+            search.filters.createdAt.exists(false)
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([999, 701])
+          })
+        })
+
+        describe('via constructor', () => {
+          it('works', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                createdAt: {
+                  exists: true
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([1, 2, 702])
+          })
+
+          it('works when passed false', async() => {
+            const search = new ThronesSearch({
+              filters: {
+                createdAt: {
+                  exists: false
+                }
+              }
+            })
+            await search.execute()
+            expect(search.results.map(r => r.id)).to.have.members([999, 701])
+          })
+        })
+
+        describe('NOT', () => {
+          describe('via direct assignment', () => {
+            it('works', async() => {
+              const search = new ThronesSearch()
+              search.filters.createdAt.not.exists()
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([999, 701])
+            })
+          })
+
+          describe('via constructor', () => {
+            it('works', async() => {
+              const search = new ThronesSearch({
+                filters: {
+                  createdAt: {
+                    not: {
+                      exists: true
+                    }
+                  }
+                }
+              })
+              await search.execute()
+              expect(search.results.map(r => r.id)).to.have.members([999, 701])
+            })
+          })
+
+          // Only across fields makes sense
+          describe('AND NOT', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.createdAt.exists().and.name.not.eq('Ned Stark')
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([1, 702])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    createdAt: {
+                      exists: true,
+                      and: {
+                        name: {
+                          not: {
+                            eq: 'Ned Stark'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([1, 702])
+              })
+            })
+          })
+
+          describe('NOT AND', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.createdAt.not.exists().and.name.eq('foo')
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    createdAt: {
+                      not: {
+                        exists: true,
+                        and: {
+                          name: {
+                            eq: 'foo'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([701])
+              })
+            })
+          })
+
+          describe('OR NOT', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 704,
+                name: 'bar'
+              }, true)
+            })
+
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.createdAt.exists().or.name.not.eq('foo')
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([1, 2, 999, 702, 704])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    createdAt: {
+                      exists: true,
+                      or: {
+                        name: {
+                          not: {
+                            eq: 'foo'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([1, 2, 999, 702, 704])
+              })
+            })
+          })
+
+          describe('NOT OR', () => {
+            describe('via direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.createdAt.not.exists().or.name.eq('Ned Stark')
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([2, 999, 701])
+              })
+            })
+
+            describe('via constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    createdAt: {
+                      not: {
+                        exists: true,
+                        or: {
+                          name: {
+                            eq: 'Ned Stark'
+                          }
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map(r => r.id)).to.have.members([2, 999, 701])
+              })
+            })
+          })
+        })
+
+        describe('OR clause', () => {
+          describe('within field', () => {
+            beforeEach(async() => {
+              await ThronesSearch.persist({
+                id: 703,
+                created_at: '2020-11-10'
+              }, true)
+            })
+
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.createdAt.exists(false).or.eq('2020-11-10')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701, 703])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    createdAt: {
+                      exists: false,
+                      or: {
+                        eq: '2020-11-10'
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([999, 701, 703])
+              })
+            })
+          })
+
+          describe('across fields', () => {
+            describe('by direct assignment', () => {
+              it('works', async() => {
+                const search = new ThronesSearch()
+                search.filters.createdAt.exists(false).or.quote.match('burn')
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 999, 701])
+              })
+            })
+
+            describe('by constructor', () => {
+              it('works', async() => {
+                const search = new ThronesSearch({
+                  filters: {
+                    createdAt: {
+                      exists: false,
+                      or: {
+                        quote: {
+                          match: 'burn'
+                        }
+                      }
+                    }
+                  }
+                })
+                await search.execute()
+                expect(search.results.map((r) => r.id)).to.deep.eq([1, 999, 701])
+              })
+            })
           })
         })
       })

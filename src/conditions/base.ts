@@ -24,7 +24,7 @@ interface Config {
 export class Condition<ConditionsT, ValueType> {
   protected _elasticField: string
   private conditions: ConditionsT
-  protected queryType!: "term" | "prefix" | "match" | "match_phrase" | "range"
+  protected queryType!: "term" | "prefix" | "match" | "match_phrase" | "range" | "exists"
   protected value?: ValueType | ValueType[] | RangeConditionValue<ValueType>
   protected orClauses: OrClause<this, ConditionsT>[]
   protected andClauses: AndClause<this, ConditionsT>[]
@@ -55,7 +55,10 @@ export class Condition<ConditionsT, ValueType> {
   }
 
   protected hasClause(): boolean {
-    return !!this.value || (this as any).value === 0 || this.notClauses.length > 0
+    return !!this.value ||
+      (this as any).value === 0 ||
+      (this as any).value === false ||
+      this.notClauses.length > 0
   }
 
   protected async toElastic() {
@@ -74,7 +77,7 @@ export class Condition<ConditionsT, ValueType> {
       queryType = 'range'
     }
 
-    if (condition.value || (condition.value as any) === 0) {
+    if (condition.value || (condition.value as any) === 0 || (condition.value as any) === false) {
       if (this.config && this.config.transforms) {
         condition = await this.applyTransforms() // NB condition is now duped
       }
@@ -237,10 +240,34 @@ export class Condition<ConditionsT, ValueType> {
     return dupe
   }
 
+  private existsClause(value: any, elasticField: string) {
+    if (value) {
+      return {
+        exists: {
+          field: elasticField
+        }
+      }
+    } else {
+      return {
+        bool: {
+          must_not: [{
+            exists: {
+              field: elasticField
+            }
+          }]
+        }
+      }
+    }
+  }
+
   protected elasticClause(queryType: string, value: any, condition: any) {
     let main
     let clause
     const elasticOptions = snakeifyObject(condition.elasticOptions)
+
+    if (queryType === 'exists') {
+      return this.existsClause(this.value, condition.elasticField)
+    }
 
     if (['numeric', 'date'].includes(condition.klass.type) && typeof value == "object") {
       clause = {
@@ -251,6 +278,7 @@ export class Condition<ConditionsT, ValueType> {
       if (condition.klass.type === 'text') {
         queryKey = 'query'
       }
+
       clause = {
         [condition.elasticField]: {
           [queryKey]: value,
