@@ -6,7 +6,10 @@ import {
   ClassHook,
   KeywordCondition,
   DateCondition,
-  TextCondition
+  TextCondition,
+  NumericCondition,
+  Search,
+  transformRange,
 } from './../../src/index'
 
 const index = ThronesSearch.index
@@ -34,6 +37,30 @@ class TransformedThronesSearchConditions extends ThronesSearchConditions {
       (value: any, condition: any) => {
         return value.replace('boo-urns', 'burn')
       }
+    ]
+  })
+
+  alteredAgeGranular = new NumericCondition<this>("age", this, {
+    transforms: [
+      (value: any, condition: any) => {
+        if (typeof value === 'object') {
+          if (value.gt) value.gt = value.gt * 10
+          if (value.gte) value.gte = value.gte * 10
+          if (value.lt) value.lt = value.lt * 10
+          if (value.lte) value.lte = value.lte * 10
+          return value
+        } else {
+          return value * 10
+        }
+      }
+    ]
+  })
+
+  alteredAge = new NumericCondition<this>("age", this, {
+    transforms: [
+      transformRange((value: any) => {
+        return value * 10
+      })
     ]
   })
 
@@ -217,7 +244,7 @@ describe("integration", () => {
 
       it('properly uses the transformed condition', async () => {
         const search = new TransformedThronesSearch()
-        search.filters.titleOrName.eq("foo")
+        search.filters.titleOrName.eq('foo')
         await search.execute()
         expect(search.results.map((r) => r.id)).to.deep.eq([1, 3])
       })
@@ -270,6 +297,92 @@ describe("integration", () => {
             await search.execute()
             expect(search.results.map((r) => r.id)).to.deep.eq([3, 1])
           })
+        })
+      })
+    })
+
+    describe('transforming ranges', () => {
+      beforeEach(async() => {
+        await ThronesSearch.persist([{
+          id: 456,
+          age: 20
+        }, {
+          id: 457,
+          age: 30
+        }], true)
+      })
+
+      describe('granular', () => {
+        it('works for eq', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAgeGranular.eq(2)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456])
+        })
+
+        it('works for gt', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAgeGranular.gt(2)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([457])
+        })
+
+        it('works for gte', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAgeGranular.gte(2)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456, 457])
+        })
+
+        it('works for lt', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAgeGranular.lt(3)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456])
+        })
+
+        it('works for lte', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAgeGranular.lte(3)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456, 457])
+        })
+      })
+
+      describe('with helper', () => {
+        it('works for eq', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAge.eq(2)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456])
+        })
+
+        it('works for gt', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAge.gt(2)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([457])
+        })
+
+        it('works for gte', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAge.gte(2)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456, 457])
+        })
+
+        it('works for lt', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAge.lt(3)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456])
+        })
+
+        it('works for lte', async () => {
+          const search = new TransformedThronesSearch()
+          search.filters.alteredAge.lte(3)
+          await search.execute()
+          expect(search.results.map((r) => r.id)).to.deep.eq([456, 457])
         })
       })
     })

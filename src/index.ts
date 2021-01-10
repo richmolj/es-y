@@ -1,5 +1,5 @@
 import { ClassHook, SearchClass, ConditionsClass } from "./decorators"
-import { applyMixins } from "./util"
+import { applyMixins, transformRange } from "./util"
 import {
   Conditions,
   OrClause,
@@ -40,4 +40,5 @@ export {
   DateConditionInput,
   ConditionsClass,
   generateGqlInputs,
+  transformRange,
 }
