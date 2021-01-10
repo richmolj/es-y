@@ -31,3 +31,17 @@ export function snakeifyObject(obj: null | undefined | Record<string, any>) {
     return newObj
   }
 }
+
+export function transformRange(fn: Function) {
+  return (value: any, condition: any) => {
+    if (typeof value === 'object') {
+      if (value.gt) value.gt = fn(value.gt)
+      if (value.gte) value.gte = fn(value.gte)
+      if (value.lt) value.lt = fn(value.lt)
+      if (value.lte) value.lte = fn(value.lte)
+      return value
+    } else {
+      return fn(value)
+    }
+  }
+}
