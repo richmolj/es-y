@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { expect } from "chai"
-import { ThronesSearch } from "../fixtures"
+import { GlobalSearch, JustifiedSearch, ThronesSearch } from "../fixtures"
 import { setupIntegrationTest } from "../util"
 
 const index = ThronesSearch.index
@@ -187,6 +187,144 @@ describe("integration", () => {
         const search = new ThronesSearch()
         await search.execute()
         expect(search.results).to.deep.eq([{ foo: "bar" }])
+      })
+
+      describe('but told not to transform at runtime', () => {
+        it('bypasses transformation', async () => {
+          const search = new ThronesSearch()
+          await search.execute()
+          expect(search.results).to.deep.eq([{ foo: "bar" }])
+          await search.execute({ transformResults: false })
+          expect(search.results).to.deep.eq([{
+            id: 1,
+            name: 'Ned Stark',
+            otherId: 5,
+            quote: 'Winter is coming.'
+          }])
+        })
+      })
+    })
+  })
+
+  describe('rawResults', () => {
+    beforeEach(async () => {
+      await ThronesSearch.persist({
+        id: 1,
+        name: "Ned Stark",
+      }, true)
+    })
+
+    it('is not attached by default', async() => {
+      const search = new ThronesSearch()
+      await search.execute()
+      expect(search.rawResults).to.be.undefined
+    })
+
+    describe('when requested', () => {
+      let original: boolean
+      beforeEach(() => {
+        original = ThronesSearch.rawResults
+        ThronesSearch.rawResults = true
+      })
+
+      afterEach(() => {
+        ThronesSearch.rawResults = original
+      })
+
+      it('adds a rawResults array from elastic', async () => {
+        const search = new ThronesSearch()
+        await search.execute()
+        expect(Array.isArray(search.rawResults)).to.be.true
+        const raw = search.rawResults as any[]
+        expect(raw.length).to.eq(1)
+        expect(raw[0]._index).to.eq('game-of-thrones')
+        expect(raw[0]._source).to.deep.eq({
+          id: 1,
+          name: 'Ned Stark'
+        })
+      })
+
+      describe('when multisearch', () => {
+        beforeEach(async () => {
+          await JustifiedSearch.persist({
+            id: 1,
+            name: "Boyd Crowder",
+          }, true)
+        })
+
+        afterEach(async () => {
+          await JustifiedSearch.client.indices.delete({ index: JustifiedSearch.index })
+        })
+
+        describe('when not splitting', () => {
+          let globalOriginal: boolean
+          beforeEach(() => {
+            globalOriginal = GlobalSearch.rawResults
+            GlobalSearch.rawResults = true
+          })
+
+          afterEach(() => {
+            GlobalSearch.rawResults = original
+          })
+
+          it('still works', async () => {
+            const search = new GlobalSearch({
+              thrones: {},
+              justified: {}
+            })
+            await search.execute()
+            expect(search.rawResults?.map((r) => r._index)).to.deep.eq([
+              'game-of-thrones', 'justified'
+            ])
+            expect(search.rawResults?.map((r) => r._source)).to.deep.eq([
+              { _type: 'thrones', id: 1, name: 'Ned Stark' },
+              { _type: 'justified', id: 1, name: 'Boyd Crowder' },
+            ])
+          })
+        })
+
+        describe('when splitting', () => {
+          let justifiedOriginal: boolean
+          beforeEach(() => {
+            justifiedOriginal = JustifiedSearch.rawResults
+            JustifiedSearch.rawResults = true
+          })
+
+          afterEach(() => {
+            JustifiedSearch.rawResults = justifiedOriginal
+          })
+
+          it('still works', async () => {
+            const search = new GlobalSearch({
+              split: 2,
+              thrones: {},
+              justified: {}
+            })
+            await search.execute()
+            expect(search.rawResults?.map((r) => r._source)).to.deep.eq([
+              { _type: 'thrones', id: 1, name: 'Ned Stark' },
+              { _type: 'justified', id: 1, name: 'Boyd Crowder' },
+            ])
+          })
+
+          describe('when some of the searches have not requested rawResults', () => {
+            beforeEach(() => {
+              JustifiedSearch.rawResults = false
+            })
+
+            it('does not add them to the array', async () => {
+              const search = new GlobalSearch({
+                split: 2,
+                thrones: {},
+                justified: {}
+              })
+              await search.execute()
+              expect(search.rawResults?.map((r) => r._source)).to.deep.eq([
+                { _type: 'thrones', id: 1, name: 'Ned Stark' },
+              ])
+            })
+          })
+        })
       })
     })
   })

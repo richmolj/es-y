@@ -1,7 +1,14 @@
 import { applyMixins } from "../util"
-import { Condition, NotClause, AndClause, OrClause, EqCondition, DateRangeCondition } from "../conditions"
 import { ClassHook } from "../decorators"
 import { RangeCondition, applyOrClause, applyAndClause, applyNotClause } from "./base"
+import {
+  Condition,
+  NotClause,
+  AndClause,
+  OrClause,
+  EqCondition,
+  ExistsCondition,
+DateRangeCondition } from "../conditions"
 
 interface DateOptions {
   format?: string
@@ -43,6 +50,11 @@ class DateOrClause<ConditionT extends DateCondition<ConditionsT>, ConditionsT> e
 class DateNotClause<ConditionT, ConditionsT> extends NotClause<ConditionT, ConditionsT> {
   eq(value: string | string[], options?: DateOptions) {
     this.value = (this.condition as any).eq(value, options)
+    return this.originalCondition
+  }
+
+  exists(bool: boolean = true) {
+    this.value = (this.condition as any).exists(bool)
     return this.originalCondition
   }
 }
@@ -90,8 +102,9 @@ export class DateCondition<ConditionsT> extends Condition<ConditionsT, string> {
 export interface DateCondition<ConditionsT>
   extends Condition<ConditionsT, string>,
     EqCondition<ConditionsT, string>,
+    ExistsCondition<ConditionsT, string>,
     DateRangeCondition<ConditionsT> {}
-applyMixins(DateCondition, [Condition, EqCondition, RangeCondition])
+applyMixins(DateCondition, [Condition, EqCondition, ExistsCondition, RangeCondition])
 
 interface JustDate {
   eq?: string | string[]
@@ -99,6 +112,7 @@ interface JustDate {
   gte?: string
   lt?: string
   lte?: string
+  exists?: boolean
 }
 
 interface ConditionInput<ConditionsT> {
@@ -111,6 +125,7 @@ export interface DateConditionInput<ConditionsT> {
   gte?: string
   lt?: string
   lte?: string
+  exists?: boolean
   not?: JustDate
   or?: JustDate | ConditionInput<ConditionsT>
 }

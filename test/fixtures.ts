@@ -48,6 +48,8 @@ export class ThronesSearch extends Search {
   filters!: ThronesSearchConditions
   queries!: ThronesSearchConditions
 
+  // static rawResults = true
+  // static logResponses = true
   // static logFormat = "pretty"
 }
 
@@ -66,6 +68,7 @@ export class JustifiedSearch extends Search {
   filters!: JustifiedSearchConditions
   queries!: JustifiedSearchConditions
 
+  // static rawResults = true
   // static logFormat = "pretty"
 }
 
@@ -75,4 +78,5 @@ export class GlobalSearch extends MultiSearch {
     thrones: ThronesSearch,
     justified: JustifiedSearch
   }
+
 }

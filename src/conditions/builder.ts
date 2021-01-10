@@ -12,6 +12,7 @@ const OPERATORS = [
   'lt',
   'lte',
   'pastFiscalYears',
+  'exists',
 ]
 
 // NOT before and/or
@@ -31,7 +32,7 @@ const TOP_LEVEL_KEYS = [
 
 function buildCondition(condition: any, payload: any) {
   ACTIONS.forEach(action => {
-    if (!payload[action]) return
+    if (!payload.hasOwnProperty(action)) return
 
     const value = payload[action]
     if (COMBINATORS.includes(action)) {

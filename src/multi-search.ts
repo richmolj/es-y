@@ -109,17 +109,23 @@ export class MultiSearch extends Search {
           (s as any)._highlights = this._highlights
         }
       })
-      const promises = this.searchInstances.map((s) => s.execute())
+      const promises = this.searchInstances.map((s) => {
+        return s.execute().then(() => [s.results, s.rawResults])
+      })
       const resultArray = await Promise.all(promises)
       const classSearches = (this as any).constructor.searches
       let results = [] as any[]
       resultArray.forEach((group, index: number) => {
         const type = this.typeFor(this.searchInstances[index])
-        group.forEach((result) => {
+        ;(group[0] as any).forEach((result: any) => {
           result._type = type
         })
-        results = results.concat(group)
+        results = results.concat(group[0])
       })
+      this.rawResults = resultArray.map((g) => {
+        // If we have raw results, add to array
+        if (g[1] && g[1][0]) return g[1][0]
+      }).filter((r) => !!r)
 
       this.results = await this.transformResults(results)
       this.aggResults = {}
