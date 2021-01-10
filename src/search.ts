@@ -26,11 +26,13 @@ export class Search {
   static logger: LoggerInterface
   static logFormat = "succinct"
   static logResponses: boolean = false
+  static rawResults: boolean = false
   static conditionsClass: typeof Conditions
   static isMultiSearch: boolean = false
 
   klass!: typeof Search
   results: any[]
+  rawResults?: any[]
   aggResults: any
   filters!: Conditions
   queries!: Conditions
@@ -189,6 +191,9 @@ export class Search {
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
     const rawResults = response.body.hits.hits
+    if (this.klass.rawResults) {
+      this.rawResults = rawResults
+    }
     mergeInnerHits(this, rawResults)
     const builtResults = this.buildResults(rawResults, this.includeMetadata)
     const transformedResults = await this.transformResults(builtResults, rawResults)
