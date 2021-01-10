@@ -16,6 +16,10 @@ import {
 } from "./util/highlighting"
 import { mergeInnerHits } from './util/source-fields'
 
+interface ExecuteOptions {
+  transformResults?: boolean
+}
+
 export class Search {
   static index: string
   static host: string
@@ -186,7 +190,7 @@ export class Search {
     return await buildRequest(this)
   }
 
-  async execute() {
+  async execute(opts: ExecuteOptions = {}) {
     const searchPayload = await this.toElastic()
     const response = await this._execute(searchPayload)
     this.total = response.body.hits.total.value
@@ -196,7 +200,12 @@ export class Search {
     }
     mergeInnerHits(this, rawResults)
     const builtResults = this.buildResults(rawResults, this.includeMetadata)
-    const transformedResults = await this.transformResults(builtResults, rawResults)
+    let transformedResults
+    if (opts.transformResults === false) {
+      transformedResults = builtResults
+    } else {
+      transformedResults = await this.transformResults(builtResults, rawResults)
+    }
     attachHighlightsToResults(this, transformedResults, rawResults)
     this.results = this.applyMetadata(transformedResults, builtResults)
 

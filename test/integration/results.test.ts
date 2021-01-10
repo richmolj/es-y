@@ -188,6 +188,21 @@ describe("integration", () => {
         await search.execute()
         expect(search.results).to.deep.eq([{ foo: "bar" }])
       })
+
+      describe('but told not to transform at runtime', () => {
+        it('bypasses transformation', async () => {
+          const search = new ThronesSearch()
+          await search.execute()
+          expect(search.results).to.deep.eq([{ foo: "bar" }])
+          await search.execute({ transformResults: false })
+          expect(search.results).to.deep.eq([{
+            id: 1,
+            name: 'Ned Stark',
+            otherId: 5,
+            quote: 'Winter is coming.'
+          }])
+        })
+      })
     })
   })
 
