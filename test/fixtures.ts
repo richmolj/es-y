@@ -48,6 +48,7 @@ export class ThronesSearch extends Search {
   filters!: ThronesSearchConditions
   queries!: ThronesSearchConditions
 
+  // static logResponses = true
   // static logFormat = "pretty"
 }
 

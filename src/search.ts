@@ -25,6 +25,7 @@ export class Search {
   static resultMetadata = false
   static logger: LoggerInterface
   static logFormat = "succinct"
+  static logResponses: boolean = false
   static conditionsClass: typeof Conditions
   static isMultiSearch: boolean = false
 
@@ -207,6 +208,9 @@ export class Search {
   private async _execute(searchPayload: any) {
     this._logQuery(searchPayload)
     const response = await this.client.search(searchPayload)
+    if (this.klass.logResponses) {
+      this._logResponse(response as any)
+    }
     const { _shards } = response.body
     if (_shards && _shards.failures && _shards.failures.length > 0) {
       throw(`Error from Elastic! ${JSON.stringify(response.body)}`)
@@ -256,6 +260,19 @@ export class Search {
         "cyan",
         `curl -XGET --header 'Content-Type: application/json' ${prefix}/_search -d`,
       )} ${colorize("magenta", `'${formattedPayload}'`)}
+    `)
+  }
+
+  private _logResponse(payload: Record<string, string>): void {
+    let formattedPayload
+    if (this.klass.logFormat === "pretty") {
+      formattedPayload = JSON.stringify(payload, null, 2)
+    } else {
+      formattedPayload = JSON.stringify(payload)
+    }
+    this.klass.logger.info(`
+      ${colorize("green", "RESPONSE")}
+      ${colorize("yellow", `'${formattedPayload}'`)}
     `)
   }
 
