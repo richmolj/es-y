@@ -1,4 +1,4 @@
-# Esy
+# Es-y
 
 Node client for elasticsearch with typescript and GraphQL bindings. Making **E**lastic**S**earch **easy**.
 
@@ -17,7 +17,7 @@ import {
   TextCondition,
   NumericCondition,
   DateCondition
-} from "esy"
+} from "es-y"
 
 // Left side (e.g. goldAmount) is what we refer to in code
 // Right side (.e.g. gold) is the underlying elastic field
@@ -77,7 +77,7 @@ search.filters.goldAmount.gt(100).lte(500)
 search.filters.createdAt.gt("2020-01-01")
 ```
 
-Learn more about each type of condition [here](https://bbgithub.dev.bloomberg.com/bgov/esy/wiki/Querying#condition-types).
+Learn more about each type of condition [here](https://bbgithub.dev.bloomberg.com/bgov/es-y/wiki/Querying#condition-types).
 
 Conditions can all be negated:
 
@@ -103,7 +103,7 @@ search.filters.or.skills.type.eq("Comedic Relief")
 search.filters.not.rating.lt(10)
 ```
 
-Learn more about complex/nested AND/OR/NOT queries [here](https://bbgithub.dev.bloomberg.com/bgov/esy/wiki/Querying#andornot).
+Learn more about complex/nested AND/OR/NOT queries [here](https://bbgithub.dev.bloomberg.com/bgov/es-y/wiki/Querying#andornot).
 
 We can even alter these values. Maybe when querying `goldAmount` we need to convert dollars to cents:
 
@@ -116,9 +116,9 @@ goldAmount = new NumericCondition<this>("gold", this, {
 })
 ```
 
-Learn more about condition transforms [here](https://bbgithub.dev.bloomberg.com/bgov/esy/wiki/Querying#transforms).
+Learn more about condition transforms [here](https://bbgithub.dev.bloomberg.com/bgov/es-y/wiki/Querying#transforms).
 
-When looking at results, we'll probably want to [highlight](https://bbgithub.dev.bloomberg.com/bgov/esy/wiki/Results#highlighting) our matches:
+When looking at results, we'll probably want to [highlight](https://bbgithub.dev.bloomberg.com/bgov/es-y/wiki/Results#highlighting) our matches:
 
 ```ts
 search.queries.keywords.eq("winter")
@@ -126,7 +126,7 @@ search.highlight("quote")
 search.results[0]._highlights // { bio: ["<em>winter</em> is coming"] }
 ```
 
-Or [transform](https://bbgithub.dev.bloomberg.com/bgov/esy/wiki/Results#transforms) the results altogether.
+Or [transform](https://bbgithub.dev.bloomberg.com/bgov/es-y/wiki/Results#transforms) the results altogether.
 
 ```ts
 class ThronesSearch extends Search {
@@ -137,7 +137,7 @@ class ThronesSearch extends Search {
 }
 ```
 
-Searches can be combined with `Multisearch` (docs [here](https://bbgithub.dev.bloomberg.com/BGOV/esy/wiki/Multisearch)) to perform cross-index queries that re-use all the logic you see above:
+Searches can be combined with `Multisearch` (docs [here](https://bbgithub.dev.bloomberg.com/BGOV/es-y/wiki/Multisearch)) to perform cross-index queries that re-use all the logic you see above:
 
 ```ts
 class GlobalTVSearch extends MultiSearch {
@@ -163,7 +163,7 @@ search.results // =>
 // ]
 ```
 
-Finally, we can perform [sophisticated aggregations](https://bbgithub.dev.bloomberg.com/BGOV/esy/wiki/Aggregations), like showing the top kingdoms by `goldAmount` broken down by year, but only for the Merchant class:
+Finally, we can perform [sophisticated aggregations](https://bbgithub.dev.bloomberg.com/BGOV/es-y/wiki/Aggregations), like showing the top kingdoms by `goldAmount` broken down by year, but only for the Merchant class:
 
 ```ts
 const search = new ThroneTaxReportSearch()
@@ -238,8 +238,8 @@ If you're using GraphQL with [type-graphql](https://github.com/MichalLytek/type-
 
 ![](https://user-images.githubusercontent.com/55264/77768780-57567a80-7019-11ea-8101-876a823152ad.gif)
 
-[Learn more about GraphQL integration here](https://bbgithub.dev.bloomberg.com/BGOV/esy/wiki/GraphQL-Integration).
+[Learn more about GraphQL integration here](https://bbgithub.dev.bloomberg.com/BGOV/es-y/wiki/GraphQL-Integration).
 
 ### That's Not All!
 
-The above gives a basic overview of `esy` functionality - but there's plenty more we haven't covered. Head over to out [Wiki](https://bbgithub.dev.bloomberg.com/BGOV/esy/wiki) to dive deeper.
+The above gives a basic overview of `es-y` functionality - but there's plenty more we haven't covered. Head over to out [Wiki](https://bbgithub.dev.bloomberg.com/BGOV/es-y/wiki) to dive deeper.
