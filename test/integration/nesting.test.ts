@@ -349,7 +349,10 @@ describe("integration", () => {
           const search = new ThronesSearch()
           search.queries.bio.not.match("bar")
           search.queries.skills.keywords.eq("baking")
-          search.highlight('skills.description', { fragment_size: 10, number_of_fragments: 1 })
+          search.highlight('skills.description', {
+            fragmentSize: 10,
+            numberOfFragments: 1
+          })
           search.highlight('skills.note')
           await search.execute()
           expect(search.results[0]._highlights).to.eq(undefined)

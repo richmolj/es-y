@@ -132,11 +132,11 @@ describe("integration", () => {
           search.queries.keywords.eq("foo")
           search.highlight("thing", {
             field: "bio",
-            number_of_fragments: 2,
-            fragment_size: 15,
+            numberOfFragments: 2,
+            fragmentSize: 15,
             order: "score",
-            pre_tags: ['<strong>'],
-            post_tags: ['</strong>'],
+            preTags: ['<strong>'],
+            postTags: ['</strong>'],
           })
           await search.execute()
           expect(search.results[0]._highlights).to.deep.eq({
@@ -159,11 +159,11 @@ describe("integration", () => {
             highlights: [{
               name: "thing",
               field: "bio",
-              number_of_fragments: 2,
-              fragment_size: 15,
+              numberOfFragments: 2,
+              fragmentSize: 15,
               order: "score",
-              pre_tags: ['<strong>'],
-              post_tags: ['</strong>'],
+              preTags: ['<strong>'],
+              postTags: ['</strong>'],
             }]
           })
           await search.execute()

@@ -7,7 +7,7 @@ import { Aggregations, buildAggResults } from "./aggregations"
 import { Meta } from "./meta"
 import { Pagination, Sort } from './types'
 import { Scripting, ElasticScript } from "./scripting"
-import { applyMixins } from './util'
+import { applyMixins, camelToSnake, snakeifyObject } from './util'
 import { config } from "./util/env"
 import {
   HighlightConfig,
@@ -144,6 +144,7 @@ export class Search {
     if (!this._highlights) this._highlights = []
     const field = options.field
     delete options.field
+    options = snakeifyObject(options)
 
     this._highlights.push({
       name,
