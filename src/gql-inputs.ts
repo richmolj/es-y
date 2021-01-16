@@ -585,6 +585,9 @@ export class ${bestName}KeywordNotInput {
   @Field(type => [String], { nullable: true })
   eq?: string[]
 
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
+
   @Field(type => [String], { nullable: true })
   prefix?: string[]
   ${keywordOptions}
@@ -597,6 +600,9 @@ export class ${bestName}KeywordConditionInput {
 
   @Field(type => [String], { nullable: true })
   prefix?: string[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   and?: ${bestName}KeywordAndInput
@@ -641,6 +647,9 @@ export class ${bestName}KeywordOrInput {
 
   @Field(type => [String], { nullable: true })
   prefix?: string[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   or?: ${bestName}KeywordOrInput
@@ -739,6 +748,9 @@ import { ${bestName}TextAndInput } from './text-and'
 
 @InputType()
 export class ${bestName}TextNotInput {
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
+
   @Field(type => [String], { nullable: true })
   match?: string[]
 
@@ -754,6 +766,9 @@ export class ${bestName}TextConditionInput {
 
   @Field(type => [String], { nullable: true })
   matchPhrase?: string[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   and?: ${bestName}TextAndInput
@@ -793,6 +808,9 @@ import { ${bestName}${capName}Input } from '../nested/${capName}'
   textOrContent = textOrContent.concat(`
 @InputType()
 export class ${bestName}TextOrInput {
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
+
   @Field(type => [String], { nullable: true })
   match?: string[]
 
@@ -834,6 +852,9 @@ export class ${bestName}TextAndInput {
   @Field(type => [String], { nullable: true })
   match?: string[]
 
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
+
   @Field(type => [String], { nullable: true })
   matchPhrase?: string[]
   ${textOptions}
@@ -869,6 +890,9 @@ import { ${bestName}NumericAndInput } from './numeric-and'
 export class ${bestName}NumericNotInput {
   @Field(type => [Float], { nullable: true })
   eq?: number[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
   ${numericOptions}
 }
 
@@ -888,6 +912,9 @@ export class ${bestName}NumericConditionInput {
 
   @Field({ nullable: true })
   lte?: number
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   and?: ${bestName}NumericAndInput
@@ -929,6 +956,9 @@ import { ${bestName}${capName}Input } from '../nested/${capName}'
 export class ${bestName}NumericOrInput {
   @Field(type => [Float] as const, { nullable: true })
   eq?: number[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   or?: ${bestName}NumericOrInput
@@ -1003,6 +1033,9 @@ import { ${bestName}DateAndInput } from './date-and'
 export class ${bestName}DateNotInput {
   @Field(type => [String] as const, { nullable: true })
   eq?: string[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
   ${dateOptions}
 }
 
@@ -1022,6 +1055,9 @@ export class ${bestName}DateConditionInput {
 
   @Field({ nullable: true })
   lte?: string
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   pastFiscalYears?: number
@@ -1066,6 +1102,9 @@ import { ${bestName}${capName}Input } from '../nested/${capName}'
 export class ${bestName}DateOrInput {
   @Field(type => [String] as const, { nullable: true })
   eq?: string[]
+
+  @Field(type => Boolean, { nullable: true })
+  exists?: boolean
 
   @Field({ nullable: true })
   or?: ${bestName}DateOrInput
