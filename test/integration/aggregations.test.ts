@@ -416,6 +416,15 @@ describe("integration", () => {
             ])
           })
 
+          it.only('works with minDocCount', async () => {
+            const search = new ThronesSearch()
+            search.aggs.terms("title", { min_doc_count: 2 })
+            await search.execute()
+            expect(search.aggResults.title).to.deep.eq([
+              { key: "A", count: 2 }
+            ])
+          })
+
           it('works with include', async() => {
             await ThronesSearch.persist([{
               title: 'beerbottle'

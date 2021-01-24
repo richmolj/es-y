@@ -5,6 +5,7 @@ import { Search } from '../search'
 export interface TermsOptions extends BucketOptions {
   size?: number
   min_doc_count?: number
+  minDocCount?: number
   include?: string
   exclude?: string
 }
@@ -18,6 +19,7 @@ export class TermsAggregation extends BucketAggregation {
   sortAtt?: string
   sortDir?: string
   min_doc_count?: number
+  minDocCount?: number
   include?: string
   exclude?: string
   requiresQualityAssurance = false
@@ -30,7 +32,7 @@ export class TermsAggregation extends BucketAggregation {
   constructor(search: Search, name: string, options: TermsOptions) {
     super(search, name, options)
     this.size = options.size || 5
-    this.min_doc_count = options.min_doc_count
+    this.minDocCount = options.minDocCount || options.min_doc_count
     this.include = options.include
     this.exclude = options.exclude
     this._sourceFields = []
@@ -74,8 +76,8 @@ export class TermsAggregation extends BucketAggregation {
       payload.terms.shard_size = payload.terms.size + 1000
     }
 
-    if (this.min_doc_count) {
-      payload.terms.min_doc_count = this.min_doc_count
+    if (this.minDocCount) {
+      payload.terms.min_doc_count = this.minDocCount
     }
 
     if (this.sortAtt) {
