@@ -416,7 +416,7 @@ describe("integration", () => {
             ])
           })
 
-          it.only('works with minDocCount', async () => {
+          it('works with minDocCount', async () => {
             const search = new ThronesSearch()
             search.aggs.terms("title", { min_doc_count: 2 })
             await search.execute()
@@ -1127,9 +1127,9 @@ describe("integration", () => {
             ])
           })
 
-          it('works with min_doc_count', async () => {
+          it('works with minDocCount', async () => {
             const search = new ThronesSearch()
-            search.aggs.dateHistogram('createdAt', { interval: "month", min_doc_count: 1 })
+            search.aggs.dateHistogram('createdAt', { interval: "month", minDocCount: 1 })
             await search.execute()
             expect(search.aggResults.createdAt).to.deep.eq([
               { key: '2020-01-01T00:00:00.000Z', count: 1 },
