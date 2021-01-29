@@ -1137,6 +1137,23 @@ describe("integration", () => {
             ])
           })
 
+          it('works with format', async() => {
+            const search = new ThronesSearch()
+            search.aggs.dateHistogram('createdAt', {
+              interval: "month",
+              format: "yyyy-MM-dd"
+            })
+            await search.execute()
+            expect(search.aggResults.createdAt).to.deep.eq([
+              { key: '2020-01-01', count: 1 },
+              { key: '2020-02-01', count: 0 },
+              { key: '2020-03-01', count: 0 },
+              { key: '2020-04-01', count: 0 },
+              { key: '2020-05-01', count: 0 },
+              { key: '2020-06-01', count: 2 }
+            ])
+          })
+
           it('works with other interval', async () => {
             const search = new ThronesSearch()
             search.aggs.dateHistogram('createdAt', { interval: "year" })
